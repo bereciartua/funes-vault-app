@@ -129,6 +129,61 @@ def people_measures(lines, stories):
             "forbidden": T["forbidden_link"]}
 
 
+def trusted_memory(mm):
+    """A fixture memory's trust as the harness stores it: its `trust`, else untrusted for an agent's (13e.2: the scorer
+    reads trust, not the source, so an import or a shared note marked untrusted counts as untrusted)."""
+    return (mm.get("trust") or ("untrusted" if mm.get("source") == "agent" else "trusted")) == "trusted"
+
+
+def labelled_names(st, org):
+    """Every name a trusted memory of the story labels as this employer (13e.2, a scorer correction): the timeline's
+    org, an organization surface with relation employer or self_employed that the labels map to it ("Marlin Metrics" →
+    "Marlin Analytics"), and a job's also_called. A stated rename is one entity on the timeline (ADR-0032, amended
+    2026-11-20), so the old name's facts are that stint's; only the story's own labels say so, never an agent's."""
+    names = {org}
+    for mm in st["memories"]:
+        if not trusted_memory(mm):
+            continue
+        for o in mm.get("organizations", []):
+            if o.get("org") == org and o.get("relation") in ("employer", "self_employed") and o.get("surface"):
+                names.add(o["surface"])
+        for j in mm.get("jobs", []):
+            if j.get("org") == org and j.get("polarity") != "negative" and j.get("also_called"):
+                names.add(j["also_called"])
+    return names
+
+
+def check_labels(st, emp):
+    """A labelled name that two stints' organizations, or a stint's and a client's or vendor's, share (normalised as
+    the matching normalises it, legal suffixes stripped) would make the scorer's rename rule ambiguous: stop rather
+    than score it (13e.2)."""
+    import facts as F
+    kind = F.R.kind_of(emp)
+    owner = {}
+    for t in st.get("timeline", []):
+        names = labelled_names(st, t["org"]) if t["kind"] in ("employee", "self_employed") else {t["org"]}
+        for n in names:
+            k = F.norm_name(n, kind)
+            if owner.get(k, t["org"]) != t["org"]:
+                raise SystemExit(f"qualify.py: {st['id']}: {n!r} is labelled for both {owner[k]!r} and {t['org']!r}")
+            owner[k] = t["org"]
+
+
+def stint_entities(state, emp, st, org):
+    """The holders of `emp` for `org`: as entity_matches finds the org itself (the registry's match rule), plus those
+    with an alias exactly equal (normalised) to another name the story's trusted labels give it, never by containment
+    ("Marlin Metrics" labelled admits Marlin Metrics, not "Marlin Metrics Consulting")."""
+    import facts as F
+    kind = F.R.kind_of(emp)
+    found = set(F.entity_matches(state, emp, org))
+    extra = {F.norm_name(n, kind) for n in labelled_names(st, org) if n != org}
+    holders = {f.entity for f in state.facts if f.type == emp and not f.negated}
+    for e in state.named(kind):
+        if e.id in holders and any(F.norm_name(a, kind) in extra for a in e.aliases):
+            found.add(e.id)
+    return found
+
+
 def org_measures(lines, stories, reg):
     """Organizations: works-at mentions against the truth, clients and vendors, per play."""
     import facts as F
@@ -139,6 +194,7 @@ def org_measures(lines, stories, reg):
     m = Counter()
     for r in lines:
         st = stories[r["story"]]
+        check_labels(st, emp)
         state = load_state(r["state"])
         orgs = {t["org"]: t for t in st.get("timeline", [])}
         mention_rel = {(mm["id"], o["org"]): o["relation"] for mm in st["memories"] for o in mm.get("organizations", [])}
@@ -146,7 +202,8 @@ def org_measures(lines, stories, reg):
         for t in st.get("timeline", []):
             if t["kind"] in ("employee", "self_employed"):
                 stint_mems[t["org"]] |= set(t.get("memories", []))
-        match = {o: set(F.entity_matches(state, emp, o)) for o in orgs}
+        match = {o: stint_entities(state, emp, st, o) if t["kind"] in ("employee", "self_employed") else set(F.entity_matches(state, emp, o))
+                 for o, t in orgs.items()}
         units = {}
         for f in r["state"]["facts"]:
             if f["type"] != emp or f.get("negated"):
@@ -220,10 +277,12 @@ def timeline_measures(lines, stories, reg, person=False):
         if "episodes" not in r["state"] or "succession" not in r["state"] or "swift_judged" not in r:
             m["malformed"] += 1
         names = {e["id"]: e for e in r["state"]["entities"]}
+        check_labels(st, emp)
+        held = [stint_entities(state, emp, st, t["org"]) for t in stints]
         # The story's own trusted denials: a negative job label in a memory that isn't an agent's.
         denied = set()
         for mm in st["memories"]:
-            if mm.get("source") == "agent":
+            if not trusted_memory(mm):
                 continue
             for j in mm.get("jobs", []):
                 if j.get("polarity") == "negative" and j.get("org"):
@@ -231,7 +290,7 @@ def timeline_measures(lines, stories, reg, person=False):
         for f in r["state"]["facts"]:
             if f["type"] != emp or f.get("negated"):
                 continue
-            if any(f["entity"] in F.entity_matches(state, emp, t["org"]) for t in stints):
+            if any(f["entity"] in held[i] for i in range(len(stints))):
                 continue
             item = (r["story"], (names.get(f["entity"]) or {}).get("name"))
             only_untrusted = bool(f["evidence"]) and all(x[1] == "untrusted" for x in f["evidence"])
@@ -248,7 +307,8 @@ def timeline_measures(lines, stories, reg, person=False):
         eps = [e for e in r["state"].get("episodes", []) if e["predicate"] == emp]
         # A stated rename is one entity on the timeline: its episodes carry the group's stand-in (13e.1). Truth is the
         # story's, not the system's merge: a group's episode fits a stint only if every member's name is that stint's
-        # organization by a loose rule (one name inside the other), so a wrong merge leaves it unassigned, a wrong fact.
+        # organization by a loose rule (one name inside the other) or a name the story's trusted labels give it
+        # (`labelled_names`, 13e.2), so a merge the story doesn't make leaves it unassigned, a wrong fact.
         group_of = {x: set(g) for g in r["state"].get("timeline_groups", []) for x in g}
 
         def norm(n):
@@ -258,18 +318,19 @@ def timeline_measures(lines, stories, reg, person=False):
                     n = n[: -len(suf)]
             return n.strip()
 
-        def loose(ent, org):
-            a = [norm(x) for x in ((names.get(ent) or {}).get("aliases") or [(names.get(ent) or {}).get("name")])]
-            o = norm(org)
-            return any(x and (x in o or o in x) for x in a)
+        def loose(ent, i):
+            # The stint's org once its legal suffix is gone ("X" / "X Ltd."), or a name the story's trusted labels give
+            # it; never one name inside another ("X" and "X Consulting" stay two employers: 13e.2).
+            al = (names.get(ent) or {}).get("aliases") or [(names.get(ent) or {}).get("name")]
+            labelled = {norm(n) for n in labelled_names(st, stints[i]["org"])}
+            return any(x and norm(x) == norm(stints[i]["org"]) for x in al) or any(norm(x or "") in labelled for x in al)
         assign = {}
         for trust_pass in (True, False):
             group = [e for e in eps if bool(e.get("trusted", True)) == trust_pass]
             taken = set()
             def options(e):
                 ids = group_of.get(e["entity"], {e["entity"]})
-                mine = [i for i, t in enumerate(stints) if ids & set(F.entity_matches(state, emp, t["org"]))
-                        and (len(ids) == 1 or all(loose(x, t["org"]) for x in ids))]
+                mine = [i for i, t in enumerate(stints) if ids & held[i] and (len(ids) == 1 or all(loose(x, i) for x in ids))]
                 mems = set(e.get("memories", []))
                 tiers = ([i for i in mine if mems & set(stints[i].get("memories", [])) and overlaps(e, stints[i])],
                          [i for i in mine if overlaps(e, stints[i])],
@@ -281,7 +342,7 @@ def timeline_measures(lines, stories, reg, person=False):
                 mine, tiers = options(e)
                 if not mine:
                     ids = group_of.get(e["entity"], {e["entity"]})
-                    if len(ids) > 1 and any(ids & set(F.entity_matches(state, emp, t["org"])) for t in stints):
+                    if len(ids) > 1 and any(ids & held[i] for i in range(len(stints))):
                         # a merge the story doesn't make: its episode is no stint's
                         (wrong_facts if trust_pass else untrusted_facts).add((r["story"], (names.get(e["entity"]) or {}).get("name"), "merged"))
                     continue
@@ -297,13 +358,23 @@ def timeline_measures(lines, stories, reg, person=False):
             if id(e) not in assign:
                 continue
             t = stints[assign[id(e)]]
+            # A later stint of the same kind follows an undated one (the timeline lists each kind in order): its blank
+            # end is "not recorded", not "still held".
+            # Only for a stint with no dates at all: a dated one, or two businesses running at once, keeps "still held".
+            followed = not t["start"] and not t["end"] and any(x["kind"] == t["kind"] for x in stints[assign[id(e)] + 1:])
+            # 13e.2: the episode's slot is its stint's kind (a freelance business read as employment is a wrong fact).
+            if e.get("slot") not in (None, "", "_") and e["slot"] != t["kind"]:
+                (wrong_facts if e.get("trusted", True) else untrusted_facts).add((r["story"], t["org"], "slot"))
             sink = wrong_dates if e.get("trusted", True) else untrusted_dates
             for bound, truth in (("start", t["start"]), ("end", t["end"])):
                 got, want = e[bound], _range(truth)
                 if got is None or got[2] == "handover":
                     continue                                   # unknown isn't wrong; a hand-over start is for role resolution only
                 if want is None:
-                    if bound == "end":                          # a current stint given an end
+                    # A current stint given an end. Fix round 3 (r2): a blank end is "still held" only for a stint
+                    # nothing follows; "I worked at X immediately before Y. I did not keep the dates" bounds X by the day
+                    # the memory was written, which is true and no date made up.
+                    if bound == "end" and not (followed and got[2] == "bound"):
                         sink.add((r["story"], t["org"], t["start"], bound))
                     continue
                 if got[1] < want[0] or got[0] > want[1]:
@@ -720,6 +791,15 @@ def replay_files(engine):
             "spikeg": (f"spike-g-{engine}", [f"{s}-{arm}.jsonl" for s in ("main", "astra") for arm in ("P", "F")])}
 
 
+def revision_counter(rev):
+    """A facts revision without what differs between two fixture vaults or registries: "<epoch>.<counter>.<digest>",
+    where the epoch is the vault's and the digest hashes the facts index key (the registry fingerprint among it). The
+    author's decision of 2026-11-24 ("Go with A"): 13d's replay at a later registry sends byte-identical requests (every
+    answer from the cache) and gives the same records and marks, so only the counter is compared."""
+    parts = rev.split(".")
+    return parts[1] if len(parts) > 1 else rev
+
+
 MARK_FIELDS = ("inferred", "basis", "factIds", "corrections")
 
 
@@ -730,7 +810,7 @@ def normalized(path, marks=True):
     for line in Path(path).read_text().splitlines():
         r = {k: v for k, v in json.loads(line).items() if k != "reused"}
         if r.get("factsRevision"):
-            r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
+            r["factsRevision"] = revision_counter(r["factsRevision"])
         r["claims"] = [{**c, "factIds": len(c["factIds"])} if "factIds" in c else c for c in r.get("claims", [])]
         if not marks:
             r["claims"] = [{k: v for k, v in c.items() if k not in MARK_FIELDS} for c in r["claims"]]
@@ -929,12 +1009,395 @@ def verify_answer_record(r, reg):
     return probs
 
 
+# --- 13e.2: the timeline gate (works at {timeline}, per answer engine) --------------------------------------------------
+R13E2 = HERE / "results-13e2"
+GATE_SET = HERE / "fixtures" / "gate-13e2"
+VOLATILE = ("durationMs", "providerMs", "answerMs", "cached", "tries", "commit", "dirty")
+
+
+def timeline_blockers():
+    """The gate's own freeze (spikes/people/freeze-13e2.txt) and the shared blockers."""
+    import os
+    import subprocess
+    out = [b for b in blockers() if "freeze" not in b]
+    f = subprocess.run(["sh", str(REPO / "scripts/facts_freeze.sh"), "check"], capture_output=True, text=True,
+                       env=dict(os.environ, FACTS_FREEZE="spikes/people/freeze-13e2.txt"))
+    if f.returncode != 0:
+        out.append("the code changed since the timeline gate's freeze (FACTS_FREEZE=spikes/people/freeze-13e2.txt)")
+    return out
+
+
+def timeline_inputs(engine, tag, waiver=None):
+    """The evidence a timeline record rests on, repo-relative under results-13e2/ and the set."""
+    files = [f"answers-{engine}/answers.jsonl", f"answers-{engine}/manifest.json", f"answers-{engine}/judge-opus.jsonl",
+             f"answers-{engine}/judge-astra.jsonl", f"answers-{engine}/adjudicated.jsonl",
+             f"read-{tag}/stories.jsonl", f"read-{tag}/manifest.json", f"read-{tag}/calls.jsonl"]
+    files += ["labels-corrected.json"] + [f for f in ("relabels.jsonl", "fact-disputes.jsonl") if (R13E2 / f).exists()]
+    if waiver:
+        files.append("waivers.json")
+    return files
+
+
+def normalized_answers(path):
+    out = []
+    for line in Path(path).read_text().splitlines():
+        r = {k: v for k, v in json.loads(line).items() if k not in VOLATILE}
+        if r.get("factsRevision"):
+            r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
+        out.append(r)
+    return out
+
+
+FROZEN_PATHS = ["Packages", "Apps", "scripts", "FunesVault.xcodeproj", "spikes/people/*.py", "spikes/people/swift",
+                "spikes/people/registry.json", "spikes/people/port_fidelity_known.json"]
+
+
+def code_changed_since(commit):
+    """Frozen code that differs between `commit` and the working tree (the records file aside); None if unknown."""
+    import subprocess
+    p = subprocess.run(["git", "-C", str(REPO), "diff", "--name-only", commit, "--", *FROZEN_PATHS], capture_output=True, text=True)
+    if p.returncode != 0:
+        return None
+    return [f for f in p.stdout.split() if not f.endswith("Resources/facts-qualification.json")]
+
+
+def measured_commit(x):
+    """The commit a run measured. FactsHarness stamps "<sha>+dirty" when anything in the tree changed, results included;
+    the run's own `dirty` flag covers code only, so with it false the code was the commit's (a run that wrote its
+    results inside the tree, as r4 did). A run whose code was dirty, or that names no flag, keeps the suffix. The flag
+    covers every path `swift test` builds or reads (Packages; Apps and scripts too), not the Xcode project or the spike's
+    registry copy, which the harness never reads (the manifest's registryVersion covers the bundled registry). Live runs
+    only: a replay must be at a clean commit."""
+    c = x.get("commit") or ""
+    if c.endswith("+dirty") and x.get("dirty") is False:
+        return c[: -len("+dirty")]
+    return c
+
+
+def is_product_code(f):
+    """Code that ships: not the test support and harnesses (Packages/*/Tests), nor the spike's scripts and Swift."""
+    return not (re.match(r"Packages/[^/]+/Tests/", f) or re.fullmatch(r"spikes/people/[^/]+\.py", f)
+                or f.startswith("spikes/people/swift/"))
+
+
+def product_code_changed_since(commit):
+    """The timeline gate's code check (the author's decision of 2026-11-24): product code changed since `commit`; None
+    if unknown. Test support and scoring scripts may change after a live run, because the replays at one clean commit
+    must reproduce its read and answers exactly (`timeline_replay_problems`)."""
+    changed = code_changed_since(commit) if commit else None
+    return None if changed is None else [f for f in changed if is_product_code(f)]
+
+
+TIMELINE_WAIVERS = HERE / "results-13e2" / "waivers.json"
+# The targets a waiver may name, each with the measure it caps. Wrong answers (decidable wrong, someone else, negatives),
+# the facts, completeness, Spike G and latency are never waived.
+TIMELINE_WAIVABLE = {"owed_checks": "owed_skipped", "marking": "unmarked_inferred"}
+
+
+def timeline_waiver(model, answer_prompt_version, registry_version, tag, engine):
+    """The author's waiver for one answer model's timeline gate (results-13e2/waivers.json), or None. It holds only for
+    the answer model, answer prompt version, registry version and gate read it names, and for the very read calls and
+    answers it was given on (their digests)."""
+    if not TIMELINE_WAIVERS.exists():
+        return None
+    calls, answers = R13E2 / f"read-{tag}" / "calls.jsonl", R13E2 / f"answers-{engine}" / "answers.jsonl"
+    return next((w for w in json.loads(TIMELINE_WAIVERS.read_text())["waivers"]
+                 if w.get("gate") == "timeline-answers" and w.get("answerModel") == model
+                 and w.get("answerPromptVersion") == answer_prompt_version and w.get("registryVersion") == registry_version
+                 and w.get("tag") == tag and calls.exists() and answers.exists()
+                 and w.get("readCallsSha256") == sha(calls) and w.get("answersSha256") == sha(answers)), None)
+
+
+def unwaived_failures(gates, measures, waiver):
+    """The failing gates a waiver doesn't cover: it names the target, caps its measure, and the measure is within it."""
+    out = []
+    for k, ok in gates.items():
+        if ok:
+            continue
+        t = (waiver or {}).get("waived", {}).get(k)
+        if t and TIMELINE_WAIVABLE.get(k) == t.get("measure") and isinstance(measures.get(t["measure"]), int) \
+                and measures[t["measure"]] <= t.get("max", -1):
+            continue
+        out.append(k)
+    return out
+
+
+def scores_waiver(sc):
+    return timeline_waiver(sc["model"], sc["replay"]["answerPromptVersion"], sc["replay"]["registryVersion"], sc["tag"], sc["engine"])
+
+
+def timeline_replay_problems(engine, model, replay, tag, facts_record=None, check_code=True):
+    """Why the evidence doesn't tie the live read and answers, and their replays, to one set and the frozen code
+    ([] = it does)."""
+    import score_13e2
+    probs = []
+    set_sha = {"storiesSha256": sha(GATE_SET / "stories.json"), "fillersSha256": sha(GATE_SET / "fillers.json")}
+    read_calls = R13E2 / f"read-{tag}" / "calls.jsonl"
+    manifests = {
+        "read": R13E2 / f"read-{tag}" / "manifest.json",
+        "answers": R13E2 / f"answers-{engine}" / "manifest.json",
+        "read replay": Path(replay) / f"replay-read-{tag}" / "manifest.json",
+        "answers replay": Path(replay) / f"answers-{engine}" / "manifest.json",
+    }
+    m = {}
+    for name, mp in manifests.items():
+        if not mp.exists():
+            probs.append(f"{name}: no manifest at {mp}")
+            continue
+        m[name] = json.loads(mp.read_text())
+        x = m[name]
+        if x.get("dirty") or not x.get("commit"):
+            probs.append(f"{name}: on a dirty tree")
+        if "replay" in name and (x.get("commit") or "").endswith("+dirty"):
+            probs.append(f"{name}: not at a clean commit")
+        if check_code:
+            changed = product_code_changed_since(x.get("commit") if "replay" in name else measured_commit(x))
+            if changed is None or changed:
+                probs.append(f"{name}: product code changed since its commit ({(changed or ['unknown'])[:3]})")
+        if any(x.get(k) != v for k, v in set_sha.items()):
+            probs.append(f"{name}: not on the set's current files")
+        if x.get("options", {}).get("only") or x.get("options", {}).get("index") == "keyword":
+            probs.append(f"{name}: a partial or keyword-only run ({x.get('options')})")
+    if len(m) < 4:
+        return probs
+    rd, ans, rrep, arep = m["read"], m["answers"], m["read replay"], m["answers replay"]
+    if rd.get("mode") != "live" or rd.get("problems") or rd.get("unsettled"):
+        probs.append(f"read: not a clean live read ({rd.get('mode')}, {rd.get('problems')}, unsettled {rd.get('unsettled')})")
+    if rd.get("callsSha256") != sha(read_calls):
+        probs.append("read: its calls file isn't the one it wrote")
+    lines = R13E2 / f"read-{tag}" / "stories.jsonl"
+    if rd.get("linesSha256") != sha(lines):
+        probs.append("read: its stories file isn't the one it wrote")
+    else:
+        got = [json.loads(l)["story"] for l in lines.read_text().splitlines()]
+        want = [s["id"] for s in json.loads((GATE_SET / "stories.json").read_text())["stories"]]
+        if got != want or sorted(rd.get("digests", {})) != sorted(want):
+            probs.append("read: not every story of the set, once, in order")
+    if rrep.get("mode") != "replay" or rrep.get("calls", {}).get("misses") or rrep.get("problems"):
+        probs.append(f"read replay: {rrep.get('mode')}, misses {rrep.get('calls', {}).get('misses')}, {rrep.get('problems')}")
+    if rrep.get("digests") != rd.get("digests"):
+        probs.append("read replay: its stories' states differ from the live read's")
+    for name, x in (("answers", ans), ("answers replay", arep)):
+        if x.get("readCallsSha256") != sha(read_calls) or x.get("readDigests") != rd.get("digests"):
+            probs.append(f"{name}: not on the live read {tag}")
+        if x.get("reps") != score_13e2.GATE_REPS:
+            probs.append(f"{name}: {x.get('reps')} samples of R, the gate fixed {score_13e2.GATE_REPS}")
+    if ans.get("mode") != "live":
+        probs.append(f"answers: not a live run ({ans.get('mode')})")
+    provider, mid = model.split("/", 1)
+    seen = ans.get("modelsReported")
+    if not (seen == [mid] or (seen == [] and ans.get("engine") == {"provider": provider, "model": mid})):
+        probs.append(f"answers: the provider reported {seen}, for {ans.get('engine')}")
+    if arep.get("mode") != "replay" or arep.get("calls", {}).get("uncached"):
+        probs.append(f"answers replay: not a full replay ({arep.get('mode')}, {arep.get('calls')})")
+    f = Path(replay) / f"answers-{engine}" / "answers.jsonl"
+    live_file = R13E2 / f"answers-{engine}" / "answers.jsonl"
+    if not f.exists() or normalized_answers(f) != normalized_answers(live_file):
+        probs.append("answers replay: its records differ from the live ones")
+    if check_code:
+        for c in sorted({(json.loads(l).get("commit"), json.loads(l).get("dirty")) for l in live_file.read_text().splitlines()}, key=str):
+            if c[1] or not c[0]:
+                probs.append(f"answers: records made on a dirty tree or without a commit ({c})")
+            else:
+                changed = product_code_changed_since(measured_commit({"commit": c[0], "dirty": c[1]}))
+                if changed is None or changed:
+                    probs.append(f"answers: records made at {c[0][:8]}, and product code changed since")
+    if rrep.get("commit") != arep.get("commit"):
+        probs.append("the two replays aren't at one commit")
+    sg = Path(replay) / f"spike-g-{engine}-timeline" / "manifest-spikeg.json"
+    if sg.exists():
+        g = json.loads(sg.read_text())
+        if g.get("commit") != arep.get("commit"):
+            probs.append("Spike G's replay isn't at the replays' commit")
+        if g.get("answerPromptVersion") != arep.get("answerPromptVersion") or g.get("registryVersion") != arep.get("registryVersion"):
+            probs.append("Spike G's replay isn't at the answers' prompt and registry versions")
+    if facts_record:
+        e = rd.get("engine", {})
+        if f"{e.get('provider')}/{e.get('model')}" != facts_record["model"] or e.get("adapter") != facts_record["adapter"]:
+            probs.append(f"read: engine {e} isn't the works at record's ({facts_record['model']}, {facts_record['adapter']})")
+        if rd.get("batching") != facts_record["batching"] or rd.get("registryVersion") != facts_record["registryVersion"] \
+                or rd.get("promptVersions", {}).get(facts_record["callGroup"]) != facts_record["promptVersion"]:
+            probs.append("read: batching, registry or prompt version isn't the works at record's")
+    probs += spikeg_timeline_problems(engine, model, replay, check_code)
+    return probs
+
+
+def spikeg_timeline_problems(engine, model, replay, check_code=True):
+    """The Spike G run with the rows on (FactsAnswerLiveTests timeline=1): live, full, clean, the model, and replayed at
+    a clean commit with the same records."""
+    probs = []
+    live_dir, rep_dir = R13D / f"spike-g-{engine}-timeline", Path(replay) / f"spike-g-{engine}-timeline"
+    for name, d, mode in (("Spike G", live_dir, "live"), ("Spike G replay", rep_dir, "replay")):
+        mp = d / "manifest-spikeg.json"
+        if not mp.exists():
+            probs.append(f"{name}: no manifest")
+            continue
+        x = json.loads(mp.read_text())
+        o = x.get("options", {})
+        if x.get("mode") != mode or (mode == "replay" and x.get("uncached")):
+            probs.append(f"{name}: mode {x.get('mode')}, uncached {x.get('uncached')}")
+        if o.get("timeline") != "1" or o.get("engine") != engine or o.get("only") or o.get("sets") or o.get("arms") or o.get("index") == "keyword":
+            probs.append(f"{name}: options {o}")
+        if x.get("dirty") or not x.get("commit"):
+            probs.append(f"{name}: on a dirty tree")
+        if mode == "replay" and (x.get("commit") or "").endswith("+dirty"):
+            probs.append(f"{name}: not at a clean commit")
+        if check_code:
+            changed = product_code_changed_since(x.get("commit") if mode == "replay" else measured_commit(x))
+            if changed is None or changed:
+                probs.append(f"{name}: product code changed since its commit")
+        if mode == "live" and not model_identified(x, model):
+            probs.append(f"{name}: the provider reported {x.get('modelsReported')}")
+    for n in ("main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl"):
+        a, b = live_dir / n, rep_dir / n
+        if not a.exists() or not b.exists() or normalized(a) != normalized(b):
+            probs.append(f"Spike G {n}: the replay's records differ from the live ones")
+    return probs
+
+
+def phase_a_lines(model):
+    """Phase A's reads behind the works at record: its work13 and mixed lines, r1 and r2 (the record's evidence)."""
+    rec = next((r for r in json.loads(RECORDS.read_text())["records"]
+                if r["model"] == model and r["uses"] == ["recorded", "linked"] and "works_at" in r["predicates"]), None)
+    if rec is None:
+        return None, []
+    return rec, sorted(e for e in rec["evidence"] if re.search(r"-gates-r\d+/(work13|mixed)\.jsonl$", e))
+
+
+def timeline_gates(engine, answer_model, facts_model, tag):
+    import score_13e2
+    import score_13d
+    import judge_13e2 as J
+    J.SET, J.RESULTS = GATE_SET, R13E2
+    score_13d.OUT = R13D
+    sc = score_13e2.score_engine(R13E2, engine, score_13e2.GATE_REPS)
+    orig = score_13e2.score_engine(R13E2, engine, score_13e2.GATE_REPS, J.original_labels(), check_minimums=False)
+    sc["original_labels"] = {"measures": orig["measures"], "gates": orig["gates"]}
+    rec, lines = phase_a_lines(facts_model)
+    reads = [("gate read", str(R13E2 / f"read-{tag}" / "stories.jsonl"), str(GATE_SET / "stories.json"))]
+    reads += [(l, str(REPO / l), str(HERE / "fixtures" / f"stories-{'work13' if 'work13' in l else 'mixed'}.json")) for l in lines]
+    sc["facts"] = score_13e2.facts_gate(R13E2, reads)
+    sc["gates"]["facts"] = len(lines) >= 4 and all(v["pass"] for v in sc["facts"].values())
+    ok_g, _ = score_13d.spikeg_gate(engine, "-timeline")
+    sc["gates"]["spike_g"] = all(ok_g.values())
+    return sc, rec, lines
+
+
+def cmd_timeline_scores(a):
+    rec0, _ = phase_a_lines(a.facts_model)
+    probs = timeline_replay_problems(a.engine, a.model, Path(a.replay), a.tag, rec0) + timeline_blockers()
+    if probs:
+        raise SystemExit("qualify.py: " + "; ".join(probs))
+    sc, rec, lines = timeline_gates(a.engine, a.model, a.facts_model, a.tag)
+    dest = R13E2 / "gates" / a.model.replace("/", "_")
+    (dest / "replay").mkdir(parents=True, exist_ok=True)
+    for sub in (f"replay-read-{a.tag}", f"answers-{a.engine}", f"spike-g-{a.engine}-timeline"):
+        (dest / "replay" / sub).mkdir(parents=True, exist_ok=True)
+        for f in Path(a.replay, sub).iterdir():
+            if f.is_file():
+                shutil.copy(f, dest / "replay" / sub / f.name)
+    m0 = json.loads((Path(a.replay) / f"answers-{a.engine}" / "manifest.json").read_text())
+    inputs = timeline_inputs(a.engine, a.tag, timeline_waiver(a.model, m0["answerPromptVersion"], m0["registryVersion"], a.tag, a.engine))
+    m = json.loads((dest / "replay" / f"answers-{a.engine}" / "manifest.json").read_text())
+    out = {"engine": a.engine, "model": a.model, "factsModel": a.facts_model, "tag": a.tag,
+           "inputs": {p: sha(R13E2 / p) for p in inputs}, "set": {f: sha(GATE_SET / f) for f in ("stories.json", "fillers.json")},
+           "spikeG": {f"spike-g-{a.engine}-timeline/{n}": sha(R13D / f"spike-g-{a.engine}-timeline" / n)
+                      for n in ("main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl")},
+           "phaseA": {l: sha(REPO / l) for l in lines},
+           "replay": {"commit": m["commit"], "answerPromptVersion": m["answerPromptVersion"], "registryVersion": m["registryVersion"],
+                      "files": {str(f.relative_to(dest)): sha(f) for f in sorted((dest / "replay").rglob("*")) if f.is_file()}},
+           "measures": sc["measures"], "facts": sc["facts"], "gates": sc["gates"], "problems": sc["problems"],
+           "originalLabels": sc.get("original_labels"),
+           "date": m["date"][:10]}
+    path = dest / f"scores-13e2-{a.engine}.json"
+    path.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+    print(json.dumps({"gates": sc["gates"], "measures": sc["measures"]}, indent=1, ensure_ascii=False))
+
+
+def timeline_record_problems(sc):
+    probs = [f"{k}: fails" for k in unwaived_failures(sc["gates"], sc["measures"], scores_waiver(sc))] + sc.get("problems", [])
+    rec, _ = phase_a_lines(sc["factsModel"])
+    if rec is None:
+        probs.append("no works at {recorded, linked} record for the Facts engine")
+    attrs = [r for r in json.loads(RECORDS.read_text())["records"] if r["uses"] == ["attributes"]
+             and r.get("answerModels") == [sc["model"]] and r.get("answerPromptVersion") == sc["replay"]["answerPromptVersion"]]
+    if not attrs:
+        probs.append("no attributes record for this answer model at this answer prompt version (the gate measured them together)")
+    if rec and sc["replay"]["registryVersion"] != rec["registryVersion"]:
+        probs.append("the replay's registry isn't the works at record's")
+    return probs, rec
+
+
+def cmd_timeline_records(a):
+    path = Path(a.scores)
+    sc = json.loads(path.read_text())
+    probs, rec = timeline_record_problems(sc)
+    probs += timeline_blockers()
+    if probs:
+        raise SystemExit("qualify.py: no record: " + "; ".join(probs))
+    rel = lambda p: str(Path(p).resolve().relative_to(REPO))
+    dest = path.parent
+    evidence = sorted([rel(path)] + [rel(R13E2 / p) for p in sc["inputs"]] + [rel(GATE_SET / f) for f in sc["set"]]
+                      + [rel(R13D / p) for p in sc["spikeG"]] + list(sc["phaseA"]) + [rel(dest / p) for p in sc["replay"]["files"]])
+    record = {"predicates": ["works_at"], "uses": ["timeline"], "basis": "", "callGroup": rec["callGroup"], "model": rec["model"],
+              "adapter": rec["adapter"], "batching": rec["batching"], "promptVersion": rec["promptVersion"],
+              "registryVersion": rec["registryVersion"],
+              "gate": "13e.2 timeline gate (ADR-0032 decision 9, amended 2026-11-21): a blind set by GPT-6-Astra (24 stories), "
+                      "one recorded live read, P/R answers judged blind by Opus and GPT-6-Astra with adjudication, "
+                      f"{sc['measures']['samples']} sample(s) of R; Spike G with the rows on; the facts behind the rows",
+              "evidence": evidence, "recordedAt": sc["date"], "answerModels": [sc["model"]],
+              "answerPromptVersion": sc["replay"]["answerPromptVersion"]}
+    waived = [k for k, v in sc["gates"].items() if not v]
+    if waived:
+        w = scores_waiver(sc)
+        record["gate"] += "; waived by the author (" + w["date"] + "): " + ", ".join(
+            f"{k} ({w['waived'][k]['measure']} {sc['measures'][w['waived'][k]['measure']]})" for k in waived)
+    print(json.dumps(record, indent=1, ensure_ascii=False))
+    if a.write:
+        f = json.loads(RECORDS.read_text())
+        f["records"] = [r for r in f["records"] if not (r.get("answerModels") == [sc["model"]] and r["uses"] == ["timeline"])] + [record]
+        RECORDS.write_text(json.dumps(f, indent=2, ensure_ascii=False) + "\n")
+        print("wrote 1 record")
+
+
+def verify_timeline_record(r, reg):
+    """Why a shipped timeline record's evidence doesn't hold up ([] = it does): digests, the replay, and every gate
+    recomputed from the evidence."""
+    scores = next((REPO / e for e in r["evidence"] if re.search(r"/scores-13e2-\w+\.json$", e)), None)
+    if scores is None or not scores.exists():
+        return ["no scores-13e2-<engine>.json in the evidence"]
+    missing = [e for e in r["evidence"] if not (REPO / e).exists()]
+    if missing:
+        return [f"missing {m}" for m in missing]
+    sc = json.loads(scores.read_text())
+    probs = [f"{p}: digest differs" for p, d in sc["inputs"].items() if sha(R13E2 / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["phaseA"].items() if sha(REPO / p) != d]
+    probs += [f"replay {p}: digest differs" for p, d in sc["replay"]["files"].items() if sha(scores.parent / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["set"].items() if sha(GATE_SET / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["spikeG"].items() if sha(R13D / p) != d]
+    rec0, _ = phase_a_lines(sc["factsModel"])
+    probs += timeline_replay_problems(sc["engine"], sc["model"], scores.parent / "replay", sc["tag"], rec0, check_code=False)
+    again, _, _ = timeline_gates(sc["engine"], sc["model"], sc["factsModel"], sc["tag"])
+    probs += [f"{k}: fails (recomputed)" for k in unwaived_failures(again["gates"], again["measures"], scores_waiver(sc))]
+    # Compared as the scores file stores them (JSON object keys are strings: negative_wrong_R_per_sample's samples).
+    if json.loads(json.dumps(again["measures"])) != sc["measures"]:
+        probs.append("the measures recomputed from the evidence differ from the scores")
+    p2, rec = timeline_record_problems(sc)
+    probs += p2
+    if rec and any(rec[k] != r[k] for k in ("model", "adapter", "batching", "promptVersion", "registryVersion", "callGroup")):
+        probs.append("not on the facts key of the works at record")
+    if r.get("answerModels") != [sc["model"]] or r.get("answerPromptVersion") != sc["replay"]["answerPromptVersion"]:
+        probs.append("answer model or prompt version isn't the scores'")
+    return probs
+
+
 def cmd_verify(a):
     reg = registry()
     recs = json.loads(RECORDS.read_text())["records"]
     bad = 0
     for r in recs:
-        probs = verify_answer_record(r, reg) if r["uses"] == ["attributes"] else verify_record(r, reg)
+        probs = (verify_answer_record(r, reg) if r["uses"] == ["attributes"]
+                 else verify_timeline_record(r, reg) if r["uses"] == ["timeline"] and r.get("answerModels") else verify_record(r, reg))
         bad += bool(probs)
         print(f"{r['callGroup']} {r['uses']} {r['model']}: " + ("ok" if not probs else "; ".join(probs)))
     print(f"qualify.py verify: {len(recs)} record(s), {bad} failing")
@@ -964,7 +1427,20 @@ def main():
     r13 = sub.add_parser("answer-records")
     r13.add_argument("scores")
     r13.add_argument("--write", action="store_true")
+    t13 = sub.add_parser("timeline-scores")
+    t13.add_argument("--engine", required=True)
+    t13.add_argument("--model", required=True, help="the answer model, <provider>/<id>")
+    t13.add_argument("--replay", required=True, help="the replay's out= (replay-read-<tag>/, answers-<engine>/)")
+    t13.add_argument("--tag", required=True, help="the live read's tag (results-13e2/read-<tag>/)")
+    t13.add_argument("--facts-model", default="claude-code/claude-haiku-5-5")
+    tr13 = sub.add_parser("timeline-records")
+    tr13.add_argument("scores")
+    tr13.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "timeline-scores":
+        return cmd_timeline_scores(a)
+    if a.cmd == "timeline-records":
+        return cmd_timeline_records(a)
     if a.cmd == "answer-scores":
         return cmd_answer_scores(a)
     if a.cmd == "answer-records":

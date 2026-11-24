@@ -1,0 +1,10 @@
+[
+ "/bin/zsh -lc 'cat notes.md input.json'",
+ "/bin/zsh -lc 'cat notes.md input.json'",
+ "/bin/zsh -lc \"sed -n '250,580p' input.json\"",
+ "/bin/zsh -lc \"sed -n '250,580p' input.json\"",
+ "/bin/zsh -lc \"sed -n '580,960p' input.json\"",
+ "/bin/zsh -lc \"sed -n '580,960p' input.json\"",
+ "/bin/zsh -lc \"sed -n '960,1075p' input.json\"",
+ "/bin/zsh -lc \"sed -n '960,1075p' input.json\""
+]

@@ -1,0 +1,167 @@
+{
+ "engine": "haiku",
+ "problems": [],
+ "measures": {
+  "decidable": 60,
+  "decidable_right": 53,
+  "decidable_right_rate": 0.8833333333333333,
+  "decidable_unmarked_wrong": 0,
+  "decidable_marked_wrong": 0,
+  "undecidable": 60,
+  "undecidable_not_sure": 50,
+  "undecidable_not_sure_rate": 0.8333333333333334,
+  "undecidable_no_answer": 10,
+  "negatives": 48,
+  "negative_wrong_R_per_sample": {
+   "1": 2
+  },
+  "negative_wrong_P": 1,
+  "someone_else": 1,
+  "owed_skipped": 3,
+  "unmarked_inferred": 0,
+  "failed": 0,
+  "p95_ms": 7020.5,
+  "live_answers_timed": 168,
+  "samples": 1
+ },
+ "gates": {
+  "complete": true,
+  "decidable_right": true,
+  "decidable_wrong": true,
+  "undecidable_not_sure": false,
+  "negatives": true,
+  "someone_else": false,
+  "owed_checks": false,
+  "marking": true,
+  "p95": true,
+  "facts": false
+ },
+ "lists": {
+  "decidable_missed": [
+   "g01|q1|R|1",
+   "g01|q2|R|1",
+   "g07|q1|R|1",
+   "g07|q2|R|1",
+   "g13|q1|R|1",
+   "g17|q2|R|1",
+   "g20|q1|R|1"
+  ],
+  "decidable_wrong": [],
+  "undecidable_answered": [
+   "g01|q3|R|1 rows=yes",
+   "g01|q4|R|1 rows=yes",
+   "g01|q5|R|1 rows=yes",
+   "g07|q3|R|1 rows=yes",
+   "g07|q5|R|1 rows=yes",
+   "g08|q5|R|1 rows=yes",
+   "g16|q5|R|1 rows=yes",
+   "g17|q4|R|1 rows=yes",
+   "g18|q4|R|1 rows=yes",
+   "g23|q5|R|1 rows=yes"
+  ],
+  "negative_wrong_R": [
+   "g01|q7|R|1",
+   "g22|q6|R|1"
+  ],
+  "negative_wrong_P": [
+   "g19|q7|P|1"
+  ],
+  "someone_else": [
+   "g07|q5|R|1 claim 1"
+  ],
+  "owed_skipped": [
+   "g07|q5|R|1 claim 2 (judge: temporal, unchecked)",
+   "g17|q4|R|1 claim 2 (judge: temporal, unchecked)",
+   "g24|q4|R|1 claim 2 (judge: temporal, unchecked)"
+  ],
+  "unmarked_inferred": [],
+  "failed": []
+ },
+ "original_labels": {
+  "measures": {
+   "decidable": 60,
+   "decidable_right": 53,
+   "decidable_right_rate": 0.8833333333333333,
+   "decidable_unmarked_wrong": 0,
+   "decidable_marked_wrong": 0,
+   "undecidable": 60,
+   "undecidable_not_sure": 50,
+   "undecidable_not_sure_rate": 0.8333333333333334,
+   "undecidable_no_answer": 10,
+   "negatives": 48,
+   "negative_wrong_R_per_sample": {
+    "1": 2
+   },
+   "negative_wrong_P": 1,
+   "someone_else": 1,
+   "owed_skipped": 3,
+   "unmarked_inferred": 0,
+   "failed": 0,
+   "p95_ms": 7020.5,
+   "live_answers_timed": 168,
+   "samples": 1
+  },
+  "gates": {
+   "complete": true,
+   "decidable_right": true,
+   "decidable_wrong": true,
+   "undecidable_not_sure": false,
+   "negatives": true,
+   "someone_else": false,
+   "owed_checks": false,
+   "marking": true,
+   "p95": true
+  }
+ },
+ "facts": {
+  "gate read": {
+   "wrong_facts": [
+    "('g08', 'Juniperwake Retail')"
+   ],
+   "wrong_dates": [
+    "('g01', 'Vellicore Maps', '2012-01', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": false
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('x03', 'Small Current Studio', '2019-02', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('w02', 'Cedar Press', '2020-09', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  }
+ },
+ "pass": false
+}

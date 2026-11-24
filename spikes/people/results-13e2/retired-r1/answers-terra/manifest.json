@@ -1,0 +1,93 @@
+{
+  "answerPromptVersion" : "a13e2-1",
+  "batching" : "one-memory;pipeline=3",
+  "calls" : {
+    "cached" : 0,
+    "live" : 336,
+    "uncached" : 0
+  },
+  "commit" : "506af825adb0c598f7d8d90c870f7d4c43a508e9",
+  "date" : "2026-11-23T00:50:12Z",
+  "dirty" : false,
+  "engine" : {
+    "model" : "gpt-5.6-terra",
+    "provider" : "codex"
+  },
+  "fillersSha256" : "34e57e678d0179195da6077f6c75b7fa8a1140791bd7ea1b7cf41f9fdfa9bb98",
+  "mode" : "live",
+  "modelsReported" : [
+
+  ],
+  "options" : {
+    "calls" : "\/private\/tmp\/claude-502\/-Users-mib-Library-Mobile-Documents-com-apple-CloudDocs-Projects--iCloud--Personal-Funes-Vault-App\/c3e85913-c343-424b-8275-d37fe45ba7a9\/scratchpad\/wt-d\/spikes\/people\/results-13e2\/read-r1\/calls.jsonl",
+    "engine" : "terra",
+    "phase" : "answers",
+    "reps" : "1",
+    "set" : "gate-13e2"
+  },
+  "promptVersions" : {
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
+  },
+  "readCallsSha256" : "8f9d33c996689731b29337d889cb6b586d49f46f43f5015947183c14747a2856",
+  "readDigests" : {
+    "g01" : "60f8d362420f769aa51e4c6d47bf3a5410d3c4c73d04333bc3656141b2b792de",
+    "g02" : "1e1025dcb41dca496a221864ac039bec2ee9dc6e879b2c5986a5dc6132e541e5",
+    "g03" : "62fc6bbe5fa2162c3e5ebc383bbdc50e837657c809e0d84a90669dd260ff5155",
+    "g04" : "01dd467a41cd24b458a22ec232131c4d2503714f854e9a3e430ef17b3b5bdef3",
+    "g05" : "dbd3f61ca9ec9f1e16034016d55717d1bb2a744078c5887c4324d27bc73e9c7a",
+    "g06" : "373debf27cb3a4329b510013672b58b13ca4cd7894223d96a0a7c2b041f0e01e",
+    "g07" : "0ddab0838a09a1a3f7836e65ce54e1d8e07c9b53cbf3d14001819882cb188d09",
+    "g08" : "c905482dc21758e92b7003d905e0db68c2639f0e16444c23520f9be697946a41",
+    "g09" : "80788613adddc357d5fdbea922e1c4a8039c637ab9d85ed3189cff24e3d886ba",
+    "g10" : "b3cc12a0efaeada1aac27159588454ae1d63e38bc0b4c674a974481f00a1b336",
+    "g11" : "75e24d476db8afea0105be6bff377203f6b6e77a20c45ef7680314479c3d1a11",
+    "g12" : "a144002d34a9d479f6b64c83c9bd7f29ff7c433ce592ce2a945defdeb217fe3d",
+    "g13" : "01695d75128d495e6c96555961ecc876ba4bfed5a6ef2a120751eb710c73ba3b",
+    "g14" : "f1fea98fa2c8b513898a9a66016410ebd3b45e3cad30fbe167ed2aac9aec591f",
+    "g15" : "2185900df2b73b674b07a3ede3b9d3d0113009e04684925de541a45232b1f392",
+    "g16" : "5c02bdd2d715b759de74f651fcca5572961c1a819b920190f7dc009be5667e2c",
+    "g17" : "28851702080223d35bcf8ea82c1ca7b9db9051a5140f18507659cef9e5e6d1b5",
+    "g18" : "7cf08a4a9802cb88466f89d5e51fbc679cb29661ad2d5db88e668311c7e6b1e4",
+    "g19" : "ba035c04919a0fe901fe75c7693aeac2fa69306cd24dabdb8c63b302726d1e5a",
+    "g20" : "65f1517eca16044d0b34256195375f60bf4f48d264acb4bf20aa93ddc4dfe460",
+    "g21" : "8007138970a35ac223f5297088f72342f89b7f35e9307d8419d304b2a124bc9e",
+    "g22" : "3e5731ab0ab85a7dfb7448fbb91f3005849c25ce03fd01ad247636031590c043",
+    "g23" : "dc79466e69a21f2b3781550ec606fdcc47b9aa53a84247378c97593cd11c9766",
+    "g24" : "473eb592ee0d5f3afd9327cf10b212ffbb510e577c8b216ea1c4ba5435892148"
+  },
+  "records" : {
+    "answers.jsonl" : "63b0ef28ee8a262f9cb22df0534823d90c9bbc888316d9aba6f9596b969ff32f"
+  },
+  "registryVersion" : "v1-8338de9d268e",
+  "reps" : 1,
+  "set" : "gate-13e2",
+  "stories" : [
+    "g01",
+    "g02",
+    "g03",
+    "g04",
+    "g05",
+    "g06",
+    "g07",
+    "g08",
+    "g09",
+    "g10",
+    "g11",
+    "g12",
+    "g13",
+    "g14",
+    "g15",
+    "g16",
+    "g17",
+    "g18",
+    "g19",
+    "g20",
+    "g21",
+    "g22",
+    "g23",
+    "g24"
+  ],
+  "storiesSha256" : "0cd9a0e22638dd88740b79aaeffd951d5fec3ee261d109c3c982f8ab1aeee94d",
+  "unsettled" : 0
+}

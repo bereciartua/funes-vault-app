@@ -41,12 +41,10 @@
   },
   "timeline": {
    "problems": [
-    "r1 work13: 5 wrong facts",
-    "r1 work13: decidable right 14 + 4 with a gap told, of 48",
-    "r1 work13: 2 wrong answers, 0 negatives triggered",
-    "r2 work13: 4 wrong facts",
+    "r1 work13: decidable right 13 + 4 with a gap told, of 48",
+    "r1 work13: 3 wrong answers, 0 negatives triggered",
     "r2 work13: decidable right 15 + 4 with a gap told, of 48",
-    "r2 work13: 1 wrong answers, 0 negatives triggered"
+    "r2 work13: 2 wrong answers, 0 negatives triggered"
    ],
    "record": false,
    "sets": [
@@ -68,26 +66,36 @@
   }
  },
  "inputs": {
-  "swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json": "d792ddcd01ec4addc4521cf1b9063a66e629d7187a283a5b979ef3875ff396af",
-  "swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl": "ac671621e10e7f7fb0f17e08e61267dce3a5dc5d8890bad2f61117dad59d21e2",
-  "swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json": "92570012e4f02b3a7889fb93eef29fdddd06f8d6f49dfa9af99b757fe863ebe2",
-  "swift-claude-claude-haiku-5-5-gates-r1/main.jsonl": "eb1b88141de6614f0d9e38f215f22f53c2ee1e52cf23dabf25fc518e3ecc940b",
-  "swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json": "6ce6cb13cc5ed2d0baacf5d39d677e0885afb97630802f93f254bcfa4db4e809",
-  "swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "eaba06c721fb9b1f93f119c6e288b944868b8e08477954b03687d845d4af7e78",
-  "swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json": "402e77bf077da09d5cde9d3431e80dda82c693e282ebe0fd2da7b729817ef2cc",
-  "swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl": "e83f31aa83409656dcc424a618a73baff679ebaa68daef2a7c1693c1d1ca65e2",
-  "swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json": "a0b55f926b77a17683cfd32e2a805f9653de293910047082ba1fc8024611d716",
-  "swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "beb5d50e8984bdfe1441fa8b5c3000bca84b9ae3c4120e2631dd26ebf22665eb",
-  "swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json": "b23a65ca228dca87cadc90fdbb08fe5ffe868557af759917357f31ccffeab61c",
-  "swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl": "dc5764d8b27f29db038c906a286f5d842d77af9255de8f1421997dca5dd0ee2b",
-  "swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json": "148932e974e6bc7f4d75acba553cfd39dcd7e44d634ba37052b91c8258bed39d",
-  "swift-claude-claude-haiku-5-5-gates-r2/main.jsonl": "00a4aa6b5afff4006f4b2d20785c96b27a734d265db082616974c2eed75ab6f6",
-  "swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json": "bb9f1af00b3764e7d9c089bfaf62674d4f8a6410e2cb3c0a01f46991e62b6538",
-  "swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "fb58029ae9ea62cdaa7212119d8e8c34877e228e103dc97db2116e16c29814a6",
-  "swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json": "c638d484a473d08278c3b9c5ea32a92de743cd7663c8c0c179beb2ea562e622c",
-  "swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl": "29983c2bbb2b4bf882bca7aa1d47e600dc5ca870ee63975958c3ffc3713be801",
-  "swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json": "33858b38aad9a3ab544625ca5231c9e24f21f23759673c7795a8f5ba8d7d31ea",
-  "swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "3edfb248230759228adc37522f8956ee36faf5b678e314935b33f24798f612b4"
+  "swift-claude-claude-haiku-5-5-gates-r1/astra-calls.jsonl": "f3e2b1f3a060fe78d6fde8ccd3371446a36e665d90a39d19544fd767eebc258e",
+  "swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json": "7f798104df409bb81b37014d65ccc03a9cf7cd4c534c26331efba97f825297cf",
+  "swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl": "79d175190841ee4ae5707c22ad46b26dce8f406cb8602aa3a0b689ebee084555",
+  "swift-claude-claude-haiku-5-5-gates-r1/main-calls.jsonl": "733ac73f0e926c75f0a58069d54b9db71589d3d0eac6348dc072b1c7e2623be7",
+  "swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json": "345ff64df9d98f9da305d37471b8d6e810b5d00aa4e6fc0ea61c209ae275d8a6",
+  "swift-claude-claude-haiku-5-5-gates-r1/main.jsonl": "a4f0b875b579b6c38575186422436fd94b64eaf6ba9916cee9b7dddb3dd7c776",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed-calls.jsonl": "5135983920a95f5a0b37dd554c4803bcf231ad1b7db82fb21e66e9df825c8ae1",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json": "0408ac02a55de4b8ca3172a452d538962f40c3033bc15c9218ea7c8ef61e54cb",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "5071e095f587fd94704d495893bc50c270fb5a4eff479c7fb74b917a6baf2469",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons-calls.jsonl": "3f526089a329414b33b2a19543b49a0a7f25f28959156dc2cab19c0f7c489ee9",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json": "152c4205602d9d4119ef33050fb6c2c545acfde926f61a485d542b02bee2f08d",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl": "edece01b9aa1b3b12ab9f82102c3f5f585e196793b0bfa99245267d302efcb14",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13-calls.jsonl": "5cefd15bf4342d5b565c68d35004139af8d1cc9a53801efa1e3b0034c1c47840",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json": "31911c87f3a02f376a9b83b0f8a4c9548b229856433c883f0bb654a057343a27",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "c64420024978e2ed50cdb72949af003418d3757466abe3b7b790ebd0677e9c78",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra-calls.jsonl": "7f19b15f29659bbc2b6d72ae6e464a8911dd6fb29dba998eadc50eaec0faef33",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json": "720669a54d1edde2a5345ba0193de85ab2857bfea9e1e6ee1130f3a36ab24f5e",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl": "57abcf851360db02fffc7b061f888e401006f0544cd841b501bb50c288eaecaa",
+  "swift-claude-claude-haiku-5-5-gates-r2/main-calls.jsonl": "8a105393111cf7f4ad3702fa9599504c2caaa5f5db92e3ba2afb84b850ac469b",
+  "swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json": "a77f43b4b3ebbbf38e1bc2f6c6b557e3a2cec354a8097bacc065039f5f24831a",
+  "swift-claude-claude-haiku-5-5-gates-r2/main.jsonl": "5c424f33391a3cfe3c7860118ffbae646c6df6c576fdfda4209c3efc92cf57ea",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed-calls.jsonl": "cd0b9e044417e3b1d3986bb95a187fa5ef574bfee8a346aae4bc2d485ce5dd0f",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json": "54b8d9aa30e7f2bc4e57b7380ab7f5f1a091ff241d284e91fa6498838cace8da",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "11addd49a5eb99e2249e5da52863cdcc303a5aad9edd79a4cd0a416bc6383901",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons-calls.jsonl": "3ef7c1a8130f5fef874f71b6e583ab36d59f185587065b02729b7f3095e43cd3",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json": "03a84037527e5cb4efbba57b920c02eb85a1231055126d11bdbfb65145c1c324",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl": "5101394572417fd5900a3f9594dd144a53986640c077938d8648bd33e87e4bbd",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13-calls.jsonl": "8bf58c167d77db56d7e5de33951e2701f5853984fa62cba678d9374d489843fc",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json": "b15c42d713874568bceae1ce16caa0da79c3fa89a88c0f839c96fb88eeeaeb58",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "49576f4d2c06fdec9db4379f7aa6e86f762a54f63fbc6d84c68c6061da3031b5"
  },
  "measures": {
   "r1": {
@@ -98,17 +106,17 @@
       "care": 7,
       "child": 1,
       "colleague": 10,
-      "friend": 14,
+      "friend": 13,
       "manager": 7,
       "other_family": 4,
       "parent": 9,
       "partner": 11,
       "sibling": 15
      },
-     "full_right": 78,
+     "full_right": 77,
      "full_wrong": 0,
      "outside_lexicon": 1,
-     "recall_right": 91,
+     "recall_right": 90,
      "recall_truth": 98,
      "sole_known_right": 11,
      "sole_known_wrong": 0
@@ -137,7 +145,7 @@
      "full_right": 57,
      "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 77,
+     "recall_right": 75,
      "recall_truth": 79,
      "sole_known_right": 13,
      "sole_known_wrong": 0
@@ -156,8 +164,228 @@
      "vendors": 5,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 80,
-     "works_at_untrusted_right": 10
+     "works_at_right": 82,
+     "works_at_untrusted_right": 9
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 3,
+      "colleague": 6,
+      "friend": 2,
+      "manager": 22,
+      "other": 5,
+      "parent": 3,
+      "partner": 2,
+      "sibling": 2
+     },
+     "full_right": 45,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 57,
+     "recall_truth": 58,
+     "sole_known_right": 4,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 16,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 28,
+     "details": {
+      "triggered": [],
+      "untrusted_wrong_dates": [],
+      "untrusted_wrong_facts": [],
+      "wrong_answers": [],
+      "wrong_dates": [],
+      "wrong_facts": []
+     },
+     "inferred_ends": 0,
+     "malformed": 0,
+     "negatives": 16,
+     "right": 21,
+     "right_gap": 4,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "untrusted_wrong_dates": 0,
+     "untrusted_wrong_facts": 0,
+     "wrong_answers": 0,
+     "wrong_dates": 0,
+     "wrong_facts": 0
+    }
+   },
+   "persons": {
+    "people": {
+     "forbidden": 3,
+     "full_by_predicate": {
+      "care": 55,
+      "child": 38,
+      "colleague": 21,
+      "friend": 10,
+      "manager": 16,
+      "other": 43,
+      "other_family": 42,
+      "parent": 38,
+      "partner": 23,
+      "sibling": 14
+     },
+     "full_right": 300,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 378,
+     "recall_truth": 394,
+     "sole_known_right": 36,
+     "sole_known_wrong": 3
+    },
+    "plays": {
+     "expected": 66,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "work13": {
+    "orgs": {
+     "clients": 7,
+     "clients_as_employer": 0,
+     "clients_recorded": 7,
+     "vendors": 7,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 96,
+     "works_at_untrusted_right": 7,
+     "works_at_untrusted_wrong": 6
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "colleague": 2,
+      "manager": 5,
+      "parent": 2,
+      "sibling": 3
+     },
+     "full_right": 12,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 14,
+     "recall_truth": 15,
+     "sole_known_right": 0,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 16,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 48,
+     "details": {
+      "triggered": [],
+      "untrusted_wrong_dates": [
+       "('w01', 'Alder Mapworks', '2018-03-15', 'end')"
+      ],
+      "untrusted_wrong_facts": [
+       "('w01', 'Kestrel Labs')",
+       "('w03', 'Oxbow Grid')",
+       "('w06', 'Jetty Power')",
+       "('w11', 'Tile Foods')"
+      ],
+      "wrong_answers": [
+       "('w03', 'q2')",
+       "('w12', 'q1')",
+       "('w12', 'q2')"
+      ],
+      "wrong_dates": [],
+      "wrong_facts": []
+     },
+     "inferred_ends": 0,
+     "malformed": 0,
+     "negatives": 8,
+     "right": 13,
+     "right_gap": 4,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "untrusted_wrong_dates": 1,
+     "untrusted_wrong_facts": 4,
+     "wrong_answers": 3,
+     "wrong_dates": 0,
+     "wrong_facts": 0
+    }
+   }
+  },
+  "r2": {
+   "astra": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 7,
+      "child": 1,
+      "colleague": 10,
+      "friend": 14,
+      "manager": 7,
+      "other_family": 5,
+      "parent": 9,
+      "partner": 11,
+      "sibling": 15
+     },
+     "full_right": 79,
+     "full_wrong": 0,
+     "outside_lexicon": 1,
+     "recall_right": 91,
+     "recall_truth": 98,
+     "sole_known_right": 10,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 28,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "main": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 2,
+      "child": 1,
+      "colleague": 3,
+      "friend": 4,
+      "manager": 6,
+      "other": 1,
+      "other_family": 6,
+      "parent": 4,
+      "partner": 8,
+      "sibling": 21
+     },
+     "full_right": 56,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 74,
+     "recall_truth": 79,
+     "sole_known_right": 12,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 30,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "mixed": {
+    "orgs": {
+     "clients": 5,
+     "clients_as_employer": 0,
+     "clients_recorded": 5,
+     "vendors": 5,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 83,
+     "works_at_untrusted_right": 9
     },
     "people": {
      "forbidden": 0,
@@ -214,26 +442,26 @@
    },
    "persons": {
     "people": {
-     "forbidden": 1,
+     "forbidden": 3,
      "full_by_predicate": {
-      "care": 54,
+      "care": 55,
       "child": 37,
-      "colleague": 20,
+      "colleague": 21,
       "friend": 10,
       "manager": 16,
       "other": 43,
-      "other_family": 41,
+      "other_family": 42,
       "parent": 38,
       "partner": 23,
       "sibling": 14
      },
-     "full_right": 296,
+     "full_right": 299,
      "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 375,
+     "recall_right": 378,
      "recall_truth": 394,
      "sole_known_right": 37,
-     "sole_known_wrong": 1
+     "sole_known_wrong": 3
     },
     "plays": {
      "expected": 66,
@@ -249,10 +477,9 @@
      "vendors": 7,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 91,
-     "works_at_untrusted_right": 7,
-     "works_at_untrusted_wrong": 8,
-     "works_at_wrong": 3
+     "works_at_right": 95,
+     "works_at_untrusted_right": 6,
+     "works_at_untrusted_wrong": 6
     },
     "people": {
      "forbidden": 0,
@@ -292,240 +519,10 @@
        "('w12', 'q1')",
        "('w12', 'q2')"
       ],
-      "wrong_dates": [],
-      "wrong_facts": [
-       "('w03', 'Marlin Analytics', 'merged')",
-       "('w03', 'Marlin Metrics')",
-       "('w08', 'Granito Pago')",
-       "('w12', 'Prisma Salud')",
-       "('w12', 'Prisma Salud', 'merged')"
-      ]
-     },
-     "inferred_ends": 0,
-     "malformed": 0,
-     "negatives": 8,
-     "right": 14,
-     "right_gap": 4,
-     "succession_cross_slot": 0,
-     "succession_unexplained": 0,
-     "succession_untrusted": 0,
-     "triggered": 0,
-     "untrusted_wrong_dates": 1,
-     "untrusted_wrong_facts": 4,
-     "wrong_answers": 2,
-     "wrong_dates": 0,
-     "wrong_facts": 5
-    }
-   }
-  },
-  "r2": {
-   "astra": {
-    "people": {
-     "forbidden": 0,
-     "full_by_predicate": {
-      "care": 7,
-      "child": 1,
-      "colleague": 10,
-      "friend": 14,
-      "manager": 7,
-      "other_family": 4,
-      "parent": 9,
-      "partner": 11,
-      "sibling": 13
-     },
-     "full_right": 76,
-     "full_wrong": 0,
-     "outside_lexicon": 1,
-     "recall_right": 88,
-     "recall_truth": 98,
-     "sole_known_right": 10,
-     "sole_known_wrong": 0
-    },
-    "plays": {
-     "expected": 28,
-     "extra": 0,
-     "missing": 0
-    }
-   },
-   "main": {
-    "people": {
-     "forbidden": 0,
-     "full_by_predicate": {
-      "care": 2,
-      "child": 1,
-      "colleague": 3,
-      "friend": 4,
-      "manager": 6,
-      "other": 1,
-      "other_family": 6,
-      "parent": 4,
-      "partner": 8,
-      "sibling": 21
-     },
-     "full_right": 56,
-     "full_wrong": 0,
-     "outside_lexicon": 0,
-     "recall_right": 75,
-     "recall_truth": 79,
-     "sole_known_right": 12,
-     "sole_known_wrong": 0
-    },
-    "plays": {
-     "expected": 30,
-     "extra": 0,
-     "missing": 0
-    }
-   },
-   "mixed": {
-    "orgs": {
-     "clients": 5,
-     "clients_as_employer": 0,
-     "clients_recorded": 5,
-     "vendors": 5,
-     "vendors_as_client": 0,
-     "vendors_as_employer": 0,
-     "works_at_right": 81,
-     "works_at_untrusted_right": 9
-    },
-    "people": {
-     "forbidden": 0,
-     "full_by_predicate": {
-      "care": 3,
-      "colleague": 6,
-      "friend": 2,
-      "manager": 22,
-      "other": 5,
-      "parent": 3,
-      "partner": 2,
-      "sibling": 2
-     },
-     "full_right": 45,
-     "full_wrong": 0,
-     "outside_lexicon": 0,
-     "recall_right": 57,
-     "recall_truth": 58,
-     "sole_known_right": 4,
-     "sole_known_wrong": 0
-    },
-    "plays": {
-     "expected": 16,
-     "extra": 0,
-     "missing": 0
-    },
-    "timeline": {
-     "decidable": 28,
-     "details": {
-      "triggered": [],
-      "untrusted_wrong_dates": [],
-      "untrusted_wrong_facts": [],
-      "wrong_answers": [],
       "wrong_dates": [
-       "('x01', 'Cinder Arc', '2022-09', 'end')"
+       "('w02', 'Cedar Press', '2020-09', 'end')"
       ],
       "wrong_facts": []
-     },
-     "inferred_ends": 0,
-     "malformed": 0,
-     "negatives": 16,
-     "right": 21,
-     "right_gap": 4,
-     "succession_cross_slot": 0,
-     "succession_unexplained": 0,
-     "succession_untrusted": 0,
-     "triggered": 0,
-     "untrusted_wrong_dates": 0,
-     "untrusted_wrong_facts": 0,
-     "wrong_answers": 0,
-     "wrong_dates": 1,
-     "wrong_facts": 0
-    }
-   },
-   "persons": {
-    "people": {
-     "forbidden": 3,
-     "full_by_predicate": {
-      "care": 54,
-      "child": 37,
-      "colleague": 21,
-      "friend": 10,
-      "manager": 16,
-      "other": 43,
-      "other_family": 42,
-      "parent": 38,
-      "partner": 23,
-      "sibling": 13
-     },
-     "full_right": 297,
-     "full_wrong": 0,
-     "outside_lexicon": 0,
-     "recall_right": 375,
-     "recall_truth": 394,
-     "sole_known_right": 36,
-     "sole_known_wrong": 3
-    },
-    "plays": {
-     "expected": 66,
-     "extra": 0,
-     "missing": 0
-    }
-   },
-   "work13": {
-    "orgs": {
-     "clients": 7,
-     "clients_as_employer": 0,
-     "clients_recorded": 7,
-     "vendors": 7,
-     "vendors_as_client": 0,
-     "vendors_as_employer": 0,
-     "works_at_right": 93,
-     "works_at_untrusted_right": 8,
-     "works_at_untrusted_wrong": 8,
-     "works_at_wrong": 2
-    },
-    "people": {
-     "forbidden": 0,
-     "full_by_predicate": {
-      "colleague": 2,
-      "manager": 5,
-      "parent": 2,
-      "sibling": 3
-     },
-     "full_right": 12,
-     "full_wrong": 0,
-     "outside_lexicon": 0,
-     "recall_right": 14,
-     "recall_truth": 15,
-     "sole_known_right": 0,
-     "sole_known_wrong": 0
-    },
-    "plays": {
-     "expected": 16,
-     "extra": 0,
-     "missing": 0
-    },
-    "timeline": {
-     "decidable": 48,
-     "details": {
-      "triggered": [],
-      "untrusted_wrong_dates": [
-       "('w01', 'Alder Mapworks', '2018-03-15', 'end')"
-      ],
-      "untrusted_wrong_facts": [
-       "('w01', 'Kestrel Labs')",
-       "('w03', 'Oxbow Grid')",
-       "('w06', 'Jetty Power')",
-       "('w11', 'Tile Foods')"
-      ],
-      "wrong_answers": [
-       "('w03', 'q2')"
-      ],
-      "wrong_dates": [],
-      "wrong_facts": [
-       "('w03', 'Marlin Analytics', 'merged')",
-       "('w03', 'Marlin Metrics')",
-       "('w03', 'Marlin Metrics', 'merged')",
-       "('w08', 'Granito Pago')"
-      ]
      },
      "inferred_ends": 0,
      "malformed": 0,
@@ -538,9 +535,9 @@
      "triggered": 0,
      "untrusted_wrong_dates": 1,
      "untrusted_wrong_facts": 4,
-     "wrong_answers": 1,
-     "wrong_dates": 0,
-     "wrong_facts": 4
+     "wrong_answers": 2,
+     "wrong_dates": 1,
+     "wrong_facts": 0
     }
    }
   }
@@ -548,7 +545,7 @@
  "model": "claude-code/claude-haiku-5-5",
  "port_fidelity": {
   "pass": true,
-  "sha256": "4cef5e0c457a28dcb0779402a970ca474bb894afdd84bb4e19710856f784386c"
+  "sha256": "aabd7f74ae2822bbe70ad952f74dbecef02c8c4552c81caf8779c3e83cd76221"
  },
  "reads": [
   "r1",

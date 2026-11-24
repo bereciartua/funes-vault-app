@@ -1,0 +1,46 @@
+{"key": "g02/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Copperhush", "why": "La memoria m6 dice que dejó Copperhush y volvió directamente a Kitebasin en 2021."}}
+{"key": "g01/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "After Brindlequay’s first stint came Vellumridge; after its second came Thistlemere. The question does not specify which stint."}}
+{"key": "g02/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Kitebasin has two stints: Copperhush followed the first, while the second is ongoing; the question does not specify which stint."}}
+{"key": "g01/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Brindlequay had two stints: the first was your first job, while the second followed Vellumridge; the question does not specify which."}}
+{"key": "g03/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Ternvault", "why": "Your own note places your salaried testing job at Ternvault from 2019 to 2022, including 2021."}}
+{"key": "g02/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The first Kitebasin stint followed Marrowfen; the 2021 return followed Copperhush. The question does not specify which start."}}
+{"key": "g04/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The notes give no exact 2023 payroll transition dates, so they cannot establish which employer had you on payroll on February 14."}}
+{"key": "g05/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Halcyonspoke", "why": "The user's own note places their employment at Halcyonspoke from 2019 to 2022, including 2020."}}
+{"key": "g04/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The notes do not establish when in 2023 Flintorch ended or Glasscairn began, so July's day job is unclear."}}
+{"key": "g03/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Las notas no precisan cuándo terminó Opalstitch ni cuándo comenzó Ternvault en 2019, y pudo haber solapamiento."}}
+{"key": "g06/q6", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks for a list of employers and the user's business, not an organization relative to a time or another job."}}
+{"key": "g05/q3", "ok": true, "label": {"class": "decidable", "answer_org": "Cedarhull", "why": "The user's own note explicitly names Cedarhull as their first employer after the study break."}}
+{"key": "g06/q7", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks about the friend's employer, not the user's."}}
+{"key": "g06/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Ashenharbor ended and Plumeledger began in 2021, but the notes do not establish a single payroll employer throughout that year."}}
+{"key": "g08/q6", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks for a role, not an organization relative to a time or another job."}}
+{"key": "g08/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The user's own notes do not identify a salaried employer in 2022; the agent's claim cannot establish one."}}
+{"key": "g10/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Emberfolio", "why": "Sus notas confirman que dirigía el mismo negocio, renombrado Emberfolio en 2021, hasta su cierre en 2024."}}
+{"key": "g09/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "You left Velvetdelta (formerly Pollenarc) in 2022, but the unknown departure date leaves your employment on 15 March uncertain."}}
+{"key": "g11/q3", "ok": true, "label": {"class": "decidable", "answer_org": "Sprucemarrow", "why": "La memoria m6 indica que empezó a trabajar en Sprucemarrow el 15 de enero de 2025."}}
+{"key": "g10/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Larkspindle became Emberfolio without closing, and no business is recorded after its 2024 closure."}}
+{"key": "g10/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Larkspindle became Emberfolio, but the unknown closure month leaves it unclear whether it was operating on 10 April 2024."}}
+{"key": "g10/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Emberfolio was the same business as Larkspindle, not a new opening; no earlier freelance business is recorded."}}
+{"key": "g11/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Garnetshoal's start date is only known as March 2019, so employment on 15 March is uncertain."}}
+{"key": "g11/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "You left Garnetshoal in July 2021, but the unknown last day means your employment on 15 July is uncertain."}}
+{"key": "g12/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Frostpetal ended on 29 February, and Inkbadger’s unknown March start date does not establish work on 1 March."}}
+{"key": "g12/q6", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks for a list of employers and a business, not one organization relative to a time or another job."}}
+{"key": "g13/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "After the first Ultradune stint you joined Zorvella; after the return stint you joined Daskerio. The question does not specify which stint."}}
+{"key": "g12/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Sunkenfinch started in June 2023, but the unknown start day leaves employment on June 1 uncertain."}}
+{"key": "g14/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The 2019 handover from Vantessa to Selqorin has no exact date, so March 15 could fall in either stint."}}
+{"key": "g14/q7", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks about a vendor, not an organization the user worked at or ran relative to a time."}}
+{"key": "g15/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The user's notes leave Envarro's end and Qelistra's start unresolved, so Envarro or no employer could have been on payroll immediately beforehand."}}
+{"key": "g16/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The notes do not date the 2021 Brezuno–Yondara transition precisely enough to identify the employer on July 9."}}
+{"key": "g16/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The memories do not establish whether Yondara employment had begun the day after Brezuno ended."}}
+{"key": "g16/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Avrendi Lab", "why": "Sus notas confirman que Avrendi Lab, su único negocio propio, operó continuamente desde 2020, incluido 2023."}}
+{"key": "g18/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The transition from Tivessa to Korvani occurred in 2020, but no dates establish employment on July 4."}}
+{"key": "g19/q3", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Your own notes do not identify any job before Nuvarex; the agent note cannot establish it."}}
+{"key": "g20/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The user's own notes do not establish any additional employer in 2025; the agent note cannot decide it."}}
+{"key": "g18/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The transition from Tivessa to Korvani occurred in 2020, but no dates establish which employed the user early that year."}}
+{"key": "g20/q7", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "La pregunta pide el cargo en Zelmora, no la organización donde trabajó."}}
+{"key": "g22/q1", "ok": true, "label": {"class": "decidable", "answer_org": "Jezuno", "why": "The user's latest note confirms Jezuno remains their sole salaried employer."}}
+{"key": "g22/q2", "ok": true, "label": {"class": "decidable", "answer_org": "Evorali", "why": "Caldriva renamed itself Evorali on 12 May 2021, with your salaried employment continuing without a break."}}
+{"key": "g21/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "The Lavrendi-to-Mirvanto transition is dated only to 2017, so employment on December 1 is uncertain; Mirvanto later became Oquessa."}}
+{"key": "g22/q4", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Caldriva later became Evorali, but the unknown March 2016 start day leaves employment on 4 March uncertain."}}
+{"key": "g22/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Your departure day in August 2022 is unknown, so the notes cannot establish whether you still worked at Evorali on August 15."}}
+{"key": "g24/q5", "ok": true, "label": {"class": "undecidable", "answer_org": "", "why": "Zuvendi’s start date is recorded only as 2018, so employment on January 2 is not established."}}
+{"key": "g24/q6", "ok": true, "label": {"class": "negative", "answer_org": "", "why": "The question asks for a list of employers, not an organization relative to a time or another job."}}

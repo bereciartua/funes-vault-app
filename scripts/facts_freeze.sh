@@ -12,7 +12,7 @@
 # records or this freeze file, which the Gates step adds after the freeze.
 set -eu
 cd "$(dirname "$0")/.."
-FREEZE=spikes/people/freeze-13a2.txt
+FREEZE=${FACTS_FREEZE:-spikes/people/freeze-13a2.txt}    # 13e.2's timeline gate keeps its own: FACTS_FREEZE=spikes/people/freeze-13e2.txt
 digests() {
     git -c core.quotePath=false ls-files -co --exclude-standard -- Packages Apps scripts FunesVault.xcodeproj 'spikes/people/*.py' \
         spikes/people/swift spikes/people/registry.json spikes/people/port_fidelity_known.json \

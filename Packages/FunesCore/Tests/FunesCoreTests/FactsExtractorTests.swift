@@ -23,6 +23,11 @@ import Testing
 
     var sibling: String { FX.personPredicate { $0.lexicon.contains { $0.words.contains("sister") } } }
     var employer: String { FX.dated }
+    /// The organization predicate that isn't a timeline one (a client).
+    var client: String {
+        let reg = FactsRegistry.bundled
+        return reg.predicates.first { !reg.timelinePredicates.contains($0.id) && reg.kindOf($0.id) == "organization" }!.id
+    }
 
     /// A provider whose answer is a function of the request; it records every request.
     final class Scripted: GenerationProvider, @unchecked Sendable {
@@ -131,6 +136,62 @@ import Testing
         return FactsValidator(graph: g, sent: FactsSentText(text, userAliases: user, registry: .bundled), roster: [:],
                               phrases: g.rolePhrases(text, predicates: Set(preds)), predicates: preds, knownThings: [])
             .validate(FactsJSON(out))
+    }
+
+    /// 13e.2: a name the model gives must be written on one line: a title's last word over a body that opens with a
+    /// name isn't part of it, however whitespace-tolerant quote matching is.
+    @Test func aNameAcrossTheTitleLineIsDropped() {
+        let text = "Note\nMax is my boyfriend. Granito Pago called."
+        let v = validate(text, ["people": [["name": "Note Max", "quote": "Note Max is my", "person": "new"],
+                                           ["name": "Max", "quote": "Max is my", "person": "new"]],
+                                "things": [["name": "Note Max", "kind": "organization", "quote": "Note Max is"]]])
+        #expect(v.people.map(\.name) == ["Max"])
+        #expect(v.things.isEmpty)
+        #expect(v.dropped.map(\.reason).filter { $0 != "paired_applied" }.sorted() == ["person_quote", "thing_quote"])
+        let w = validate("Notes\nGranito Pago hired me in 2020.", ["facts": [Self.fact("Granito Pago hired me", employer, "Notes Granito Pago"),
+                                                                          Self.fact("Granito Pago hired me", employer, "Granito Pago")]], group: work)
+        #expect(w.facts.map(\.name) == ["Granito Pago"])
+    }
+
+    /// 13e.2 r2: "work" in "a difficult day at work" isn't an employer. A shared memory like that made the read record a
+    /// trusted, undated job at "work" in every story, and the time model then couldn't tell any one-date job.
+    @Test func aWorkplaceWordIsNotAnEmployer() {
+        let cases: [(String, String, String)] = [
+            ("A difficult day at work didn't ruin the evening.", "A difficult day at work", "work"),
+            ("Work was quiet today, so I left early.", "Work was quiet today", "Work"),
+            ("Lunch at the office again.", "Lunch at the office", "the office"),
+            ("Otro día largo en el trabajo.", "Otro día largo en el trabajo", "trabajo"),
+            ("The office was closed for the holiday.", "The office was closed", "The office"),
+            ("Mi trabajo me agotó hoy.", "Mi trabajo me agotó", "Mi trabajo"),
+            ("Company drinks ran late.", "Company drinks ran late", "Company"),
+        ]
+        for (text, quote, name) in cases {
+            let v = validate(text, ["facts": [Self.fact(quote, employer, name)]], group: work)
+            #expect(v.facts.isEmpty, "\(name)")
+            #expect(v.dropped.map(\.reason) == ["fact_not_a_name"], "\(name)")
+        }
+        // A name keeps its own casing, and "Self-employed" is a placeholder, not a name.
+        for (text, quote, name, want) in [("I sold old cameras on eBay in 2019.", "I sold old cameras on eBay", "eBay", "eBay"),
+                                          ("I joined 37signals in 2014.", "I joined 37signals", "37signals", "37signals"),
+                                          ("I wrote for The Guardian in 2016.", "I wrote for The Guardian", "The Guardian", "The Guardian"),
+                                          ("Entré en La Oficina Creativa en 2018.", "Entré en La Oficina Creativa", "La Oficina Creativa", "La Oficina Creativa"),
+                                          ("I joined Work Shop Studio in 2020.", "I joined Work Shop Studio", "Work Shop Studio", "Work Shop Studio"),
+                                          ("I went freelance in 2021.", "I went freelance", "freelance", "Self-employed")] {
+            let v = validate(text, ["facts": [Self.fact(quote, employer, name)]], group: work)
+            #expect(v.facts.map(\.name) == [want], "\(name)")
+        }
+        // The same goes for a client, an organization among the named things and an employer's other name.
+        let c = validate("Lunch at the office with a client.", ["facts": [Self.fact("Lunch at the office", client, "the office")]],
+                         group: FactsRegistry.bundled.predicate(client)!.callGroup)
+        #expect(c.facts.isEmpty && c.dropped.map(\.reason) == ["fact_not_a_name"])
+        let t = validate("A long day at work. Granito Pago called.", ["things": [["name": "work", "kind": "organization", "quote": "A long day at work"],
+                                                                              ["name": "Granito Pago", "kind": "organization", "quote": "Granito Pago called"]]])
+        #expect(t.things.map(\.name) == ["Granito Pago"] && t.dropped.map(\.reason) == ["thing_not_a_name"])
+        var aka = Self.fact("I joined Granito Pago, work for short, in 2020", employer, "Granito Pago")
+        aka["also_called"] = "work"
+        let a = validate("I joined Granito Pago, work for short, in 2020.", ["facts": [aka]], group: work)
+        #expect(a.facts.map(\.name) == ["Granito Pago"] && a.facts.first?.alsoCalled == nil)
+        #expect(a.dropped.map(\.reason) == ["also_called_not_a_name"])
     }
 
     @Test func secretsWrongTypesAndValuesOutsideAPredicatesEnumAreDropped() {
@@ -470,10 +531,13 @@ import Testing
         #expect(g.names[FactsGraph.NameKey(memoryID: early, surface: "Ana")]?.basis == .ambiguous)
     }
 
-    /// The memory section of a Facts prompt (not the roster's quotes of other memories).
+    /// The memory section of a Facts prompt (not the roster's quotes of other memories), without the harness's neutral
+    /// title line (`FactsHarness.title`).
     static func memoryText(_ prompt: String) -> String {
         guard let a = prompt.range(of: "\">\n"), let b = prompt.range(of: "\n</memory>") else { return "" }
-        return String(prompt[a.upperBound..<b.lowerBound]).replacingOccurrences(of: "\n", with: " ")
+        var text = String(prompt[a.upperBound..<b.lowerBound])
+        if text.hasPrefix(FactsHarness.title + "\n") { text.removeFirst(FactsHarness.prefix) }
+        return text.replacingOccurrences(of: "\n", with: " ")
     }
 
     /// The roster id (`e…`) of the line that lists this alias, or "new".

@@ -1,0 +1,36 @@
+{
+  "answerPromptVersion" : "a13e2-3",
+  "cached" : 124,
+  "calls" : 0,
+  "commit" : "491740da3adb983716c77af34461ca634bfc099f",
+  "date" : "2026-11-24T19:14:53Z",
+  "dirty" : false,
+  "engine" : {
+    "model" : "haiku",
+    "provider" : "claude-code"
+  },
+  "factsPromptVersions" : {
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
+  },
+  "gate" : "spikeg",
+  "mode" : "replay",
+  "modelsReported" : [
+    "claude-haiku-5-5"
+  ],
+  "options" : {
+    "dry" : "1",
+    "engine" : "haiku",
+    "gate" : "spikeg",
+    "timeline" : "1"
+  },
+  "records" : {
+    "astra-F.jsonl" : "c7049d1aa98825449f1f9c5f26d3a5179035a500dbd60647808cd5dd489fa64c",
+    "astra-P.jsonl" : "958c9e4d844b43965405bd5a0c2a9f8b29fec006d79122092e03f23e666eb1f0",
+    "main-F.jsonl" : "8ebb1c5b87bdbb3b7f6be48e52f3f0cafa8978fb1dc2d85caba7934ce224d320",
+    "main-P.jsonl" : "94fcb091206402927015fec91931f54c4df1c185a172a18562040832e34f643a"
+  },
+  "registryVersion" : "v1-8338de9d268e",
+  "responsesWithoutModel" : 0,
+  "uncached" : 0
+}

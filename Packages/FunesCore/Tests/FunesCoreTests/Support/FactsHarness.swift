@@ -28,6 +28,8 @@ enum FactsHarness {
             let names: [Name]?
             /// The memory's sensitivity (canary and work sets may set it); `low` when absent.
             let sensitivity: String?
+            /// 13e.2's timeline gate: a filler memory (shared, or one of a story's own), not part of the story's labels.
+            var filler: Bool? = nil
 
             var trusted: Bool { (trust ?? (source == "agent" ? "untrusted" : "trusted")) == "trusted" }
         }
@@ -203,6 +205,7 @@ enum FactsHarness {
         case "transport": .transport
         case "cap_reached": .capReached
         case "invalid_output": .invalidOutput
+        case "insecure_endpoint": .insecureEndpoint
         default: code.hasPrefix("server_") ? .server(status: Int(code.dropFirst(7)) ?? 500) : .transport
         }
     }
@@ -308,6 +311,128 @@ enum FactsHarness {
             if let e = next.error { throw FactsHarness.error(e) }
             return (try HTTPClient.decode(String(decoding: next.output ?? Data("{}".utf8), as: UTF8.self), as: T.self),
                     ProviderUsage(requests: 1, model: next.model))
+        }
+    }
+
+    /// 13e.2's timeline gate read: calls shared across stories (the fillers every story vault reads first). Within a
+    /// story, the n-th ask of a call key is served the n-th recorded entry for that key (its output or its error); with
+    /// none, a live call (with `inner`) is made and appended to the record, else it's a miss. The fillers' calls are
+    /// byte-identical in every story (positional roster ids, a deterministic clock), so they're paid once; the same rule
+    /// on the same record, in the same story order, replays the whole read. Each story's (key, occurrence, source) list
+    /// is kept for the manifest.
+    final class SharedCalls: GenerationProvider, @unchecked Sendable {
+        struct Entry { var output: Data?; var error: String?; var model: String? }
+        struct State {
+            var entries: [String: [Entry]] = [:]
+            var seen: [String: Int] = [:]
+            var log: [[String: Any]] = []
+            var live = 0, reused = 0, misses = 0, liveErrors = 0, servedErrors = 0
+            var lines = 0
+        }
+        let inner: (any GenerationProvider)?
+        let file: URL
+        let state: Mutex<State>
+        let id: ProviderID
+        let modelID: String
+        let factsAdapter: String
+
+        /// `inner` nil replays `file` only; with `inner`, `file` is the record (new, or one an interrupted read began).
+        init(_ inner: (any GenerationProvider)?, file: URL) throws {
+            self.inner = inner
+            self.file = file
+            var st = State()
+            var model: String?, provider: String?, adapter: String?
+            if FileManager.default.fileExists(atPath: file.path) {
+                for line in try String(contentsOf: file, encoding: .utf8).split(separator: "\n") {
+                    let d = try JSONSerialization.jsonObject(with: Data(line.utf8)) as! [String: Any]
+                    model = model ?? d["model"] as? String
+                    provider = provider ?? d["provider"] as? String
+                    adapter = adapter ?? d["adapter"] as? String
+                    let out = try d["output"].map { try JSONSerialization.data(withJSONObject: $0) }
+                    st.entries[d["key"] as! String, default: []].append(Entry(output: out, error: d["error"] as? String, model: d["model"] as? String))
+                    st.lines += 1
+                }
+            } else if inner != nil {
+                try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data().write(to: file)
+            } else {
+                throw CocoaError(.fileNoSuchFile)
+            }
+            state = Mutex(st)
+            id = inner?.id ?? ProviderID(rawValue: provider ?? "anthropic")
+            modelID = inner?.modelID ?? (model ?? "recorded").components(separatedBy: "/").last ?? "recorded"
+            factsAdapter = inner?.factsAdapter ?? adapter ?? "recorded"
+        }
+        var locality: Locality { .cloud }
+
+        /// A new story: occurrences count from zero again; returns the previous story's log.
+        @discardableResult
+        func begin() -> [[String: Any]] {
+            state.withLock { s in
+                defer { s.seen = [:]; s.log = [] }
+                return s.log
+            }
+        }
+        var counts: (live: Int, reused: Int, misses: Int, liveErrors: Int, servedErrors: Int) {
+            state.withLock { ($0.live, $0.reused, $0.misses, $0.liveErrors, $0.servedErrors) }
+        }
+
+        func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+            let key = FactsHarness.callKey(request)
+            let served: Entry? = state.withLock { s in
+                let n = s.seen[key, default: 0]
+                s.seen[key] = n + 1
+                guard let list = s.entries[key], n < list.count else { return nil }
+                s.reused += 1
+                if list[n].error != nil { s.servedErrors += 1 }
+                s.log.append(["key": key, "n": n, "source": "recorded"])
+                return list[n]
+            }
+            if let e = served {
+                if let code = e.error { throw FactsHarness.error(code) }
+                return (try HTTPClient.decode(String(decoding: e.output ?? Data("{}".utf8), as: UTF8.self), as: T.self),
+                        ProviderUsage(requests: 1, model: e.model))
+            }
+            guard let inner else {
+                state.withLock { $0.misses += 1 }
+                throw ProviderError.invalidOutput
+            }
+            let raw = StructuredRequest<JSONValue>(instructions: request.instructions, prompt: request.prompt, schema: request.schema,
+                                                   maxOutputTokens: request.maxOutputTokens)
+            var line: [String: Any] = ["key": key, "provider": inner.id.rawValue, "adapter": inner.factsAdapter,
+                                       "maxOutputTokens": request.maxOutputTokens ?? NSNull()]
+            let result: Result<(JSONValue, ProviderUsage), any Error>
+            do { result = .success(try await inner.generate(raw)) } catch { result = .failure(error) }
+            var entry = Entry()
+            switch result {
+            case let .failure(error):
+                line["error"] = FactsHarness.errorCode(error)
+                entry.error = line["error"] as? String
+            case let .success((value, usage)):
+                let data = try JSONEncoder().encode(value)
+                line["model"] = usage.model ?? NSNull()
+                line["output"] = try JSONSerialization.jsonObject(with: data)
+                entry.output = data
+                entry.model = usage.model
+            }
+            let bytes = try JSONSerialization.data(withJSONObject: line, options: [.sortedKeys])
+            state.withLock { s in
+                if let h = try? FileHandle(forWritingTo: file) {
+                    h.seekToEndOfFile()
+                    h.write(bytes + Data("\n".utf8))
+                    try? h.close()
+                }
+                s.entries[key, default: []].append(entry)
+                s.live += 1
+                s.lines += 1
+                if entry.error != nil { s.liveErrors += 1 }
+                s.log.append(["key": key, "n": s.seen[key, default: 1] - 1, "source": entry.error == nil ? "live" : "live_error"])
+            }
+            switch result {
+            case let .failure(error): throw error
+            case let .success((value, usage)):
+                return (try HTTPClient.decode(String(decoding: try JSONEncoder().encode(value), as: UTF8.self), as: T.self), usage)
+            }
         }
     }
 
@@ -556,6 +681,9 @@ enum FactsHarness {
         /// The gold reader's alias-trust substitutions, and unmapped ids it couldn't explain.
         var substituted = 0
         var unexplained = 0
+        /// With `keep`: the vault as the play left it, and each fixture memory's id in it (13e.2's timeline gate).
+        var vault: TestVault? = nil
+        var vaultIDs: [String: String] = [:]
     }
 
     /// A monotonic clock: roster tokens are `updated_at` values compared as text.
@@ -564,17 +692,20 @@ enum FactsHarness {
         func now() -> Date { t.withLock { $0 = $0.addingTimeInterval(1); return $0 } }
     }
 
-    /// A story's text as a memory's title and body: split at its last space, so the stored text (`title\nbody`) is the
-    /// story's text with that space as the newline, and every offset is the same.
-    /// The space chosen is the last one before a lowercase word, so no name (or name pair) straddles the newline.
-    static func split(_ text: String) -> (String, String) {
-        let spaces = text.indices.filter { text[$0] == " " && text.index(after: $0) < text.endIndex }
-        guard let at = spaces.last(where: { text[text.index(after: $0)].isLowercase }) ?? spaces.last else { return (text, "-") }
-        return (String(text[..<at]), String(text[text.index(after: at)...]))
-    }
+    /// The title every story memory gets (13e.2). A memory's title is its own field in the app (a summary, or the
+    /// capture's first line), so a body sentence is never broken by the title's line break; a fixture's text is the
+    /// memory's body, whole, under this neutral title. (Until 13e.2 the text was split at a space inside its last
+    /// sentence, which hid that sentence from the sentence-bounded rules: a never-denial, the placeholder fold.)
+    static let title = "Note"
 
-    /// The stored text of a story memory.
-    static func stored(_ text: String) -> String { let (t, b) = split(text); return t + "\n" + b }
+    /// The stored text's offsets ahead of the story's text: the title and its line break (UTF-16 and code points alike).
+    static let prefix = title.utf16.count + 1
+
+    /// A story's text as a memory's title and body: the neutral title, and the text as written.
+    static func split(_ text: String) -> (String, String) { (title, text) }
+
+    /// The stored text of a story memory (`title\nbody`, as `FactStore.text` makes it).
+    static func stored(_ text: String) -> String { title + "\n" + text }
 
     static func day(_ written: String) -> Date {
         let p = written.split(separator: "-").compactMap { Int($0) }
@@ -588,7 +719,9 @@ enum FactsHarness {
     /// from the recording.
     static func play(_ story: Fixture.Story, order: [String], orderIndex: Int, user: [String], provider: any GenerationProvider,
                      replay: [Recorded]?, groups: [String], label: String, registry: FactsRegistry = .bundled,
-                     limit: CloudLimit = .upTo(.secret)) async throws -> Play {
+                     limit: CloudLimit = .upTo(.secret), prelude: [Fixture.Memory] = [],
+                     memoryID: (@Sendable (String) -> UUID)? = nil, afterPrelude: (() throws -> Void)? = nil,
+                     keep: Bool = false) async throws -> Play {
         let v = try TestVault()
         let clock = Clock()
         let router = ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, factsModel: provider)
@@ -597,13 +730,26 @@ enum FactsHarness {
         x.clock = { clock.now() }
         let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast, ungatedFacts: true)
         let worker = FactsQueueWorker(extractor: x)
-        let mems = Dictionary(uniqueKeysWithValues: story.memories.map { ($0.id, $0) })
+        // 13e.2's timeline gate: `prelude` (the shared fillers) is read first, each drained before the next, then the order.
+        let mems = Dictionary(uniqueKeysWithValues: (prelude + story.memories).map { ($0.id, $0) })
         var vaultID: [String: String] = [:], fixtureID: [String: String] = [:]
         func add(_ mid: String) throws -> String {
             if let id = vaultID[mid] { return id }
             let m = mems[mid]!
             let (title, body) = split(m.text)
-            let mem = try v.memory(title, body, sensitivity: sensitivity(m.sensitivity), now: day(m.written))
+            let mem: Memory
+            if let memoryID {
+                // A fixed id per fixture memory (13e.2): search breaks ties by id, so a replay ranks as the run did.
+                let draft = MemoryDraft(title: title, body: body, kind: .fact, categoryKeys: ["personal_preferences"],
+                                        sensitivity: sensitivity(m.sensitivity))
+                mem = try v.store.writer.write { db in
+                    let id = memoryID(mid)
+                    _ = try MemoryStore.insert(db, draft, actor: .user, now: day(m.written), id: id)
+                    return try MemoryStore.fetch(db, id: id)!
+                }
+            } else {
+                mem = try v.memory(title, body, sensitivity: sensitivity(m.sensitivity), now: day(m.written))
+            }
             let source = ["agent": MemorySource.agentWrite, "import": .importMarkdown][m.source] ?? .captureMac
             let trust = m.trust ?? (m.source == "agent" ? "untrusted" : "trusted")
             try v.store.writer.write { db in
@@ -684,7 +830,8 @@ enum FactsHarness {
             fixtureIDs.withLock { $0 = fixtureID }
             try await drain()
         } else {
-            for mid in order {
+            for (k, mid) in (prelude.map(\.id) + order).enumerated() {
+                if k == prelude.count, let afterPrelude { try afterPrelude() }
                 let id = try add(mid)
                 fixtureIDs.withLock { $0 = fixtureID }
                 let now = clock.now()
@@ -758,7 +905,8 @@ enum FactsHarness {
             line["swift_direct"] = direct
         }
         return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0, unsettled: unsettled,
-                    substituted: rp?.substituted ?? 0, unexplained: rp?.unexplained ?? 0)
+                    substituted: rp?.substituted ?? 0, unexplained: rp?.unexplained ?? 0, vault: keep ? v : nil,
+                    vaultIDs: keep ? vaultID : [:])
     }
 
     /// A story's corrections after a memory, as the user's own operations in the store. True if any was applied.
@@ -856,14 +1004,15 @@ extension FactsHarness {
         }
 
         func mid(_ id: String) -> String { fixtureID[id] ?? id }
-        /// A surface as the story writes it (the stored text has a newline where the story has a space).
+        /// A surface as the story writes it (a story's own line breaks read as spaces, as the spike's scorers compare).
         func flat(_ s: String) -> String { s.replacingOccurrences(of: "\n", with: " ") }
         func p(_ id: String?) -> Any { id.flatMap { pid[$0] } ?? NSNull() }
 
-        /// UTF-16 offset in the stored text → code-point offset in the story's text (Python's `str.find`).
+        /// UTF-16 offset in the stored text → code-point offset in the story's text (Python's `str.find`): the title and
+        /// its line break come first.
         func codePoint(_ memoryID: String, _ utf16: Int) -> Int {
             let t = graph.memories[memoryID]?.text ?? ""
-            return FactStore.scalarOffset(t, utf16: utf16)
+            return FactStore.scalarOffset(t, utf16: utf16) - FactsHarness.prefix
         }
 
         func people(calls: [[String: Any]]) -> [String: Any] {
@@ -978,14 +1127,17 @@ extension FactsHarness {
                 "names": g.names.sorted { ($0.key.memoryID, $0.key.surface) < ($1.key.memoryID, $1.key.surface) }.map { k, n in
                     [mid(k.memoryID), flat(k.surface), p(n.entity), n.basis.rawValue, n.candidates.map { p($0) }] as [Any]
                 },
-                "decisions": g.decisions.map { k, d in
+                // Sorted: a dictionary's order changes with each process's hash seed, and the gate's digests must not.
+                "decisions": g.decisions.sorted { ($0.key.memoryID, $0.key.start) < ($1.key.memoryID, $1.key.start) }.map { k, d in
                     [mid(k.memoryID), codePoint(k.memoryID, k.start), d.basis == .someoneElse ? "someone_else" : p(d.entity),
                      d.basis.rawValue] as [Any]
                 },
                 "things": things.map { [$0.0, $0.1] },
                 "episodes": episodes(),
                 // Stated renames read as one entity on the timeline (13e.1): an episode's entity stands for its group.
-                "timeline_groups": g.registry.timelinePredicates.flatMap { g.statedGroups($0) }.map { $0.sorted().map { p($0) } },
+                // By dump id (order made), not entity id (new each run), so a replay dumps what the live read did.
+                "timeline_groups": g.registry.timelinePredicates.flatMap { g.statedGroups($0) }.map { $0.compactMap { pid[$0] }.sorted() }
+                    .sorted { $0.lexicographicallyPrecedes($1) },
                 "succession": succession(),
                 "user_aliases": user,
                 "memories": Dictionary(uniqueKeysWithValues: order.compactMap { id -> (String, Any)? in

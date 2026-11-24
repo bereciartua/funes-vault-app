@@ -64,6 +64,7 @@ enum FactsGateEvidence {
     /// Why a record's evidence doesn't qualify it now ([] = it does).
     static func problems(_ r: FactsQualification.Record, registry: FactsRegistry, fixtures: (String) -> URL = FactsHarness.fixtureURL) -> [String] {
         if r.uses == [FactsUse.attributes.rawValue] { return answerProblems(r, registry: registry) }
+        if r.uses == [FactsUse.timeline.rawValue], !r.answerModels.isEmpty { return timelineAnswerProblems(r, registry: registry) }
         guard let gate = gate(for: r, registry: registry) else { return ["no 13a.2 gate for \(r.predicates) \(r.uses) \(r.basis)"] }
         var out: [String] = []
         let manifests = r.evidence.filter { $0.hasSuffix("-manifest.json") }
@@ -174,6 +175,129 @@ enum FactsGateEvidence {
         let want = (sc["inputs"] as? [String: String] ?? [:]).keys.map { "spikes/people/results-13d/" + $0 }
             + files.keys.map { String(path.dropLast("scores-13d.json".count)) + $0 }
         if !Set(want).isSubset(of: listed) { out.append("the record's evidence isn't what the scores were computed from") }
+        return out
+    }
+
+    /// The gates a 13e.2 timeline record's scores must hold (score_13e2.py's, plus the facts and Spike G).
+    static let timelineGates = ["complete", "decidable_right", "decidable_wrong", "facts", "marking", "negatives", "owed_checks",
+                                "p95", "someone_else", "spike_g", "undecidable_not_sure"]
+    /// The targets the author may waive, each with the measure it caps (qualify.py's TIMELINE_WAIVABLE).
+    static let timelineWaivable = ["owed_checks": "owed_skipped", "marking": "unmarked_inferred"]
+
+    /// The author's waiver of a timeline gate (`spikes/people/results-13e2/waivers.json`) for exactly this answer model,
+    /// answer prompt version, registry version and gate read, given on these read calls and answers (their digests), or nil.
+    static func timelineWaiver(model: String, answerPromptVersion: String, registryVersion: String, tag: String,
+                               readCallsSha256: String?, answersSha256: String?,
+                               file: URL = FactsHarness.repo.appending(path: "spikes/people/results-13e2/waivers.json")) -> [String: Any]? {
+        guard let calls = readCallsSha256, let answers = answersSha256 else { return nil }
+        return (json(file)?["waivers"] as? [[String: Any]] ?? []).first {
+            $0["gate"] as? String == "timeline-answers" && $0["answerModel"] as? String == model
+                && $0["answerPromptVersion"] as? String == answerPromptVersion && $0["registryVersion"] as? String == registryVersion
+                && $0["tag"] as? String == tag && $0["readCallsSha256"] as? String == calls && $0["answersSha256"] as? String == answers
+        }
+    }
+
+    /// The failing gates a waiver doesn't cover: it names the target, caps its measure, and the measure is within it.
+    static func unwaived(_ gates: [String: Bool], measures: [String: Any], waiver: [String: Any]?) -> [String] {
+        gates.filter { !$0.value }.keys.sorted().filter { k in
+            guard let t = (waiver?["waived"] as? [String: [String: Any]])?[k], let m = t["measure"] as? String,
+                  timelineWaivable[k] == m, let v = measures[m] as? Int, let cap = t["max"] as? Int else { return true }
+            return v > cap
+        }
+    }
+
+    /// Whether a manifest's answers are by exactly `model` ("<provider>/<id>"): the provider named that id (Claude Code),
+    /// or it names none (Codex) and the run asked for that full id.
+    static func answeredBy(_ m: [String: Any], _ model: String) -> Bool {
+        let parts = model.split(separator: "/", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return false }
+        let reported = m["modelsReported"] as? [String]
+        return reported == [parts[1]] || (reported == [] && m["engine"] as? [String: String] == ["provider": parts[0], "model": parts[1]])
+    }
+
+    /// A *timeline* record measured with an answer model (13e.2's gate; `qualify.py timeline-scores`, which `qualify.py
+    /// verify` recomputes): works at alone; for the answer model the gate ran and the answer prompt that runs now; every
+    /// gate passed or waived by the author within the measured caps; every input, set, Spike G, Phase A and replay file
+    /// present and unchanged; and the replays, at one clean commit and on the record's Facts engine, prompt, batching
+    /// and registry, replayed the read with no miss and every answer and Spike G request from the cache.
+    static func timelineAnswerProblems(_ r: FactsQualification.Record, registry: FactsRegistry) -> [String] {
+        var out: [String] = []
+        if r.predicates.count != 1 || !registry.timelinePredicates.contains(r.predicates[0]) || !r.basis.isEmpty {
+            return ["no 13e.2 gate for \(r.predicates) \(r.uses) \(r.basis)"]
+        }
+        guard let path = r.evidence.first(where: { $0.contains("/scores-13e2-") && $0.hasSuffix(".json") }), let sc = json(url(path)) else {
+            return ["no scores-13e2-<engine>.json in the evidence"]
+        }
+        let dir = url(path).deletingLastPathComponent(), people = FactsHarness.repo.appending(path: "spikes/people")
+        let results = people.appending(path: "results-13e2")
+        let replay = sc["replay"] as? [String: Any] ?? [:], model = sc["model"] as? String ?? ""
+        let engine = sc["engine"] as? String ?? "", tag = sc["tag"] as? String ?? ""
+        if r.answerModels != [model] { out.append("answer models \(r.answerModels)") }
+        if sc["factsModel"] as? String != r.model { out.append("not the Facts engine the scores were computed with") }
+        if r.answerPromptVersion != SearchAnswerer.promptVersion { out.append("answer prompt version \(r.answerPromptVersion)") }
+        if replay["answerPromptVersion"] as? String != r.answerPromptVersion { out.append("not the replay's answer prompt version") }
+        if replay["registryVersion"] as? String != r.registryVersion { out.append("not the replay's registry version") }
+        let gates = sc["gates"] as? [String: Bool] ?? [:]
+        if gates.keys.sorted() != timelineGates { out.append("gates \(gates.keys.sorted())") }
+        let waiver = timelineWaiver(model: model, answerPromptVersion: r.answerPromptVersion, registryVersion: r.registryVersion, tag: tag,
+                                    readCallsSha256: sha256(results.appending(path: "read-\(tag)/calls.jsonl")),
+                                    answersSha256: sha256(results.appending(path: "answers-\(engine)/answers.jsonl")))
+        for k in unwaived(gates, measures: sc["measures"] as? [String: Any] ?? [:], waiver: waiver) { out.append("\(k): fails") }
+        // Every digest unchanged, over an inventory fixed here (not read from the scores).
+        let required: [(String, URL, [String])] = [
+            ("inputs", results, ["answers-\(engine)/answers.jsonl", "answers-\(engine)/manifest.json", "answers-\(engine)/judge-opus.jsonl",
+                                 "answers-\(engine)/judge-astra.jsonl", "answers-\(engine)/adjudicated.jsonl", "read-\(tag)/stories.jsonl",
+                                 "read-\(tag)/manifest.json", "read-\(tag)/calls.jsonl", "labels-corrected.json"]
+                                + (waiver != nil ? ["waivers.json"] : [])),
+            ("set", people.appending(path: "fixtures/gate-13e2"), ["stories.json", "fillers.json"]),
+            ("spikeG", people.appending(path: "results-13d"), ["main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl"]
+                .map { "spike-g-\(engine)-timeline/" + $0 }),
+            ("phaseA", FactsHarness.repo, []),
+        ]
+        for (key, base, names) in required {
+            let d = sc[key] as? [String: String] ?? [:]
+            for n in names where d[n] == nil { out.append("\(key): \(n) missing") }
+            for (p, digest) in d where sha256(base.appending(path: p)) != digest { out.append("\(p): changed") }
+        }
+        if (sc["phaseA"] as? [String: String] ?? [:]).count < 4 { out.append("phaseA: fewer than Phase A's 4 lines") }
+        let files = replay["files"] as? [String: String] ?? [:]
+        let readDir = "replay/replay-read-\(tag)/", ansDir = "replay/answers-\(engine)/", sgDir = "replay/spike-g-\(engine)-timeline/"
+        for f in [readDir + "manifest.json", readDir + "stories.jsonl", ansDir + "manifest.json", ansDir + "answers.jsonl", sgDir + "manifest-spikeg.json"]
+            + ["main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl"].map({ sgDir + $0 }) where files[f] == nil {
+            out.append("replay: \(f) missing")
+        }
+        for (p, d) in files where sha256(dir.appending(path: p)) != d { out.append("replay \(p): changed") }
+        let facts = r.model.split(separator: "/", maxSplits: 1).map(String.init)
+        var commits = Set<String>()
+        for p in [readDir + "manifest.json", ansDir + "manifest.json", sgDir + "manifest-spikeg.json"] {
+            guard let m = json(dir.appending(path: p)) else { out.append("missing \(p)"); continue }
+            commits.insert(m["commit"] as? String ?? "")
+            if m["mode"] as? String != "replay" { out.append("\(p): not a replay") }
+            if m["dirty"] as? Bool != false { out.append("\(p): a dirty tree") }
+            if m["registryVersion"] as? String != r.registryVersion { out.append("\(p): registry") }
+            let calls = m["calls"] as? [String: Any]
+            if p.hasPrefix(readDir) {
+                if (calls?["misses"] as? Int ?? 1) != 0 { out.append("\(p): read misses") }
+                let e = m["engine"] as? [String: String]
+                if facts.count != 2 || e?["provider"] != facts[0] || e?["model"] != facts[1] || e?["adapter"] != r.adapter {
+                    out.append("\(p): not the record's Facts engine")
+                }
+                if (m["promptVersions"] as? [String: String])?[r.callGroup] != r.promptVersion { out.append("\(p): Facts prompt version") }
+                if m["batching"] as? String != r.batching { out.append("\(p): batching") }
+            } else {
+                if m["answerPromptVersion"] as? String != r.answerPromptVersion { out.append("\(p): answer prompt version") }
+                if !answeredBy(m, model) { out.append("\(p): not answered by \(model)") }
+                let uncached = p.hasPrefix(ansDir) ? calls?["uncached"] as? Int : m["uncached"] as? Int
+                if (uncached ?? 1) != 0 { out.append("\(p): not a full replay") }
+            }
+        }
+        if commits.count != 1 || commits.contains(where: { $0.isEmpty || $0.hasSuffix("+dirty") }) { out.append("replay commits \(commits.sorted())") }
+        let want = (sc["inputs"] as? [String: String] ?? [:]).keys.map { "spikes/people/results-13e2/" + $0 }
+            + (sc["set"] as? [String: String] ?? [:]).keys.map { "spikes/people/fixtures/gate-13e2/" + $0 }
+            + (sc["spikeG"] as? [String: String] ?? [:]).keys.map { "spikes/people/results-13d/" + $0 }
+            + (sc["phaseA"] as? [String: String] ?? [:]).keys
+            + files.keys.map { String(path.dropLast(url(path).lastPathComponent.count)) + $0 } + [path]
+        if !Set(want).isSubset(of: Set(r.evidence)) { out.append("the record's evidence isn't what the scores were computed from") }
         return out
     }
 

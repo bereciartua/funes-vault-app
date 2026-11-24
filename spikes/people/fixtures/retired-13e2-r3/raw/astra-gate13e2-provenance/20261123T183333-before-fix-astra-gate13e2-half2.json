@@ -1,0 +1,1134 @@
+{
+  "user_name": "Alex Soler",
+  "user_aliases": ["Alex", "A. Soler"],
+  "stories": [
+    {
+      "id": "g13",
+      "title": "Two departures from the same employer",
+      "traps": ["rehire", "undated_order", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I'm Alex Soler. My first stint as a map editor at Zeruvo Cartography ran from 2012 to 2013.",
+          "written": "2014-02-10",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Soler", "person": "user"}],
+          "organizations": [{"surface": "Zeruvo Cartography", "org": "Zeruvo Cartography", "relation": "employer"}],
+          "jobs": [{"org": "Zeruvo Cartography", "kind": "employee", "title": "map editor", "status": "former", "polarity": "positive", "start": "2012", "end": "2013", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Neri works at Peltrix Ceramics and brought a very lopsided mug to dinner.",
+          "written": "2015-05-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Neri", "person": "p1"}],
+          "organizations": [{"surface": "Peltrix Ceramics", "org": "Peltrix Ceramics", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "After leaving Zeruvo Cartography the first time, my next employer was Peltrix Ceramics. I worked there as a production planner from 2014 to 2016.",
+          "written": "2017-03-04",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Zeruvo Cartography", "org": "Zeruvo Cartography", "relation": "employer"}, {"surface": "Peltrix Ceramics", "org": "Peltrix Ceramics", "relation": "employer"}],
+          "jobs": [{"org": "Peltrix Ceramics", "kind": "employee", "title": "production planner", "status": "former", "polarity": "positive", "start": "2014", "end": "2016", "time": null, "preceded_by": "Zeruvo Cartography", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "Bought a folded walking map from Zeruvo Cartography for the kitchen drawer.",
+          "written": "2018-09-21",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Zeruvo Cartography", "org": "Zeruvo Cartography", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My next employer after Peltrix Ceramics was Daskuna Robotics, where I was a documentation lead from 2017 to 2019.",
+          "written": "2020-01-19",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Peltrix Ceramics", "org": "Peltrix Ceramics", "relation": "employer"}, {"surface": "Daskuna Robotics", "org": "Daskuna Robotics", "relation": "employer"}],
+          "jobs": [{"org": "Daskuna Robotics", "kind": "employee", "title": "documentation lead", "status": "former", "polarity": "positive", "start": "2017", "end": "2019", "time": null, "preceded_by": "Peltrix Ceramics", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "I returned to Zeruvo Cartography directly after Daskuna Robotics, as a map editor again, from 2020 to 2022. After that second departure my next employer was Istravo Signals, starting in 2023. I am still its operations editor today.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Zeruvo Cartography", "org": "Zeruvo Cartography", "relation": "employer"}, {"surface": "Daskuna Robotics", "org": "Daskuna Robotics", "relation": "employer"}, {"surface": "Istravo Signals", "org": "Istravo Signals", "relation": "employer"}],
+          "jobs": [
+            {"org": "Zeruvo Cartography", "kind": "employee", "title": "map editor", "status": "former", "polarity": "positive", "start": "2020", "end": "2022", "time": null, "preceded_by": "Daskuna Robotics", "followed_by": "Istravo Signals", "also_called": null},
+            {"org": "Istravo Signals", "kind": "employee", "title": "operations editor", "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": "Zeruvo Cartography", "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Zeruvo Cartography", "role": "map editor", "start": "2012", "end": "2013", "kind": "employee", "memories": ["m1"]},
+        {"org": "Peltrix Ceramics", "role": "production planner", "start": "2014", "end": "2016", "kind": "employee", "memories": ["m3"]},
+        {"org": "Daskuna Robotics", "role": "documentation lead", "start": "2017", "end": "2019", "kind": "employee", "memories": ["m5"]},
+        {"org": "Zeruvo Cartography", "role": "map editor", "start": "2020", "end": "2022", "kind": "employee", "memories": ["m6"]},
+        {"org": "Istravo Signals", "role": "operations editor", "start": "2023", "end": "", "kind": "employee", "memories": ["m6"]},
+        {"org": "Zeruvo Cartography", "role": "walking-map seller", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Who employed me just before I came back to Zeruvo Cartography?", "answer_org": "Daskuna Robotics", "traps": ["rehire", "undated_order"], "why": "m6 explicitly places Daskuna immediately before the return stint."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "¿Dónde trabajé después de salir de Zeruvo Cartography por primera vez?", "answer_org": "Peltrix Ceramics", "traps": ["rehire", "spanish", "undated_order"], "why": "m3 identifies Peltrix as the next employer after the first departure."},
+        {"id": "q3", "class": "undecidable", "kind": "after", "query": "Where did I go after Zeruvo Cartography?", "answer_org": "", "traps": ["rehire"], "why": "The first departure led to Peltrix and the second to Istravo; no stint is specified."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Employer before Zeruvo Cartography?", "answer_org": "", "traps": ["rehire"], "why": "The predecessor of the first stint is unrecorded, while Daskuna preceded the second."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "I'm fixing my CV—what company immediately followed my departure from Zeruvo Cartography?", "answer_org": "", "traps": ["rehire"], "why": "Both departures have different explicitly recorded successors."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my title at Zeruvo Cartography?", "answer_org": "Zeruvo Cartography", "traps": ["rehire"], "why": "The title was map editor in both stints; this asks for a title, not a temporal employer."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "Where did Neri work when they brought that mug?", "answer_org": "Peltrix Ceramics", "traps": [], "why": "m2 says Neri worked at Peltrix; this concerns another person."}
+      ]
+    },
+    {
+      "id": "g14",
+      "title": "A return and a separate business",
+      "traps": ["rehire", "concurrent_slots", "vendor", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "A. Soler: I was a technician at Venzari Optics from 2012 to 2014, my first stint there.",
+          "written": "2015-02-08",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "A. Soler", "person": "user"}],
+          "organizations": [{"surface": "Venzari Optics", "org": "Venzari Optics", "relation": "employer"}],
+          "jobs": [{"org": "Venzari Optics", "kind": "employee", "title": "technician", "status": "former", "polarity": "positive", "start": "2012", "end": "2014", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Venzari Optics sold me a pocket magnifier for reading tiny labels at home.",
+          "written": "2016-06-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Venzari Optics", "org": "Venzari Optics", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "After my first departure from Venzari Optics, my next employer was Odraku Motion. I was its test coordinator from 2015 to 2017.",
+          "written": "2018-01-15",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Venzari Optics", "org": "Venzari Optics", "relation": "employer"}, {"surface": "Odraku Motion", "org": "Odraku Motion", "relation": "employer"}],
+          "jobs": [{"org": "Odraku Motion", "kind": "employee", "title": "test coordinator", "status": "former", "polarity": "positive", "start": "2015", "end": "2017", "time": null, "preceded_by": "Venzari Optics", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "My cousin Remi started at Selqiro Materials. We celebrated with noodles.",
+          "written": "2019-04-20",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Remi", "person": "p1"}],
+          "organizations": [{"surface": "Selqiro Materials", "org": "Selqiro Materials", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Directly after Odraku Motion I returned to Venzari Optics as a senior technician, from 2018 to 2020.",
+          "written": "2022-03-03",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Odraku Motion", "org": "Odraku Motion", "relation": "employer"}, {"surface": "Venzari Optics", "org": "Venzari Optics", "relation": "employer"}],
+          "jobs": [{"org": "Venzari Optics", "kind": "employee", "title": "senior technician", "status": "former", "polarity": "positive", "start": "2018", "end": "2020", "time": null, "preceded_by": "Odraku Motion", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "After the second Venzari Optics stint, my next salaried employer was Selqiro Materials, starting in 2021 as a quality lead. That remains my day job. Separately, I have run Axuvo Studio as my freelance illustration business since 2022, and it is still active.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Venzari Optics", "org": "Venzari Optics", "relation": "employer"}, {"surface": "Selqiro Materials", "org": "Selqiro Materials", "relation": "employer"}, {"surface": "Axuvo Studio", "org": "Axuvo Studio", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Selqiro Materials", "kind": "employee", "title": "quality lead", "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": "Venzari Optics", "followed_by": null, "also_called": null},
+            {"org": "Axuvo Studio", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2022", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Venzari Optics", "role": "technician", "start": "2012", "end": "2014", "kind": "employee", "memories": ["m1"]},
+        {"org": "Odraku Motion", "role": "test coordinator", "start": "2015", "end": "2017", "kind": "employee", "memories": ["m3"]},
+        {"org": "Venzari Optics", "role": "senior technician", "start": "2018", "end": "2020", "kind": "employee", "memories": ["m5"]},
+        {"org": "Selqiro Materials", "role": "quality lead", "start": "2021", "end": "", "kind": "employee", "memories": ["m6"]},
+        {"org": "Axuvo Studio", "role": "freelance illustration business", "start": "2022", "end": "", "kind": "self_employed", "memories": ["m6"]},
+        {"org": "Venzari Optics", "role": "magnifier seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "after", "query": "Next employer after my first Venzari Optics stint?", "answer_org": "Odraku Motion", "traps": ["rehire"], "why": "m3 explicitly identifies Odraku as the next employer after the first stint."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "¿Qué empresa vino después de mi segunda etapa en Venzari Optics?", "answer_org": "Selqiro Materials", "traps": ["rehire", "spanish"], "why": "m6 identifies Selqiro as the next salaried employer after the second stint."},
+        {"id": "q3", "class": "decidable", "kind": "in_year", "query": "What was my own illustration business called in 2024?", "answer_org": "Axuvo Studio", "traps": ["concurrent_slots"], "why": "Axuvo operated from 2022 onward on the freelance track."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "Where did I work after leaving Venzari Optics?", "answer_org": "", "traps": ["rehire"], "why": "The two departures lead to Odraku and Selqiro respectively."},
+        {"id": "q5", "class": "undecidable", "kind": "previous", "query": "What was my previous company when I joined Venzari Optics?", "answer_org": "", "traps": ["rehire"], "why": "The first joining has no recorded predecessor, while the return followed Odraku."},
+        {"id": "q6", "class": "negative", "kind": "list", "query": "List all my employers and my own businesses.", "answer_org": "", "traps": ["rehire", "concurrent_slots"], "why": "The recorded organizations are Venzari, Odraku, Selqiro, and Axuvo, with two distinct Venzari stints."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Who sold me that little magnifier?", "answer_org": "Venzari Optics", "traps": ["vendor"], "why": "m2 identifies Venzari as a personal vendor."}
+      ]
+    },
+    {
+      "id": "g15",
+      "title": "An uncertain overlap at the lab",
+      "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I, Alex, worked for Tazvoro Audio as an assembly specialist from 2014 to 2016. I only saved the years.",
+          "written": "2017-02-09",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex", "person": "user"}],
+          "organizations": [{"surface": "Tazvoro Audio", "org": "Tazvoro Audio", "relation": "employer"}],
+          "jobs": [{"org": "Tazvoro Audio", "kind": "employee", "title": "assembly specialist", "status": "former", "polarity": "positive", "start": "2014", "end": "2016", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Read a newspaper piece about Eskuven Research opening a public garden.",
+          "written": "2018-08-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Eskuven Research", "org": "Eskuven Research", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My lab coordinator job at Eskuven Research began in 2016 and ended in 2018. I cannot remember whether it overlapped my Tazvoro Audio employment or began after I left. Those were my only two jobs during 2014 through 2018.",
+          "written": "2019-03-18",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Eskuven Research", "org": "Eskuven Research", "relation": "employer"}, {"surface": "Tazvoro Audio", "org": "Tazvoro Audio", "relation": "employer"}],
+          "jobs": [
+            {"org": "Eskuven Research", "kind": "employee", "title": "lab coordinator", "status": "former", "polarity": "positive", "start": "2016", "end": "2018", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Tazvoro Audio", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Sami from Voqami Engineering joined our neighborhood chess evening.",
+          "written": "2020-05-04",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Sami", "person": "p1"}],
+          "organizations": [{"surface": "Voqami Engineering", "org": "Voqami Engineering", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "After both earlier jobs had ended, my next employer was Voqami Engineering. I was its safety writer from 2019-01-01 to 2020-12-31, with no other work during that interval.",
+          "written": "2021-01-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Voqami Engineering", "org": "Voqami Engineering", "relation": "employer"}],
+          "jobs": [{"org": "Voqami Engineering", "kind": "employee", "title": "safety writer", "status": "former", "polarity": "positive", "start": "2019-01-01", "end": "2020-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "Found my old Eskuven Research badge. It confirms lab coordinator as my title but adds no dates.",
+          "written": "2023-11-06",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Eskuven Research", "org": "Eskuven Research", "relation": "employer"}],
+          "jobs": [{"org": "Eskuven Research", "kind": "employee", "title": "lab coordinator", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Tazvoro Audio", "role": "assembly specialist", "start": "2014", "end": "2016", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Eskuven Research", "role": "lab coordinator", "start": "2016", "end": "2018", "kind": "employee", "memories": ["m3", "m6"]},
+        {"org": "Voqami Engineering", "role": "safety writer", "start": "2019-01-01", "end": "2020-12-31", "kind": "employee", "memories": ["m5"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where was I working in 2015?", "answer_org": "Tazvoro Audio", "traps": ["possible_overlap", "import"], "why": "2015 lies inside the Tazvoro stint and precedes the earliest possible Eskuven start."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "¿Dónde trabajaba el 1 de enero de 2019?", "answer_org": "Voqami Engineering", "traps": ["exact_day", "precision", "spanish"], "why": "m5 gives that exact start day and says the earlier jobs had ended."},
+        {"id": "q3", "class": "undecidable", "kind": "before", "query": "Which employer had I just left when I started at Eskuven Research?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "The notes do not establish that Tazvoro had ended when Eskuven started."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where was I employed on 15 June 2016?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision"], "why": "Both transition dates are year-only, so employment on that day is unresolved."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "What employer did I join next after leaving Tazvoro Audio?", "answer_org": "", "traps": ["possible_overlap"], "why": "Eskuven may have started before the departure; otherwise it was the next joining, rather than Voqami."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What did my Eskuven Research badge call my role?", "answer_org": "Eskuven Research", "traps": [], "why": "The badge title was lab coordinator."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Had I left Tazvoro Audio before I joined Eskuven Research?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "The yes/no ordering cannot be determined because the user explicitly cannot recall the overlap."}
+      ]
+    },
+    {
+      "id": "g16",
+      "title": "Two employment dates and a parallel workshop",
+      "traps": ["possible_overlap", "same_year_handover", "concurrent_slots", "freelance_clients", "exact_day", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My salaried job at Ruzeki Textiles was pattern analyst, from 2015 to 2018. These are year-only dates.",
+          "written": "2018-12-29",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ruzeki Textiles", "org": "Ruzeki Textiles", "relation": "employer"}],
+          "jobs": [{"org": "Ruzeki Textiles", "kind": "employee", "title": "pattern analyst", "status": "former", "polarity": "positive", "start": "2015", "end": "2018", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My friend Ivo works at Beskira Foods and recommended a soup recipe.",
+          "written": "2019-04-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Ivo", "person": "p1"}],
+          "organizations": [{"surface": "Beskira Foods", "org": "Beskira Foods", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I was a salaried test planner at Mavuno Testing from 2018 to 2020. I don't remember whether my Ruzeki Textiles job had ended when I started; a short overlap is possible. Those were my only salaried jobs during those transition years.",
+          "written": "2020-12-30",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Mavuno Testing", "org": "Mavuno Testing", "relation": "employer"}, {"surface": "Ruzeki Textiles", "org": "Ruzeki Textiles", "relation": "employer"}],
+          "jobs": [
+            {"org": "Mavuno Testing", "kind": "employee", "title": "test planner", "status": "former", "polarity": "positive", "start": "2018", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Ruzeki Textiles", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Read about Yelzuna Transit adding a Sunday bus route near my flat.",
+          "written": "2021-07-18",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Yelzuna Transit", "org": "Yelzuna Transit", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Alongside my salaried work, I ran Qoravi Workshop, my freelance pattern business, from 2017 to 2023. Beskira Foods was a client in 2019. I was never an employee of Beskira Foods.",
+          "written": "2024-02-07",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Qoravi Workshop", "org": "Qoravi Workshop", "relation": "self_employed"}, {"surface": "Beskira Foods", "org": "Beskira Foods", "relation": "client"}],
+          "jobs": [
+            {"org": "Qoravi Workshop", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": "2017", "end": "2023", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Beskira Foods", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2019", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Beskira Foods", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "My next salaried employer after Mavuno Testing was Yelzuna Transit. I started in 2021 as a scheduling analyst and still hold that job.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Mavuno Testing", "org": "Mavuno Testing", "relation": "employer"}, {"surface": "Yelzuna Transit", "org": "Yelzuna Transit", "relation": "employer"}],
+          "jobs": [{"org": "Yelzuna Transit", "kind": "employee", "title": "scheduling analyst", "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": "Mavuno Testing", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Ruzeki Textiles", "role": "pattern analyst", "start": "2015", "end": "2018", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Mavuno Testing", "role": "test planner", "start": "2018", "end": "2020", "kind": "employee", "memories": ["m3"]},
+        {"org": "Qoravi Workshop", "role": "freelance pattern business", "start": "2017", "end": "2023", "kind": "self_employed", "memories": ["m5"]},
+        {"org": "Beskira Foods", "role": "pattern client", "start": "2019", "end": "2019", "kind": "client", "memories": ["m5"]},
+        {"org": "Yelzuna Transit", "role": "scheduling analyst", "start": "2021", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "What was my salaried workplace in 2019?", "answer_org": "Mavuno Testing", "traps": ["possible_overlap", "concurrent_slots", "freelance_clients"], "why": "Mavuno spans 2019; Ruzeki ended earlier, and Qoravi and Beskira belong to the freelance track."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "¿Cómo se llamaba mi negocio propio en 2019?", "answer_org": "Qoravi Workshop", "traps": ["concurrent_slots", "freelance_clients", "spanish"], "why": "The user's own business was Qoravi; Beskira was its client."},
+        {"id": "q3", "class": "decidable", "kind": "after", "query": "Which day job came next after Mavuno Testing?", "answer_org": "Yelzuna Transit", "traps": ["concurrent_slots"], "why": "m6 explicitly names Yelzuna as the next salaried employer."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "My salaried employer on 10 April 2018?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision"], "why": "The year-only boundaries allow either employer, overlap, or a gap on that day."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Which company had I left immediately before starting at Mavuno Testing?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "Ruzeki may still have employed the user when Mavuno began."},
+        {"id": "q6", "class": "negative", "kind": "someone_else", "query": "Where does the friend who gave me the soup recipe work?", "answer_org": "Beskira Foods", "traps": ["freelance_clients"], "why": "m2 says Ivo works at Beskira; it is not a question about the user's employer."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "Was Beskira Foods a client or my employer?", "answer_org": "Beskira Foods", "traps": ["freelance_clients"], "why": "Beskira was a client, and the user explicitly denies being its employee."}
+      ]
+    },
+    {
+      "id": "g17",
+      "title": "A handover recorded only by year",
+      "traps": ["same_year_handover", "possible_overlap", "exact_day", "precision", "gap", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My first paid job was stock controller at Belqori Metals, from 2013 to 2017. I no longer know the months.",
+          "written": "2018-02-13",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Belqori Metals", "org": "Belqori Metals", "relation": "employer"}],
+          "jobs": [{"org": "Belqori Metals", "kind": "employee", "title": "stock controller", "status": "former", "polarity": "positive", "start": "2013", "end": "2017", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Nuvexa Packaging delivered the moving boxes I ordered for my flat.",
+          "written": "2019-03-24",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Nuvexa Packaging", "org": "Nuvexa Packaging", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I was a dispatch planner at Nuvexa Packaging from 2017 to 2019, dates known only by year. I cannot remember whether this began before or after my Belqori Metals job ended. These were my only jobs up to the end of 2019.",
+          "written": "2020-02-20",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Nuvexa Packaging", "org": "Nuvexa Packaging", "relation": "employer"}, {"surface": "Belqori Metals", "org": "Belqori Metals", "relation": "employer"}],
+          "jobs": [
+            {"org": "Nuvexa Packaging", "kind": "employee", "title": "dispatch planner", "status": "former", "polarity": "positive", "start": "2017", "end": "2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Belqori Metals", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My neighbor Noa works at Zadrumi Energy and lent me a bicycle pump.",
+          "written": "2021-07-07",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Noa", "person": "p1"}],
+          "organizations": [{"surface": "Zadrumi Energy", "org": "Zadrumi Energy", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "During all of 2020 and 2021 I studied independently full time. I had no employment, freelance business, or paid clients in those years.",
+          "written": "2024-01-22",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "After that study break I joined Zadrumi Energy in 2022 as a resource analyst. It remains my only job today.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Zadrumi Energy", "org": "Zadrumi Energy", "relation": "employer"}],
+          "jobs": [{"org": "Zadrumi Energy", "kind": "employee", "title": "resource analyst", "status": "current", "polarity": "positive", "start": "2022", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Belqori Metals", "role": "stock controller", "start": "2013", "end": "2017", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Nuvexa Packaging", "role": "dispatch planner", "start": "2017", "end": "2019", "kind": "employee", "memories": ["m3"]},
+        {"org": "", "role": "independent full-time study; no paid work", "start": "2020", "end": "2021", "kind": "study", "memories": ["m5"]},
+        {"org": "Zadrumi Energy", "role": "resource analyst", "start": "2022", "end": "", "kind": "employee", "memories": ["m6"]},
+        {"org": "Nuvexa Packaging", "role": "moving-box supplier", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where was I employed in 2015?", "answer_org": "Belqori Metals", "traps": ["same_year_handover", "import"], "why": "2015 is inside the Belqori stint and earlier than the uncertain 2017 handover."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "¿Dónde trabajé después de la pausa para estudiar de 2020 y 2021?", "answer_org": "Zadrumi Energy", "traps": ["gap", "spanish"], "why": "m6 explicitly places Zadrumi after the study break."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Who employed me on 15 March 2017?", "answer_org": "", "traps": ["same_year_handover", "exact_day", "precision"], "why": "Neither the Belqori end nor the Nuvexa start is known within 2017."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Which employer had I left just before I joined Nuvexa Packaging?", "answer_org": "", "traps": ["same_year_handover", "possible_overlap"], "why": "The notes do not establish whether Belqori ended before Nuvexa began."},
+        {"id": "q5", "class": "undecidable", "kind": "in_year", "query": "What company was I with in March 2017?", "answer_org": "", "traps": ["same_year_handover", "precision"], "why": "A month-specific employer cannot be recovered from the two year-only boundaries."},
+        {"id": "q6", "class": "negative", "kind": "first_job", "query": "What was my very first paid workplace?", "answer_org": "Belqori Metals", "traps": ["import"], "why": "m1 explicitly calls Belqori the first paid job."},
+        {"id": "q7", "class": "negative", "kind": "how_long", "query": "Exactly how many months did I work at Nuvexa Packaging?", "answer_org": "", "traps": ["precision", "same_year_handover"], "why": "Only 2017 through 2019 is known; an exact month count cannot be calculated."}
+      ]
+    },
+    {
+      "id": "g18",
+      "title": "Years, months, and a study break",
+      "traps": ["same_year_handover", "exact_day", "precision", "gap", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Alex Soler — I worked as an assembler at Jorvaki Fabrication from 2012 to 2015. My surviving records contain years only.",
+          "written": "2016-01-18",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Soler", "person": "user"}],
+          "organizations": [{"surface": "Jorvaki Fabrication", "org": "Jorvaki Fabrication", "relation": "employer"}],
+          "jobs": [{"org": "Jorvaki Fabrication", "kind": "employee", "title": "assembler", "status": "former", "polarity": "positive", "start": "2012", "end": "2015", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a board game from Cevuno Games for the family holiday.",
+          "written": "2017-08-03",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Cevuno Games", "org": "Cevuno Games", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I was a playtest coordinator at Cevuno Games from 2015 to 2017. I don't know whether its start came before or after my Jorvaki Fabrication departure within 2015. Those were my only jobs through 2017.",
+          "written": "2018-03-14",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Cevuno Games", "org": "Cevuno Games", "relation": "employer"}, {"surface": "Jorvaki Fabrication", "org": "Jorvaki Fabrication", "relation": "employer"}],
+          "jobs": [
+            {"org": "Cevuno Games", "kind": "employee", "title": "playtest coordinator", "status": "former", "polarity": "positive", "start": "2015", "end": "2017", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Jorvaki Fabrication", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2015", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Went to the free poster exhibition hosted by Dulqira Printing. The oversized train posters were my favorite.",
+          "written": "2019-11-09",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Dulqira Printing", "org": "Dulqira Printing", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My next job after Cevuno Games was prepress technician at Dulqira Printing, from March 2019 to December 2021. I do not remember the exact start or end day. This was my only work during that stint.",
+          "written": "2022-01-16",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Cevuno Games", "org": "Cevuno Games", "relation": "employer"}, {"surface": "Dulqira Printing", "org": "Dulqira Printing", "relation": "employer"}],
+          "jobs": [{"org": "Dulqira Printing", "kind": "employee", "title": "prepress technician", "status": "former", "polarity": "positive", "start": "March 2019", "end": "December 2021", "time": null, "preceded_by": "Cevuno Games", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "I spent all of 2022 studying independently, without any paid work. My next job after that break began at Wazeko Instruments in 2023 as a calibration planner. It remains my only job.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Wazeko Instruments", "org": "Wazeko Instruments", "relation": "employer"}],
+          "jobs": [{"org": "Wazeko Instruments", "kind": "employee", "title": "calibration planner", "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Jorvaki Fabrication", "role": "assembler", "start": "2012", "end": "2015", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Cevuno Games", "role": "playtest coordinator", "start": "2015", "end": "2017", "kind": "employee", "memories": ["m3"]},
+        {"org": "Dulqira Printing", "role": "prepress technician", "start": "2019-03", "end": "2021-12", "kind": "employee", "memories": ["m5"]},
+        {"org": "", "role": "independent study; no paid work", "start": "2022", "end": "2022", "kind": "study", "memories": ["m6"]},
+        {"org": "Wazeko Instruments", "role": "calibration planner", "start": "2023", "end": "", "kind": "employee", "memories": ["m6"]},
+        {"org": "Cevuno Games", "role": "board-game seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Employer in 2014?", "answer_org": "Jorvaki Fabrication", "traps": ["same_year_handover", "import"], "why": "2014 is securely inside Jorvaki employment before the uncertain 2015 transition."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "Where was I working on 15 March 2020?", "answer_org": "Dulqira Printing", "traps": ["exact_day", "precision"], "why": "That day is strictly inside the March 2019 to December 2021 stint."},
+        {"id": "q3", "class": "decidable", "kind": "after", "query": "¿Qué empresa me contrató después del año de estudio de 2022?", "answer_org": "Wazeko Instruments", "traps": ["gap", "spanish"], "why": "m6 names Wazeko as the next job after that study year."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where was I employed on October 1, 2015?", "answer_org": "", "traps": ["same_year_handover", "exact_day", "precision"], "why": "The two 2015 transition dates have no month or day."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "Who was my employer on 15 March 2019?", "answer_org": "", "traps": ["exact_day", "precision"], "why": "Dulqira began sometime in March, possibly before or after the fifteenth."},
+        {"id": "q6", "class": "negative", "kind": "how_long", "query": "How many days was I at Dulqira Printing?", "answer_org": "", "traps": ["precision"], "why": "Month-only endpoints cannot establish an exact number of days."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "Who hosted the poster exhibition I liked?", "answer_org": "Dulqira Printing", "traps": [], "why": "m4 identifies Dulqira as the exhibition host, an event fact."}
+      ]
+    },
+    {
+      "id": "g19",
+      "title": "An agent fills an undocumented interval",
+      "traps": ["agent_competitor", "untrusted_end", "gap", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I joined Pezravo Hardware in 2016 as a repair planner and still work there.",
+          "written": "2018-06-15",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pezravo Hardware", "org": "Pezravo Hardware", "relation": "employer"}],
+          "jobs": [{"org": "Pezravo Hardware", "kind": "employee", "title": "repair planner", "status": "current", "polarity": "positive", "start": "2016", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Pezravo Hardware sold me replacement cupboard handles for my kitchen.",
+          "written": "2019-09-08",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Pezravo Hardware", "org": "Pezravo Hardware", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Alex Soler worked at Kuxeni Software as a release coordinator from 2021 to 2022, after Pezravo Hardware.",
+          "written": "2022-12-28",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Soler", "person": "user"}],
+          "organizations": [{"surface": "Kuxeni Software", "org": "Kuxeni Software", "relation": "employer"}, {"surface": "Pezravo Hardware", "org": "Pezravo Hardware", "relation": "employer"}],
+          "jobs": [{"org": "Kuxeni Software", "kind": "employee", "title": "release coordinator", "status": "former", "polarity": "positive", "start": "2021", "end": "2022", "time": null, "preceded_by": "Pezravo Hardware", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "My friend Lio works at Kuxeni Software. We met for coffee and talked about houseplants.",
+          "written": "2023-03-17",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Lio", "person": "p1"}],
+          "organizations": [{"surface": "Kuxeni Software", "org": "Kuxeni Software", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My Pezravo Hardware job ended in 2020. I have no reliable work records for 2021 through 2023 and cannot reconstruct that period. I started at Omazuri Health in 2024 as a service planner and work there now.",
+          "written": "2024-09-16",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pezravo Hardware", "org": "Pezravo Hardware", "relation": "employer"}, {"surface": "Omazuri Health", "org": "Omazuri Health", "relation": "employer"}],
+          "jobs": [
+            {"org": "Pezravo Hardware", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Omazuri Health", "kind": "employee", "title": "service planner", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "The user left Omazuri Health in 2025.",
+          "written": "2025-12-19",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Omazuri Health", "org": "Omazuri Health", "relation": "employer"}],
+          "jobs": [{"org": "Omazuri Health", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2025", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m7",
+          "text": "I'm still a service planner at Omazuri Health, continuously since joining. It is my only current job; I did not leave in 2025.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Omazuri Health", "org": "Omazuri Health", "relation": "employer"}],
+          "jobs": [{"org": "Omazuri Health", "kind": "employee", "title": "service planner", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Pezravo Hardware", "role": "repair planner", "start": "2016", "end": "2020", "kind": "employee", "memories": ["m1", "m5"]},
+        {"org": "Omazuri Health", "role": "service planner", "start": "2024", "end": "", "kind": "employee", "memories": ["m5", "m7"]},
+        {"org": "Pezravo Hardware", "role": "cupboard-handle seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Who was I working for in 2018?", "answer_org": "Pezravo Hardware", "traps": ["agent_competitor"], "why": "The user's own m1 and m5 establish Pezravo employment across 2018."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "¿Cuál es mi empresa actual?", "answer_org": "Omazuri Health", "traps": ["agent_competitor", "untrusted_end", "spanish"], "why": "m7 confirms continuous current Omazuri employment and rejects the agent's claimed end."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "Where did I work in 2021?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "Only the agent places the user at Kuxeni; the user's own record leaves 2021 unresolved."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "Which company came immediately after Pezravo Hardware?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "The undocumented interval prevents identifying a next employer from trusted memories."},
+        {"id": "q5", "class": "undecidable", "kind": "previous", "query": "What was my previous employer when I joined Omazuri Health?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "The user has not confirmed any employer or absence of employment during 2021 through 2023."},
+        {"id": "q6", "class": "negative", "kind": "someone_else", "query": "Where does Lio work?", "answer_org": "Kuxeni Software", "traps": ["agent_competitor"], "why": "m4 identifies Kuxeni as Lio's employer, without establishing employment for the user."},
+        {"id": "q7", "class": "negative", "kind": "title_in_job", "query": "What was my Pezravo Hardware job title?", "answer_org": "Pezravo Hardware", "traps": [], "why": "m1 gives the title repair planner."}
+      ]
+    },
+    {
+      "id": "g20",
+      "title": "A supplier mistaken for an employer",
+      "traps": ["agent_competitor", "untrusted_end", "vendor", "gap", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was an employee of Huzqari Rail from 2012 to 2014, working as a timetable assistant.",
+          "written": "2015-02-06",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Huzqari Rail", "org": "Huzqari Rail", "relation": "employer"}],
+          "jobs": [{"org": "Huzqari Rail", "kind": "employee", "title": "timetable assistant", "status": "former", "polarity": "positive", "start": "2012", "end": "2014", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My friend Ari at Vikzuno Analytics sent me a recipe for orange cake.",
+          "written": "2016-05-18",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Ari", "person": "p1"}],
+          "organizations": [{"surface": "Vikzuno Analytics", "org": "Vikzuno Analytics", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My next employer after Huzqari Rail was Vikzuno Analytics, where I worked as a data reviewer from 2015 to 2018. I was still employed there on 2018-09-10.",
+          "written": "2019-01-14",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Huzqari Rail", "org": "Huzqari Rail", "relation": "employer"}, {"surface": "Vikzuno Analytics", "org": "Vikzuno Analytics", "relation": "employer"}],
+          "jobs": [{"org": "Vikzuno Analytics", "kind": "employee", "title": "data reviewer", "status": "former", "polarity": "positive", "start": "2015", "end": "2018", "time": "2018-09-10", "preceded_by": "Huzqari Rail", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "Paid Raqemi Security to replace the lock on my own front door.",
+          "written": "2020-04-29",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Raqemi Security", "org": "Raqemi Security", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "A. Soler left Vikzuno Analytics in 2017 and next worked at Raqemi Security as an office coordinator from 2019 to 2020.",
+          "written": "2021-02-12",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "A. Soler", "person": "user"}],
+          "organizations": [{"surface": "Vikzuno Analytics", "org": "Vikzuno Analytics", "relation": "employer"}, {"surface": "Raqemi Security", "org": "Raqemi Security", "relation": "employer"}],
+          "jobs": [
+            {"org": "Vikzuno Analytics", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2017", "time": null, "preceded_by": null, "followed_by": "Raqemi Security", "also_called": null},
+            {"org": "Raqemi Security", "kind": "employee", "title": "office coordinator", "status": "former", "polarity": "positive", "start": "2019", "end": "2020", "time": null, "preceded_by": "Vikzuno Analytics", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "I cannot reconstruct my work history for 2019 or 2020. Since 2021 I have run Xovari Design, my own freelance accessibility business. It remains my only work.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Xovari Design", "org": "Xovari Design", "relation": "self_employed"}],
+          "jobs": [{"org": "Xovari Design", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Huzqari Rail", "role": "timetable assistant", "start": "2012", "end": "2014", "kind": "employee", "memories": ["m1"]},
+        {"org": "Vikzuno Analytics", "role": "data reviewer", "start": "2015", "end": "2018", "kind": "employee", "memories": ["m3"]},
+        {"org": "Xovari Design", "role": "freelance accessibility business", "start": "2021", "end": "", "kind": "self_employed", "memories": ["m6"]},
+        {"org": "Raqemi Security", "role": "personal locksmith", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "on_day", "query": "Where was I working on September 10, 2018?", "answer_org": "Vikzuno Analytics", "traps": ["agent_competitor", "untrusted_end", "exact_day"], "why": "m3 explicitly confirms that day; the agent cannot move the end back to 2017."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "Which employer followed Huzqari Rail?", "answer_org": "Vikzuno Analytics", "traps": ["agent_competitor", "import"], "why": "m3 explicitly names Vikzuno as the next employer."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "¿Qué negocio propio tengo ahora?", "answer_org": "Xovari Design", "traps": ["spanish"], "why": "m6 confirms Xovari as the user's ongoing and only work."},
+        {"id": "q4", "class": "undecidable", "kind": "in_year", "query": "What company employed me in 2019?", "answer_org": "", "traps": ["agent_competitor", "vendor", "gap"], "why": "Only the agent asserts a Raqemi job; the personal locksmith purchase does not confirm it."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "What was my next salaried employer after Vikzuno Analytics?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "The user leaves 2019 and 2020 unresolved, and the later confirmed business is self-employment."},
+        {"id": "q6", "class": "negative", "kind": "vendor", "query": "Who changed the lock on my front door?", "answer_org": "Raqemi Security", "traps": ["vendor", "agent_competitor"], "why": "m4 identifies Raqemi as the locksmith, regardless of the unsupported employment claim."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Did I work at Huzqari Rail before Vikzuno Analytics?", "answer_org": "", "traps": ["import"], "why": "Yes; m3 explicitly says Vikzuno was the next employer after Huzqari."}
+      ]
+    },
+    {
+      "id": "g21",
+      "title": "One employer with two names and imprecise endpoints",
+      "traps": ["rename", "exact_day", "precision", "gap", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Gevruno Ledger as an accounts assistant from 2014 to 2015.",
+          "written": "2016-02-08",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Gevruno Ledger", "org": "Gevruno Ledger", "relation": "employer"}],
+          "jobs": [{"org": "Gevruno Ledger", "kind": "employee", "title": "accounts assistant", "status": "former", "polarity": "positive", "start": "2014", "end": "2015", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My friend Suri works at Lunqavi Systems and brought a picnic blanket.",
+          "written": "2017-07-15",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Suri", "person": "p1"}],
+          "organizations": [{"surface": "Lunqavi Systems", "org": "Tivzora Systems", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My next employer after Gevruno Ledger was Lunqavi Systems. I worked there as a support analyst from 2018 to 2022; I only remember those years. On 2020-07-01 it renamed itself Tivzora Systems. Same legal employer, uninterrupted employment, unchanged title.",
+          "written": "2023-02-19",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Gevruno Ledger", "org": "Gevruno Ledger", "relation": "employer"}, {"surface": "Lunqavi Systems", "org": "Tivzora Systems", "relation": "employer"}, {"surface": "Tivzora Systems", "org": "Tivzora Systems", "relation": "employer"}],
+          "jobs": [{"org": "Lunqavi Systems", "kind": "employee", "title": "support analyst", "status": "former", "polarity": "positive", "start": "2018", "end": "2022", "time": null, "preceded_by": "Gevruno Ledger", "followed_by": null, "also_called": "Tivzora Systems"}]
+        },
+        {
+          "id": "m4",
+          "text": "Read a magazine article about Paskuno Aviation testing quieter cabin fans.",
+          "written": "2024-08-03",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Paskuno Aviation", "org": "Paskuno Aviation", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "All of 2023 was independent study for me, with no paid employment or freelance work.",
+          "written": "2025-01-07",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "After the study year I started at Paskuno Aviation in February 2024 as a manuals coordinator. It is still my only job.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Paskuno Aviation", "org": "Paskuno Aviation", "relation": "employer"}],
+          "jobs": [{"org": "Paskuno Aviation", "kind": "employee", "title": "manuals coordinator", "status": "current", "polarity": "positive", "start": "February 2024", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Gevruno Ledger", "role": "accounts assistant", "start": "2014", "end": "2015", "kind": "employee", "memories": ["m1"]},
+        {"org": "Tivzora Systems", "role": "support analyst", "start": "2018", "end": "2022", "kind": "employee", "memories": ["m3"]},
+        {"org": "", "role": "independent study; no paid work", "start": "2023", "end": "2023", "kind": "study", "memories": ["m5"]},
+        {"org": "Paskuno Aviation", "role": "manuals coordinator", "start": "2024-02", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where did I work in 2019—the place then called Lunqavi Systems?", "answer_org": "Tivzora Systems", "traps": ["rename"], "why": "Lunqavi and Tivzora are one continuous employer, canonically Tivzora."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "¿Qué empresa vino después de Gevruno Ledger?", "answer_org": "Tivzora Systems", "traps": ["rename", "undated_order", "spanish"], "why": "m3 explicitly identifies Lunqavi, later Tivzora, as the next employer."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Which employer was I with on 3 January 2018, around the Lunqavi Systems move?", "answer_org": "", "traps": ["rename", "exact_day", "precision"], "why": "The Lunqavi start is known only as 2018, so employment on January 3 is unconfirmed."},
+        {"id": "q4", "class": "undecidable", "kind": "in_year", "query": "Where was I working in June 2018, the year I joined what became Tivzora Systems?", "answer_org": "", "traps": ["rename", "precision"], "why": "The year-only start does not establish whether the job had begun by June."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "My employer on 15 December 2022, during the old Lunqavi chapter?", "answer_org": "", "traps": ["rename", "exact_day", "precision"], "why": "The same employer's departure is known only as 2022, possibly before or after that day."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my title when the employer was still called Lunqavi Systems?", "answer_org": "Tivzora Systems", "traps": ["rename"], "why": "The title was support analyst, unchanged across the rename."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "Were Lunqavi Systems and Tivzora Systems actually the same employer?", "answer_org": "Tivzora Systems", "traps": ["rename"], "why": "Yes; m3 explicitly says it was the same legal employer with uninterrupted employment."}
+      ]
+    },
+    {
+      "id": "g22",
+      "title": "A renamed company at an uncertain handover",
+      "traps": ["rename", "same_year_handover", "possible_overlap", "exact_day", "vendor", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was a route clerk at Fexumo Dispatch from 2013 to 2016. I have no month or day for either boundary.",
+          "written": "2017-02-05",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Fexumo Dispatch", "org": "Fexumo Dispatch", "relation": "employer"}],
+          "jobs": [{"org": "Fexumo Dispatch", "kind": "employee", "title": "route clerk", "status": "former", "polarity": "positive", "start": "2013", "end": "2016", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My cousin Ena works at Kovzani Optics. We met for a walk along the canal.",
+          "written": "2018-05-19",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Ena", "person": "p1"}],
+          "organizations": [{"surface": "Kovzani Optics", "org": "Kovzani Optics", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I joined Zalqeri Mobile in 2016 as a device tester and left in 2019. In 2018 it renamed itself Udravo Mobile, without any change of employer or break in my job. I only know the employment years and cannot order the start against my Fexumo Dispatch departure. These were my only jobs during 2016 and 2017.",
+          "written": "2020-03-04",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Zalqeri Mobile", "org": "Udravo Mobile", "relation": "employer"}, {"surface": "Udravo Mobile", "org": "Udravo Mobile", "relation": "employer"}, {"surface": "Fexumo Dispatch", "org": "Fexumo Dispatch", "relation": "employer"}],
+          "jobs": [
+            {"org": "Zalqeri Mobile", "kind": "employee", "title": "device tester", "status": "former", "polarity": "positive", "start": "2016", "end": "2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Udravo Mobile"},
+            {"org": "Fexumo Dispatch", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Bought a personal phone charger directly from Udravo Mobile.",
+          "written": "2021-07-13",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Udravo Mobile", "org": "Udravo Mobile", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "After leaving Udravo Mobile, my next employer was Kovzani Optics, where I was a bench technician from 2020 to 2022.",
+          "written": "2023-01-24",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Udravo Mobile", "org": "Udravo Mobile", "relation": "employer"}, {"surface": "Kovzani Optics", "org": "Kovzani Optics", "relation": "employer"}],
+          "jobs": [{"org": "Kovzani Optics", "kind": "employee", "title": "bench technician", "status": "former", "polarity": "positive", "start": "2020", "end": "2022", "time": null, "preceded_by": "Udravo Mobile", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "Since 2023 I have run Mequro Practice, my freelance repair consultancy. It is still my sole work.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Mequro Practice", "org": "Mequro Practice", "relation": "self_employed"}],
+          "jobs": [{"org": "Mequro Practice", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Fexumo Dispatch", "role": "route clerk", "start": "2013", "end": "2016", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Udravo Mobile", "role": "device tester", "start": "2016", "end": "2019", "kind": "employee", "memories": ["m3"]},
+        {"org": "Kovzani Optics", "role": "bench technician", "start": "2020", "end": "2022", "kind": "employee", "memories": ["m5"]},
+        {"org": "Mequro Practice", "role": "freelance repair consultancy", "start": "2023", "end": "", "kind": "self_employed", "memories": ["m6"]},
+        {"org": "Udravo Mobile", "role": "phone-charger seller", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Employer in 2017—was that the old Zalqeri name?", "answer_org": "Udravo Mobile", "traps": ["rename", "same_year_handover"], "why": "2017 is inside the continuous Zalqeri/Udravo stint and after Fexumo ended."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "What company came after my Zalqeri Mobile job?", "answer_org": "Kovzani Optics", "traps": ["rename", "undated_order"], "why": "Zalqeri is Udravo, and m5 explicitly names Kovzani as its successor."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "¿Cómo se llama el negocio que llevo ahora?", "answer_org": "Mequro Practice", "traps": ["spanish"], "why": "m6 confirms Mequro as the user's current sole business."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where did I work on 12 September 2016, around the move to Udravo Mobile?", "answer_org": "", "traps": ["rename", "same_year_handover", "exact_day", "precision"], "why": "Resolving the later name does not supply the missing 2016 start and end dates."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Which company had I already left when I started at Zalqeri Mobile?", "answer_org": "", "traps": ["rename", "same_year_handover", "possible_overlap"], "why": "Fexumo's departure cannot be ordered against the Zalqeri/Udravo start."},
+        {"id": "q6", "class": "negative", "kind": "someone_else", "query": "What company does Ena work for?", "answer_org": "Kovzani Optics", "traps": [], "why": "m2 identifies Kovzani as Ena's workplace."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Where did I buy my phone charger?", "answer_org": "Udravo Mobile", "traps": ["vendor", "rename"], "why": "m4 records a personal purchase from Udravo."}
+      ]
+    },
+    {
+      "id": "g23",
+      "title": "A renamed lab, a possible overlap, and freelance clients",
+      "traps": ["rename", "possible_overlap", "exact_day", "precision", "freelance_clients", "gap", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Tovqira Labs as a sample archivist from 2015 to 2017. It renamed itself Ezvuno Labs on 2016-05-01; my employment continued without a break. My employment endpoints are known only by year.",
+          "written": "2018-02-16",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Tovqira Labs", "org": "Ezvuno Labs", "relation": "employer"}, {"surface": "Ezvuno Labs", "org": "Ezvuno Labs", "relation": "employer"}],
+          "jobs": [{"org": "Tovqira Labs", "kind": "employee", "title": "sample archivist", "status": "former", "polarity": "positive", "start": "2015", "end": "2017", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Ezvuno Labs"}]
+        },
+        {
+          "id": "m2",
+          "text": "Read about Parzuki Studio repainting the mural beside the bus stop.",
+          "written": "2019-05-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Parzuki Studio", "org": "Parzuki Studio", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I joined Parzuki Studio as a salaried production assistant in March 2017 and left in 2020. I cannot recall the exact March day or whether my Ezvuno Labs job had ended yet. These were my only salaried employers through 2020.",
+          "written": "2020-12-30",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Parzuki Studio", "org": "Parzuki Studio", "relation": "employer"}, {"surface": "Ezvuno Labs", "org": "Ezvuno Labs", "relation": "employer"}],
+          "jobs": [
+            {"org": "Parzuki Studio", "kind": "employee", "title": "production assistant", "status": "former", "polarity": "positive", "start": "March 2017", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Ezvuno Labs", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My friend Paz works at Navquro Theatre and recommended the Saturday matinee.",
+          "written": "2021-08-21",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Paz", "person": "p1"}],
+          "organizations": [{"surface": "Navquro Theatre", "org": "Navquro Theatre", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I studied independently for all of 2021 and 2022. I had no paid jobs or freelance clients during that break.",
+          "written": "2024-01-11",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "Since 2023 my only work has been my own freelance business, Ukezari Consulting. It is still active. Navquro Theatre was a client during 2024, but I have never been an employee of Navquro Theatre.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ukezari Consulting", "org": "Ukezari Consulting", "relation": "self_employed"}, {"surface": "Navquro Theatre", "org": "Navquro Theatre", "relation": "client"}],
+          "jobs": [
+            {"org": "Ukezari Consulting", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Navquro Theatre", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2024", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Navquro Theatre", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Ezvuno Labs", "role": "sample archivist", "start": "2015", "end": "2017", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Parzuki Studio", "role": "production assistant", "start": "2017-03", "end": "2020", "kind": "employee", "memories": ["m3"]},
+        {"org": "", "role": "independent study; no paid work", "start": "2021", "end": "2022", "kind": "study", "memories": ["m5"]},
+        {"org": "Ukezari Consulting", "role": "freelance consultancy", "start": "2023", "end": "", "kind": "self_employed", "memories": ["m6"]},
+        {"org": "Navquro Theatre", "role": "consulting client", "start": "2024", "end": "2024", "kind": "client", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "on_day", "query": "Where was I employed on 1 June 2016, just after the lab changed its name?", "answer_org": "Ezvuno Labs", "traps": ["rename", "exact_day", "import"], "why": "That day lies inside uninterrupted lab employment and after the exact rename date."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "¿Qué negocio mío llevaba en 2024 cuando trabajé para el teatro?", "answer_org": "Ukezari Consulting", "traps": ["freelance_clients", "spanish"], "why": "Ukezari was the user's business; the theatre was its client."},
+        {"id": "q3", "class": "undecidable", "kind": "before", "query": "Which employer had I left before starting Parzuki Studio—the lab under its newer name?", "answer_org": "", "traps": ["rename", "possible_overlap"], "why": "The lab's identity is known, but whether its job had ended before Parzuki began is not."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where was I employed on 15 March 2017, around the Tovqira Labs transition?", "answer_org": "", "traps": ["rename", "possible_overlap", "exact_day", "precision"], "why": "The Parzuki start day and the lab's departure date are both unresolved."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "What salaried employer did I next join after leaving Tovqira Labs?", "answer_org": "", "traps": ["rename", "possible_overlap", "gap"], "why": "Parzuki may have started before the lab departure; later confirmed work is study followed by self-employment."},
+        {"id": "q6", "class": "negative", "kind": "other", "query": "Which theatre was a client of my consultancy in 2024?", "answer_org": "Navquro Theatre", "traps": ["freelance_clients"], "why": "m6 names Navquro as a client, not an organization employing the user."},
+        {"id": "q7", "class": "negative", "kind": "list", "query": "List my recorded salaried employers, counting renamed companies once.", "answer_org": "", "traps": ["rename", "freelance_clients"], "why": "The employers are Ezvuno Labs, formerly Tovqira Labs, and Parzuki Studio; Navquro is a client."}
+      ]
+    },
+    {
+      "id": "g24",
+      "title": "Day jobs and independent businesses on separate tracks",
+      "traps": ["concurrent_slots", "freelance_clients", "exact_day", "precision", "vendor", "import", "spanish"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My only salaried job from 2014 to 2018 was component tester at Drezavo Sensors. In parallel I started my own freelance lettering business, Vuqeni Atelier, in 2016, and it is still running.",
+          "written": "2018-12-28",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Drezavo Sensors", "org": "Drezavo Sensors", "relation": "employer"}, {"surface": "Vuqeni Atelier", "org": "Vuqeni Atelier", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Drezavo Sensors", "kind": "employee", "title": "component tester", "status": "former", "polarity": "positive", "start": "2014", "end": "2018", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Vuqeni Atelier", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2016", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a travel guide from Rovzaki Publishing for my holiday.",
+          "written": "2019-06-20",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Rovzaki Publishing", "org": "Rovzaki Publishing", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My next salaried employer after Drezavo Sensors was Kelzuri Motion, where I worked as a test scheduler from 2019 to 2021. I know only the years, not the start or end day. I closed Vuqeni Atelier in 2020.",
+          "written": "2021-12-30",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Drezavo Sensors", "org": "Drezavo Sensors", "relation": "employer"}, {"surface": "Kelzuri Motion", "org": "Kelzuri Motion", "relation": "employer"}, {"surface": "Vuqeni Atelier", "org": "Vuqeni Atelier", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Kelzuri Motion", "kind": "employee", "title": "test scheduler", "status": "former", "polarity": "positive", "start": "2019", "end": "2021", "time": null, "preceded_by": "Drezavo Sensors", "followed_by": null, "also_called": null},
+            {"org": "Vuqeni Atelier", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My neighbor Ren at Kelzuri Motion helped carry a sofa upstairs.",
+          "written": "2022-08-09",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Ren", "person": "p1"}],
+          "organizations": [{"surface": "Kelzuri Motion", "org": "Kelzuri Motion", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I launched Saqivo Bureau, my own freelance layout business, in March 2022; I cannot remember the day. It is still active and has been my only work since launch. Rovzaki Publishing was a client in 2023. I have never been employed by Rovzaki Publishing.",
+          "written": "2024-02-15",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Saqivo Bureau", "org": "Saqivo Bureau", "relation": "self_employed"}, {"surface": "Rovzaki Publishing", "org": "Rovzaki Publishing", "relation": "client"}],
+          "jobs": [
+            {"org": "Saqivo Bureau", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "March 2022", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Rovzaki Publishing", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2023", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Rovzaki Publishing", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Saqivo Bureau is still my sole business and sole job. My earlier Vuqeni Atelier business was separate from it, not an earlier name.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Saqivo Bureau", "org": "Saqivo Bureau", "relation": "self_employed"}, {"surface": "Vuqeni Atelier", "org": "Vuqeni Atelier", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Saqivo Bureau", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Vuqeni Atelier", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Drezavo Sensors", "role": "component tester", "start": "2014", "end": "2018", "kind": "employee", "memories": ["m1"]},
+        {"org": "Vuqeni Atelier", "role": "freelance lettering business", "start": "2016", "end": "2020", "kind": "self_employed", "memories": ["m1", "m3", "m6"]},
+        {"org": "Kelzuri Motion", "role": "test scheduler", "start": "2019", "end": "2021", "kind": "employee", "memories": ["m3"]},
+        {"org": "Saqivo Bureau", "role": "freelance layout business", "start": "2022-03", "end": "", "kind": "self_employed", "memories": ["m5", "m6"]},
+        {"org": "Rovzaki Publishing", "role": "layout client", "start": "2023", "end": "2023", "kind": "client", "memories": ["m5"]},
+        {"org": "Rovzaki Publishing", "role": "travel-guide seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "What was my salaried day job in 2017?", "answer_org": "Drezavo Sensors", "traps": ["concurrent_slots", "import"], "why": "Drezavo is explicitly the salaried track; Vuqeni was a parallel business."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "¿Qué negocio de lettering llevaba en 2017?", "answer_org": "Vuqeni Atelier", "traps": ["concurrent_slots", "spanish"], "why": "Vuqeni operated from 2016 to 2020 alongside salaried employment."},
+        {"id": "q3", "class": "decidable", "kind": "in_year", "query": "Which business of mine handled the publishing client in 2023?", "answer_org": "Saqivo Bureau", "traps": ["freelance_clients", "vendor"], "why": "Saqivo was the user's sole work; Rovzaki was its client and had earlier been a personal vendor."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Who was my salaried employer on 2 January 2019?", "answer_org": "", "traps": ["exact_day", "precision", "concurrent_slots"], "why": "Kelzuri's year-only start may be later than January 2; the ongoing freelance business cannot fill the salaried slot."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "Which freelance business was I running on 15 March 2022?", "answer_org": "", "traps": ["exact_day", "precision"], "why": "Saqivo began sometime in March, so its operation on the fifteenth is unconfirmed."},
+        {"id": "q6", "class": "negative", "kind": "vendor", "query": "Who sold me the holiday travel guide?", "answer_org": "Rovzaki Publishing", "traps": ["vendor", "freelance_clients"], "why": "m2 identifies Rovzaki as the seller, independently of its later client relationship."},
+        {"id": "q7", "class": "negative", "kind": "list", "query": "List both my day job and my own business for 2017.", "answer_org": "", "traps": ["concurrent_slots"], "why": "The requested list contains Drezavo Sensors and Vuqeni Atelier."}
+      ]
+    }
+  ]
+}

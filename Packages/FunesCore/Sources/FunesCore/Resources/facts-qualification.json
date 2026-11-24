@@ -22,7 +22,7 @@
       "callGroup": "people",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "b08af3894f34",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 persons: main, astra, mixed, persons, reads r1, r2",
@@ -46,7 +46,7 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
     },
     {
       "predicates": [
@@ -59,7 +59,7 @@
       "callGroup": "work",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "22d054884a30",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 client: mixed, work13, reads r1, r2",
@@ -75,7 +75,7 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
     },
     {
       "predicates": [
@@ -89,7 +89,7 @@
       "callGroup": "work",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "22d054884a30",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 works_at: mixed, work13, reads r1, r2",
@@ -105,7 +105,334 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
+    },
+    {
+      "predicates": [
+        "partner",
+        "parent",
+        "child",
+        "sibling",
+        "other_family",
+        "friend",
+        "manager",
+        "colleague",
+        "care",
+        "other"
+      ],
+      "uses": [
+        "attributes"
+      ],
+      "basis": "",
+      "callGroup": "people",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "b08af3894f34",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13d answers on linked questions (main, astra, busy; P/F/W, 3 samples, blind Opus judge; one sample waived by the author) and Spike G with the feature on (main, astra)",
+      "evidence": [
+        "spikes/people/results-13d/answers-haiku/astra-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/astra-r3.jsonl",
+        "spikes/people/results-13d/answers-haiku/busy-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/busy-r3.jsonl",
+        "spikes/people/results-13d/answers-haiku/main-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/main-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/astra-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/busy-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/main-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/manifest-answers.json",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/astra-F.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/astra-P.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/main-F.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/main-P.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/manifest-spikeg.json",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/scores-13d.json",
+        "spikes/people/results-13d/labels-spikeg-haiku.json",
+        "spikes/people/results-13d/spike-g-haiku/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/main-P.jsonl",
+        "spikes/people/results-13d/waivers-haiku.json"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "claude-code/claude-haiku-5-5"
+      ],
+      "answerPromptVersion": "a13e2-3"
+    },
+    {
+      "predicates": [
+        "partner",
+        "parent",
+        "child",
+        "sibling",
+        "other_family",
+        "friend",
+        "manager",
+        "colleague",
+        "care",
+        "other"
+      ],
+      "uses": [
+        "attributes"
+      ],
+      "basis": "sole_known",
+      "callGroup": "people",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "b08af3894f34",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13d answers on linked questions (main, astra, busy; P/F/W, 3 samples, blind Opus judge; one sample waived by the author) and Spike G with the feature on (main, astra); 13a.2 sole_known ≥ 90%, reads r1, r2",
+      "evidence": [
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/scores.json",
+        "spikes/people/results-13d/answers-haiku/astra-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/astra-r3.jsonl",
+        "spikes/people/results-13d/answers-haiku/busy-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/busy-r3.jsonl",
+        "spikes/people/results-13d/answers-haiku/main-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-haiku/main-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/astra-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/busy-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/main-r3.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/manifest-answers.json",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/astra-F.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/astra-P.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/main-F.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/main-P.jsonl",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku/manifest-spikeg.json",
+        "spikes/people/results-13d/gates/claude-code_claude-haiku-5-5/scores-13d.json",
+        "spikes/people/results-13d/labels-spikeg-haiku.json",
+        "spikes/people/results-13d/spike-g-haiku/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku/main-P.jsonl",
+        "spikes/people/results-13d/waivers-haiku.json"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "claude-code/claude-haiku-5-5"
+      ],
+      "answerPromptVersion": "a13e2-3"
+    },
+    {
+      "predicates": [
+        "works_at"
+      ],
+      "uses": [
+        "timeline"
+      ],
+      "basis": "",
+      "callGroup": "work",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "22d054884a30",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13e.2 timeline gate (ADR-0032 decision 9, amended 2026-11-21): a blind set by GPT-6-Astra (24 stories), one recorded live read, P/R answers judged blind by Opus and GPT-6-Astra with adjudication, 1 sample(s) of R; Spike G with the rows on; the facts behind the rows; waived by the author (2026-11-24): owed_checks (owed_skipped 2), marking (unmarked_inferred 1)",
+      "evidence": [
+        "spikes/people/fixtures/gate-13e2/fillers.json",
+        "spikes/people/fixtures/gate-13e2/stories.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl",
+        "spikes/people/results-13d/spike-g-haiku-timeline/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku-timeline/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-haiku-timeline/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-haiku-timeline/main-P.jsonl",
+        "spikes/people/results-13e2/answers-haiku/adjudicated.jsonl",
+        "spikes/people/results-13e2/answers-haiku/answers.jsonl",
+        "spikes/people/results-13e2/answers-haiku/judge-astra.jsonl",
+        "spikes/people/results-13e2/answers-haiku/judge-opus.jsonl",
+        "spikes/people/results-13e2/answers-haiku/manifest.json",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/answers.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/manifest.json",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/answers-haiku/mode",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/replay-read-r4/manifest.json",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/replay-read-r4/stories.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku-timeline/astra-F.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku-timeline/astra-P.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku-timeline/main-F.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku-timeline/main-P.jsonl",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/replay/spike-g-haiku-timeline/manifest-spikeg.json",
+        "spikes/people/results-13e2/gates/claude-code_claude-haiku-5-5/scores-13e2-haiku.json",
+        "spikes/people/results-13e2/labels-corrected.json",
+        "spikes/people/results-13e2/read-r4/calls.jsonl",
+        "spikes/people/results-13e2/read-r4/manifest.json",
+        "spikes/people/results-13e2/read-r4/stories.jsonl",
+        "spikes/people/results-13e2/relabels.jsonl",
+        "spikes/people/results-13e2/waivers.json"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "claude-code/claude-haiku-5-5"
+      ],
+      "answerPromptVersion": "a13e2-3"
+    },
+    {
+      "predicates": [
+        "partner",
+        "parent",
+        "child",
+        "sibling",
+        "other_family",
+        "friend",
+        "manager",
+        "colleague",
+        "care",
+        "other"
+      ],
+      "uses": [
+        "attributes"
+      ],
+      "basis": "",
+      "callGroup": "people",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "b08af3894f34",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13d answers on linked questions (main, astra, busy; P/F/W, 3 samples, blind Opus judge; one sample waived by the author) and Spike G with the feature on (main, astra)",
+      "evidence": [
+        "spikes/people/results-13d/answers-terra/astra-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/astra-r3.jsonl",
+        "spikes/people/results-13d/answers-terra/busy-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/busy-r3.jsonl",
+        "spikes/people/results-13d/answers-terra/main-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/main-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/astra-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/busy-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/main-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/manifest-answers.json",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/astra-F.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/astra-P.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/main-F.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/main-P.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/manifest-spikeg.json",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/scores-13d.json",
+        "spikes/people/results-13d/labels-spikeg-terra.json",
+        "spikes/people/results-13d/spike-g-terra/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-terra/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra/main-P.jsonl",
+        "spikes/people/results-13d/waivers-terra.json"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "codex/gpt-5.6-terra"
+      ],
+      "answerPromptVersion": "a13e2-3"
+    },
+    {
+      "predicates": [
+        "partner",
+        "parent",
+        "child",
+        "sibling",
+        "other_family",
+        "friend",
+        "manager",
+        "colleague",
+        "care",
+        "other"
+      ],
+      "uses": [
+        "attributes"
+      ],
+      "basis": "sole_known",
+      "callGroup": "people",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "b08af3894f34",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13d answers on linked questions (main, astra, busy; P/F/W, 3 samples, blind Opus judge; one sample waived by the author) and Spike G with the feature on (main, astra); 13a.2 sole_known ≥ 90%, reads r1, r2",
+      "evidence": [
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/scores.json",
+        "spikes/people/results-13d/answers-terra/astra-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/astra-r3.jsonl",
+        "spikes/people/results-13d/answers-terra/busy-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/busy-r3.jsonl",
+        "spikes/people/results-13d/answers-terra/main-r3-judge.jsonl",
+        "spikes/people/results-13d/answers-terra/main-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/astra-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/busy-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/main-r3.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/answers-terra/manifest-answers.json",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/astra-F.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/astra-P.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/main-F.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/main-P.jsonl",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/replay/spike-g-terra/manifest-spikeg.json",
+        "spikes/people/results-13d/gates/codex_gpt-5.6-terra/scores-13d.json",
+        "spikes/people/results-13d/labels-spikeg-terra.json",
+        "spikes/people/results-13d/spike-g-terra/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-terra/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra/main-P.jsonl",
+        "spikes/people/results-13d/waivers-terra.json"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "codex/gpt-5.6-terra"
+      ],
+      "answerPromptVersion": "a13e2-3"
+    },
+    {
+      "predicates": [
+        "works_at"
+      ],
+      "uses": [
+        "timeline"
+      ],
+      "basis": "",
+      "callGroup": "work",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=3",
+      "promptVersion": "22d054884a30",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13e.2 timeline gate (ADR-0032 decision 9, amended 2026-11-21): a blind set by GPT-6-Astra (24 stories), one recorded live read, P/R answers judged blind by Opus and GPT-6-Astra with adjudication, 1 sample(s) of R; Spike G with the rows on; the facts behind the rows",
+      "evidence": [
+        "spikes/people/fixtures/gate-13e2/fillers.json",
+        "spikes/people/fixtures/gate-13e2/stories.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl",
+        "spikes/people/results-13d/spike-g-terra-timeline/astra-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra-timeline/astra-P.jsonl",
+        "spikes/people/results-13d/spike-g-terra-timeline/main-F.jsonl",
+        "spikes/people/results-13d/spike-g-terra-timeline/main-P.jsonl",
+        "spikes/people/results-13e2/answers-terra/adjudicated.jsonl",
+        "spikes/people/results-13e2/answers-terra/answers.jsonl",
+        "spikes/people/results-13e2/answers-terra/judge-astra.jsonl",
+        "spikes/people/results-13e2/answers-terra/judge-opus.jsonl",
+        "spikes/people/results-13e2/answers-terra/manifest.json",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/answers-terra/answers.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/answers-terra/manifest.json",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/answers-terra/mode",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/replay-read-r4/manifest.json",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/replay-read-r4/stories.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/spike-g-terra-timeline/astra-F.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/spike-g-terra-timeline/astra-P.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/spike-g-terra-timeline/main-F.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/spike-g-terra-timeline/main-P.jsonl",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/replay/spike-g-terra-timeline/manifest-spikeg.json",
+        "spikes/people/results-13e2/gates/codex_gpt-5.6-terra/scores-13e2-terra.json",
+        "spikes/people/results-13e2/labels-corrected.json",
+        "spikes/people/results-13e2/read-r4/calls.jsonl",
+        "spikes/people/results-13e2/read-r4/manifest.json",
+        "spikes/people/results-13e2/read-r4/stories.jsonl",
+        "spikes/people/results-13e2/relabels.jsonl"
+      ],
+      "recordedAt": "2026-11-24",
+      "answerModels": [
+        "codex/gpt-5.6-terra"
+      ],
+      "answerPromptVersion": "a13e2-3"
     }
   ]
 }

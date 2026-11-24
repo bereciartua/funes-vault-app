@@ -22,6 +22,7 @@ import Testing
 /// a bridges record needs its own run once a timeline record exists.
 ///
 /// Options: `engine=haiku|terra`, `sets=main,astra,busy`, `arms=P,F,W`, `reps=3` (Spike G: 1), `only=s01,wq02`,
+/// `timeline=1` (Spike G only: F is 13e.2's timeline gate arm R, written to `spike-g-<engine>-timeline/`),
 /// `index=keyword` (default bge-small, as Spike H measured), `dry=1`. A dry run sends nothing: it counts the calls a live
 /// run would make. A live run also needs `FUNES_ANSWER_GATE_LIVE=1`, set only with the author's go-ahead. Responses are
 /// cached in `results-13d/cache-<engine>/` (not committed), so a stopped run resumes and identical requests are asked once.
@@ -93,6 +94,8 @@ import Testing
         let cache = Self.out.appending(path: "cache-\(engine)")
         let model = GateModel(base: base, id: base?.id ?? (engine == "terra" ? "codex" : "claude-code"),
                               modelID: base?.modelID ?? (engine == "terra" ? "gpt-5.6-terra" : "haiku"), cache: cache)
+        // 13e.2's Spike G run with the rows on: a failure replays as that failure.
+        model.cacheErrors = o["timeline"] == "1"
         let embeddings = o["index"] != "keyword"
         if embeddings { try #require(Fixtures.modelAvailable, Fixtures.modelMissing) }
         let only = Set((o["only"] ?? "").split(separator: ",").map(String.init))
@@ -105,7 +108,7 @@ import Testing
         case "spikeg":
             (summary, written) = try await spikeG(engine: engine, model: model, sets: o["sets"]?.split(separator: ",").map(String.init),
                                        arms: Self.arms(o["arms"], default: [.plain, .facts]), reps: Int(o["reps"] ?? "1") ?? 1, only: only,
-                                       embeddings: embeddings, dry: dry)
+                                       embeddings: embeddings, dry: dry, timeline: o["timeline"] == "1")
         default:
             Issue.record("gate= answers or spikeg")
             return
@@ -276,8 +279,9 @@ import Testing
          "spikes/people/results-search/backfill-r3.json"),
     ]
 
+    /// `timeline`: F is the timeline gate's arm R (13e.2: Spike G's gates with the rows and checks on, decision 9).
     func spikeG(engine: String, model: GateModel, sets: [String]?, arms: [AnswerGate.Arm], reps: Int, only: Set<String>,
-                embeddings: Bool, dry: Bool) async throws -> ([String], [URL]) {
+                embeddings: Bool, dry: Bool, timeline: Bool = false) async throws -> ([String], [URL]) {
         var written: [URL] = []
         var summary = ["# 13d answer gate: Spike G with the feature on (\(engine))", ""]
         for s in Self.spikeGSets where sets?.contains(s.name) ?? true {
@@ -291,7 +295,8 @@ import Testing
             var lines = 0
             for arm in arms where arm != .wrong {
                 let svc = SearchService(store: env.vault.store, indexer: env.indexer)
-                svc.facts = AnswerGate.config(arm, uses: uses)
+                svc.facts = timeline && arm != .plain ? FactsTimelineGateTests.config("R", user: SearchGate.shipped.userAliases)
+                    : AnswerGate.config(arm, uses: uses)
                 var records: [[String: Any]] = []
                 for q in try AnswerGate.questions(SearchGate.repo.appending(path: s.questions)) {
                     if !only.isEmpty, !only.contains(q.id) { continue }
@@ -307,7 +312,7 @@ import Testing
                 }
                 lines += records.count
                 if let root = Self.records {
-                    let dir = root.appending(path: "spike-g-\(engine)")
+                    let dir = root.appending(path: "spike-g-\(engine)" + (timeline ? "-timeline" : ""))
                     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
                     let file = dir.appending(path: "\(s.name)-\(arm.rawValue)\(only.isEmpty ? "" : "-only").jsonl")
                     try AnswerGate.jsonl(records).write(to: file, atomically: true, encoding: .utf8)

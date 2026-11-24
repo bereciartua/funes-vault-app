@@ -1095,6 +1095,7 @@ def fact_episodes(f):
                 if open_ and ended and r["a"]["trust"] == "trusted":
                     for ep in open_:
                         ep["uncertain"] = min(ep.get("uncertain") or r["W"], r["W"])   # it may have ended by then
+                        ep.setdefault("denials", []).append(r["W"])
                     target = ended[-1]
                     r = {**r, "bound": None}
                 elif ended:
@@ -1129,9 +1130,12 @@ def fact_episodes(f):
             lo = max([stated.lo if stated else MIN_DAY] + [h for h in held if h <= min(bounds)])
             end = Range(lo, min(bounds), "bound")      # ended after the last day a memory said it held
         vals = [r["a"].get("qualifiers", {}).get(slot_key) for r in ep["rows"] if slot_key and r["a"].get("qualifiers", {}).get(slot_key)]
+        # A memory saying it still held, written on or after the last "no longer" that left it open, settles it (13e.2's
+        # fix round): that denial was about an earlier stint.
+        uncertain = bool(ep.get("uncertain")) and end is None and not (held and max(held) >= max(ep.get("denials") or [MIN_DAY]))
         out.append(Episode(f.entity, f.type, start, end, cs, ce, st_tr, en_tr, trusted, max(held) if held else None, former,
                            Counter(vals).most_common(1)[0][0] if vals else "_", False, [r["a"] for r in ep["rows"]],
-                           uncertain=bool(ep.get("uncertain")) and end is None, uncertain_from=ep.get("uncertain") or None))
+                           uncertain=uncertain, uncertain_from=ep.get("uncertain") if uncertain else None))
     if not out:
         out.append(Episode(f.entity, f.type, trusted=f.trusted))
     return sorted(out, key=lambda e: e.sort_key())

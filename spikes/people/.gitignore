@@ -2,3 +2,4 @@
 results-search/**/scores-*.json
 # The 13d answer gate's response cache (FactsAnswerLiveTests): the records it writes are kept, the cache isn't.
 results-13d/cache-*/
+results-13e2/cache-*/

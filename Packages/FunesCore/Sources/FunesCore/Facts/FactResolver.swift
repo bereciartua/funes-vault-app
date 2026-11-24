@@ -47,12 +47,14 @@ extension FactsGraph {
         let owners = lang.owners.map(FactsText.escape)
             + userAliases.sorted { $0.count > $1.count }.map { FactsText.escape($0) + "['’]s" }
         let mods = "(?:" + lang.modifiers.map(FactsText.escape).joined(separator: "|") + ")"
-        let prefixes = lang.formerPrefixes.map { FactsText.escape($0).replacingOccurrences(of: " ", with: "\\s+") }
+        // On one line (13e.2): a title ending "My" over a body opening "Sister Alice called" is no phrase.
+        let sp = Self.lineSpace
+        let prefixes = lang.formerPrefixes.map { FactsText.escape($0).replacingOccurrences(of: " ", with: sp) }
             .joined(separator: "|")
         let fw = lang.functionWords.map(FactsText.escape).joined(separator: "|")
         let role = FactsText.regex(
-            "\\b(" + owners.joined(separator: "|") + ")\\s+((?:" + mods + "\\s+)*)"
-            + "((?:(?!(?:" + fw + ")\\b)[^\\W\\d_][\\w-]*\\s+){0,2}?)(" + prefixes + ")?("
+            "\\b(" + owners.joined(separator: "|") + ")" + sp + "((?:" + mods + sp + ")*)"
+            + "((?:(?!(?:" + fw + ")\\b)[^\\W\\d_][\\w-]*" + sp + "){0,2}?)(" + prefixes + ")?("
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
         let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
         let joiners = lang.dateJoiners.map(FactsText.escape).joined(separator: "|")
@@ -203,7 +205,11 @@ extension FactsGraph {
         return out
     }
 
-    private static let namePattern = "[A-ZÁÉÍÓÚÑ][\\w'-]+(?:\\s+[A-ZÁÉÍÓÚÑ][\\w'-]+)?"
+    /// One or two capitalised words; never across a line break (13e.2): a memory's title line ends before its body, so
+    /// "Dinner" over "Max is my boyfriend" pairs Max, not "Dinner Max".
+    /// Whitespace within a line (spaces, tabs, no-break and thin spaces), never a line break.
+    private static let lineSpace = "[ \\t\\u00A0\\u2009\\u202F]+"
+    private static let namePattern = "[A-ZÁÉÍÓÚÑ][\\w'-]+(?:" + lineSpace + "[A-ZÁÉÍÓÚÑ][\\w'-]+)?"
     private static let possessive = FactsText.regex("['’]s$")
 
     /// A name the text ties to the phrase, by the registry's first-person pair templates ("Maria is my sister", "my
@@ -213,11 +219,13 @@ extension FactsGraph {
         let verbs = lang.pairBefore.map(FactsText.escape).joined(separator: "|")
         let advs = lang.pairAdverbs.map(FactsText.escape).joined(separator: "|")
         let after = lang.pairAfter.map(FactsText.escape).joined(separator: "|")
+        // On the phrase's line only (13e.2): "My sister\nAlice is my manager" pairs Alice with her manager role alone.
+        let sp = Self.lineSpace
         let candidates = [
-            FactsText.first(FactsText.regex("(" + Self.namePattern + ")\\s+(?:" + verbs + ")(?:\\s+(?:" + advs + "))?\\s+$"),
+            FactsText.first(FactsText.regex("(" + Self.namePattern + ")" + sp + "(?:" + verbs + ")(?:" + sp + "(?:" + advs + "))?" + sp + "$"),
                             in: text, from: 0, to: s),
-            FactsText.matchAt(FactsText.regex(",?\\s+(" + Self.namePattern + ")"), in: text, from: e),
-            FactsText.matchAt(FactsText.regex("\\s+(?:" + after + ")\\s+(" + Self.namePattern + ")(?=[\\s.,;:!?]|$)"),
+            FactsText.matchAt(FactsText.regex(",?" + sp + "(" + Self.namePattern + ")"), in: text, from: e),
+            FactsText.matchAt(FactsText.regex(sp + "(?:" + after + ")" + sp + "(" + Self.namePattern + ")(?=[\\s.,;:!?]|$)"),
                               in: text, from: e),
         ]
         let users = Set(userAliases.map { FactsText.fold($0) })

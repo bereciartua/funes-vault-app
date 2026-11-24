@@ -1,0 +1,1067 @@
+{
+  "user_name": "Alex Ríos",
+  "user_aliases": ["Alex"],
+  "stories": [
+    {
+      "id": "g01",
+      "title": "Two visits to Talven",
+      "traps": ["rehire", "undated_order"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My first stint at Talven Dock was from 2013 through 2014, as a dispatch assistant.",
+          "written": "2014-12-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Talven Dock", "org": "Talven Dock", "relation": "employer"}],
+          "jobs": [{"org": "Talven Dock", "kind": "employee", "title": "dispatch assistant", "status": "former", "polarity": "positive", "start": "2013", "end": "2014", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Read a newspaper story about Talven Dock's new loading cranes over breakfast.",
+          "written": "2015-03-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Talven Dock", "org": "Talven Dock", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "After leaving Talven Dock the first time, my next employer was Brindle Arc. I was a scheduling coordinator there from 2015 through 2016.",
+          "written": "2016-12-29",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Talven Dock", "org": "Talven Dock", "relation": "employer"}, {"surface": "Brindle Arc", "org": "Brindle Arc", "relation": "employer"}],
+          "jobs": [{"org": "Talven Dock", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "the first time", "preceded_by": null, "followed_by": "Brindle Arc", "also_called": null}, {"org": "Brindle Arc", "kind": "employee", "title": "scheduling coordinator", "status": "former", "polarity": "positive", "start": "2015", "end": "2016", "time": null, "preceded_by": "Talven Dock", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "I returned to Talven Dock after Brindle Arc. That second stint ran from 2017 through 2018; my title was dispatch lead.",
+          "written": "2018-12-27",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Talven Dock", "org": "Talven Dock", "relation": "employer"}, {"surface": "Brindle Arc", "org": "Brindle Arc", "relation": "employer"}],
+          "jobs": [{"org": "Talven Dock", "kind": "employee", "title": "dispatch lead", "status": "former", "polarity": "positive", "start": "2017", "end": "2018", "time": "second stint", "preceded_by": "Brindle Arc", "followed_by": null, "also_called": null}, {"org": "Brindle Arc", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Talven Dock", "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "My cousin works at Morrowglass and brought a ridiculous office cake to dinner.",
+          "written": "2019-02-08",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Morrowglass", "org": "Morrowglass", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "My next employer after my second departure from Talven Dock was Morrowglass. I joined in 2019 as an operations planner and still work there.",
+          "written": "2026-10-20",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Talven Dock", "org": "Talven Dock", "relation": "employer"}, {"surface": "Morrowglass", "org": "Morrowglass", "relation": "employer"}],
+          "jobs": [{"org": "Talven Dock", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "second departure", "preceded_by": null, "followed_by": "Morrowglass", "also_called": null}, {"org": "Morrowglass", "kind": "employee", "title": "operations planner", "status": "current", "polarity": "positive", "start": "2019", "end": null, "time": null, "preceded_by": "Talven Dock", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Talven Dock", "role": "dispatch assistant", "start": "2013", "end": "2014", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Brindle Arc", "role": "scheduling coordinator", "start": "2015", "end": "2016", "kind": "employee", "memories": ["m3", "m4"]},
+        {"org": "Talven Dock", "role": "dispatch lead", "start": "2017", "end": "2018", "kind": "employee", "memories": ["m4", "m6"]},
+        {"org": "Morrowglass", "role": "operations planner", "start": "2019", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Where was I just before I went back to Talven Dock?", "answer_org": "Brindle Arc", "traps": ["rehire"], "why": "The second Talven stint explicitly followed Brindle Arc."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "Who hired me after my first Talven Dock stint?", "answer_org": "Brindle Arc", "traps": ["rehire", "undated_order"], "why": "The user's note names Brindle Arc as the next employer after the first departure."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "What's my current employer?", "answer_org": "Morrowglass", "traps": [], "why": "The latest user note explicitly says the Morrowglass job continues."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "Where did I go after Talven Dock?", "answer_org": "", "traps": ["rehire"], "why": "The first departure led to Brindle Arc and the second to Morrowglass; the question does not identify a stint."},
+        {"id": "q5", "class": "undecidable", "kind": "previous", "query": "What was my employer before Talven Dock?", "answer_org": "", "traps": ["rehire"], "why": "Brindle Arc preceded the return, but the employer before the first stint is unrecorded."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my title the second time at Talven Dock?", "answer_org": "", "traps": ["rehire"], "why": "The title was dispatch lead; this asks for a title rather than an organization."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "Where does my cake-bringing cousin work?", "answer_org": "Morrowglass", "traps": [], "why": "The dinner note says the cousin works at Morrowglass."}
+      ]
+    },
+    {
+      "id": "g02",
+      "title": "A return under a new sign",
+      "traps": ["rehire", "rename", "agent_competitor", "untrusted_end"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Sablewick Lab as a records clerk from 2012 through 2013.",
+          "written": "2013-12-30",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Sablewick Lab", "org": "Sablewick Lab", "relation": "employer"}],
+          "jobs": [{"org": "Sablewick Lab", "kind": "employee", "title": "records clerk", "status": "former", "polarity": "positive", "start": "2012", "end": "2013", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My next employer after Sablewick Lab was Orvane Desk. My first stint there was 2014 to 2015, as an account assistant.",
+          "written": "2015-12-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Sablewick Lab", "org": "Sablewick Lab", "relation": "employer"}, {"surface": "Orvane Desk", "org": "Orvane Ledger", "relation": "employer"}],
+          "jobs": [{"org": "Sablewick Lab", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Orvane Desk", "also_called": null}, {"org": "Orvane Desk", "kind": "employee", "title": "account assistant", "status": "former", "polarity": "positive", "start": "2014", "end": "2015", "time": "first stint", "preceded_by": "Sablewick Lab", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m3",
+          "text": "Saw a news photo of Sablewick Lab's roof garden. I want those planters.",
+          "written": "2016-04-19",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Sablewick Lab", "org": "Sablewick Lab", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m4",
+          "text": "After my first departure from Orvane Desk, my next job was at Fenrock Signal, as a billing analyst from 2016 through 2017.",
+          "written": "2017-12-29",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Orvane Desk", "org": "Orvane Ledger", "relation": "employer"}, {"surface": "Fenrock Signal", "org": "Fenrock Signal", "relation": "employer"}],
+          "jobs": [{"org": "Orvane Desk", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "first departure", "preceded_by": null, "followed_by": "Fenrock Signal", "also_called": null}, {"org": "Fenrock Signal", "kind": "employee", "title": "billing analyst", "status": "former", "polarity": "positive", "start": "2016", "end": "2017", "time": null, "preceded_by": "Orvane Desk", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "I returned to Orvane Desk in 2018 immediately after leaving Fenrock Signal. Orvane Desk renamed itself Orvane Ledger in 2020; it is the same employer. I am still there as a senior account analyst.",
+          "written": "2022-06-15",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Orvane Desk", "org": "Orvane Ledger", "relation": "employer"}, {"surface": "Fenrock Signal", "org": "Fenrock Signal", "relation": "employer"}, {"surface": "Orvane Ledger", "org": "Orvane Ledger", "relation": "employer"}],
+          "jobs": [{"org": "Orvane Desk", "kind": "employee", "title": "senior account analyst", "status": "current", "polarity": "positive", "start": "2018", "end": null, "time": null, "preceded_by": "Fenrock Signal", "followed_by": null, "also_called": "Orvane Ledger"}, {"org": "Fenrock Signal", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Orvane Desk", "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "My neighbor works at Pexora Circuit and told me about the office aquarium.",
+          "written": "2023-05-17",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Pexora Circuit", "org": "Pexora Circuit", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m7",
+          "text": "Alex Ríos left Orvane Ledger in 2023 and then joined Pexora Circuit as a finance manager in 2024. The user still works there.",
+          "written": "2026-08-03",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Ríos", "person": "user"}],
+          "organizations": [{"surface": "Orvane Ledger", "org": "Orvane Ledger", "relation": "employer"}, {"surface": "Pexora Circuit", "org": "Pexora Circuit", "relation": "employer"}],
+          "jobs": [{"org": "Orvane Ledger", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2023", "time": null, "preceded_by": null, "followed_by": "Pexora Circuit", "also_called": null}, {"org": "Pexora Circuit", "kind": "employee", "title": "finance manager", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": "Orvane Ledger", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Sablewick Lab", "role": "records clerk", "start": "2012", "end": "2013", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Orvane Ledger", "role": "account assistant", "start": "2014", "end": "2015", "kind": "employee", "memories": ["m2", "m4", "m5"]},
+        {"org": "Fenrock Signal", "role": "billing analyst", "start": "2016", "end": "2017", "kind": "employee", "memories": ["m4", "m5"]},
+        {"org": "Orvane Ledger", "role": "senior account analyst", "start": "2018", "end": "", "kind": "employee", "memories": ["m5"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Employer right before my return to Orvane Desk?", "answer_org": "Fenrock Signal", "traps": ["rehire", "rename"], "why": "The return explicitly followed leaving Fenrock Signal."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "According to my own notes, who do I work for now?", "answer_org": "Orvane Ledger", "traps": ["rename", "agent_competitor", "untrusted_end"], "why": "The trusted current job is Orvane Ledger; the agent cannot end it or replace it."},
+        {"id": "q3", "class": "undecidable", "kind": "before", "query": "Where did I work before Orvane Ledger?", "answer_org": "", "traps": ["rehire", "rename"], "why": "Sablewick Lab preceded the first stint and Fenrock Signal preceded the second; renaming does not select a stint."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "What came after my Orvane Desk job?", "answer_org": "", "traps": ["rehire", "rename", "agent_competitor"], "why": "The first stint has Fenrock Signal as successor, while no trusted successor to the second stint exists."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "Who employed me after my second stint at Orvane Ledger ended?", "answer_org": "", "traps": ["rehire", "agent_competitor", "untrusted_end"], "why": "Only the agent claims that stint ended and that Pexora Circuit followed."},
+        {"id": "q6", "class": "negative", "kind": "someone_else", "query": "Which company has my neighbor's aquarium?", "answer_org": "Pexora Circuit", "traps": ["agent_competitor"], "why": "The user's neighbor works at Pexora Circuit, whose office has the aquarium."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Did I work at Sablewick Lab before Fenrock Signal?", "answer_org": "", "traps": ["import"], "why": "Yes; the trusted notes place Sablewick Lab in 2012–2013 and Fenrock Signal in 2016–2017."}
+      ]
+    },
+    {
+      "id": "g03",
+      "title": "The uncertain 2019 handover",
+      "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was an inventory analyst at Larkspire Loom from 2015 to 2019. I only remember the years.",
+          "written": "2020-01-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Larkspire Loom", "org": "Larkspire Loom", "relation": "employer"}],
+          "jobs": [{"org": "Larkspire Loom", "kind": "employee", "title": "inventory analyst", "status": "former", "polarity": "positive", "start": "2015", "end": "2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My sibling works at Velmora Grid and keeps recommending the nearby sandwich place.",
+          "written": "2020-03-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Velmora Grid", "org": "Velmora Grid", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My forecasting analyst job at Velmora Grid ran from 2019 through 2022. No months or days in my old diary.",
+          "written": "2023-01-04",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Velmora Grid", "org": "Velmora Grid", "relation": "employer"}],
+          "jobs": [{"org": "Velmora Grid", "kind": "employee", "title": "forecasting analyst", "status": "former", "polarity": "positive", "start": "2019", "end": "2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "I cannot remember whether my Larkspire Loom and Velmora Grid jobs overlapped in 2019 or whether there was a break between them.",
+          "written": "2023-01-05",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Larkspire Loom", "org": "Larkspire Loom", "relation": "employer"}, {"surface": "Velmora Grid", "org": "Velmora Grid", "relation": "employer"}],
+          "jobs": [{"org": "Larkspire Loom", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2019", "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Velmora Grid", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2019", "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "Read about Quenstone Atlas sponsoring the riverside benches while waiting for the bus.",
+          "written": "2023-04-16",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Quenstone Atlas", "org": "Quenstone Atlas", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "I joined Quenstone Atlas in 2023 as a demand planner. I still work here.",
+          "written": "2026-10-12",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Quenstone Atlas", "org": "Quenstone Atlas", "relation": "employer"}],
+          "jobs": [{"org": "Quenstone Atlas", "kind": "employee", "title": "demand planner", "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Larkspire Loom", "role": "inventory analyst", "start": "2015", "end": "2019", "kind": "employee", "memories": ["m1", "m4"]},
+        {"org": "Velmora Grid", "role": "forecasting analyst", "start": "2019", "end": "2022", "kind": "employee", "memories": ["m3", "m4"]},
+        {"org": "Quenstone Atlas", "role": "demand planner", "start": "2023", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where was I working in 2017?", "answer_org": "Larkspire Loom", "traps": ["possible_overlap", "same_year_handover", "precision"], "why": "2017 is inside the Larkspire stint and safely before the uncertain 2019 transition."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "My employer in 2020?", "answer_org": "Velmora Grid", "traps": ["same_year_handover", "possible_overlap"], "why": "The uncertain transition occurred in 2019; Velmora covers all of 2020."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "¿Dónde trabajo ahora?", "answer_org": "Quenstone Atlas", "traps": ["spanish"], "why": "The latest capture explicitly says the Quenstone Atlas job continues."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Who was I working for on 15 June 2019?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision"], "why": "Year-only boundaries allow either employer, both, or a break on that day."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Which employer had I already left when I started at Velmora Grid?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "The user explicitly cannot remember whether Larkspire had ended when Velmora began."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my Velmora Grid job title again?", "answer_org": "", "traps": [], "why": "The title was forecasting analyst."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "Where does my sandwich-obsessed sibling work?", "answer_org": "Velmora Grid", "traps": [], "why": "The sandwich note identifies the sibling's employer as Velmora Grid."}
+      ]
+    },
+    {
+      "id": "g04",
+      "title": "March, without the days",
+      "traps": ["rename", "possible_overlap", "exact_day", "precision", "undated_order", "import"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Dovrix Studio as a proofreader immediately before Wrenvale Press. I did not keep the dates.",
+          "written": "2016-11-12",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Dovrix Studio", "org": "Dovrix Studio", "relation": "employer"}, {"surface": "Wrenvale Press", "org": "Wrenvale Paper", "relation": "employer"}],
+          "jobs": [{"org": "Dovrix Studio", "kind": "employee", "title": "proofreader", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Wrenvale Press", "also_called": null}, {"org": "Wrenvale Press", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Dovrix Studio", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My friend at Ixora Beacon sent a photo of the office dog. Excellent ears.",
+          "written": "2018-08-14",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Ixora Beacon", "org": "Ixora Beacon", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I was a production editor at Wrenvale Press from 2016 until March 2019. It renamed itself Wrenvale Paper in 2018, with no change of employer. I do not remember my start month or my last day.",
+          "written": "2019-05-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Wrenvale Press", "org": "Wrenvale Paper", "relation": "employer"}, {"surface": "Wrenvale Paper", "org": "Wrenvale Paper", "relation": "employer"}],
+          "jobs": [{"org": "Wrenvale Press", "kind": "employee", "title": "production editor", "status": "former", "polarity": "positive", "start": "2016", "end": "March 2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Wrenvale Paper"}]
+        },
+        {
+          "id": "m4",
+          "text": "I worked at Ixora Beacon as a copy manager from March 2019 through 2020. I cannot remember whether this overlapped with my Wrenvale Paper job or started after it ended.",
+          "written": "2021-02-17",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ixora Beacon", "org": "Ixora Beacon", "relation": "employer"}, {"surface": "Wrenvale Paper", "org": "Wrenvale Paper", "relation": "employer"}],
+          "jobs": [{"org": "Ixora Beacon", "kind": "employee", "title": "copy manager", "status": "former", "polarity": "positive", "start": "March 2019", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Wrenvale Paper", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "The local paper says Ospen Route funded the new bike racks by the library.",
+          "written": "2022-07-06",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Ospen Route", "org": "Ospen Route", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "Since 2021 I have worked at Ospen Route as a documentation lead, and I am still employed here.",
+          "written": "2026-10-18",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ospen Route", "org": "Ospen Route", "relation": "employer"}],
+          "jobs": [{"org": "Ospen Route", "kind": "employee", "title": "documentation lead", "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Dovrix Studio", "role": "proofreader; immediately before Wrenvale Paper, dates unrecorded", "start": "", "end": "", "kind": "employee", "memories": ["m1"]},
+        {"org": "Wrenvale Paper", "role": "production editor", "start": "2016", "end": "2019-03", "kind": "employee", "memories": ["m1", "m3", "m4"]},
+        {"org": "Ixora Beacon", "role": "copy manager", "start": "2019-03", "end": "2020", "kind": "employee", "memories": ["m4"]},
+        {"org": "Ospen Route", "role": "documentation lead", "start": "2021", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where did I work in 2018, counting the old and new company names as one?", "answer_org": "Wrenvale Paper", "traps": ["rename", "precision"], "why": "The continuous Wrenvale employment covers 2018, and its canonical name is Wrenvale Paper."},
+        {"id": "q2", "class": "decidable", "kind": "before", "query": "¿Qué empresa vino justo antes de Wrenvale Press?", "answer_org": "Dovrix Studio", "traps": ["rename", "undated_order", "import", "spanish"], "why": "The imported first-person note explicitly names Dovrix Studio as the immediate predecessor."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Where was I working on 15 March 2019?", "answer_org": "", "traps": ["possible_overlap", "exact_day", "precision", "rename"], "why": "Both transition boundaries are only known to March, and the user cannot remember whether they overlapped."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Which company had I finished with by my first day at Ixora Beacon?", "answer_org": "", "traps": ["possible_overlap", "rename"], "why": "The notes do not establish whether Wrenvale employment had finished when Ixora began."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "My workplace on January 1, 2016?", "answer_org": "", "traps": ["exact_day", "precision", "rename", "undated_order"], "why": "Wrenvale's start month is unknown and Dovrix has no dates, so that day cannot be assigned."},
+        {"id": "q6", "class": "negative", "kind": "order_yes_no", "query": "Was Dovrix Studio before Wrenvale Paper?", "answer_org": "", "traps": ["rename", "undated_order", "import"], "why": "Yes; the imported note gives that order, and the rename preserves the employer's identity."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "Who funded the library bike racks?", "answer_org": "Ospen Route", "traps": [], "why": "The news note names Ospen Route as the funder, without making this an employment question."}
+      ]
+    },
+    {
+      "id": "g05",
+      "title": "A handover and a later workshop",
+      "traps": ["same_year_handover", "possible_overlap", "exact_day", "gap", "precision"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Cindrel Forge as a process technician from 2017 to 2020. Those years are all I saved.",
+          "written": "2021-01-08",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Cindrel Forge", "org": "Cindrel Forge", "relation": "employer"}],
+          "jobs": [{"org": "Cindrel Forge", "kind": "employee", "title": "process technician", "status": "former", "polarity": "positive", "start": "2017", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "My cousin at Halvex Orchard sent a photo of an unusually round pear.",
+          "written": "2021-09-23",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Halvex Orchard", "org": "Halvex Orchard", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My quality technician job at Halvex Orchard lasted from 2020 through 2023. I cannot remember whether it overlapped with Cindrel Forge or whether I had time off between those jobs.",
+          "written": "2024-01-15",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Halvex Orchard", "org": "Halvex Orchard", "relation": "employer"}, {"surface": "Cindrel Forge", "org": "Cindrel Forge", "relation": "employer"}],
+          "jobs": [{"org": "Halvex Orchard", "kind": "employee", "title": "quality technician", "status": "former", "polarity": "positive", "start": "2020", "end": "2023", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Cindrel Forge", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "After leaving Halvex Orchard, I opened my own repair business, Ternquill Works, in 2024. I run it as a sole trader.",
+          "written": "2024-09-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Halvex Orchard", "org": "Halvex Orchard", "relation": "employer"}, {"surface": "Ternquill Works", "org": "Ternquill Works", "relation": "self_employed"}],
+          "jobs": [{"org": "Halvex Orchard", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Ternquill Works", "also_called": null}, {"org": "Ternquill Works", "kind": "self_employed", "title": "sole trader", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": "Halvex Orchard", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "Read a feature about Cindrel Forge's restored clock tower with my morning tea.",
+          "written": "2025-03-22",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Cindrel Forge", "org": "Cindrel Forge", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "Ternquill Works is still my own full-time business. I have run it continuously since 2024.",
+          "written": "2026-10-22",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ternquill Works", "org": "Ternquill Works", "relation": "self_employed"}],
+          "jobs": [{"org": "Ternquill Works", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Cindrel Forge", "role": "process technician", "start": "2017", "end": "2020", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Halvex Orchard", "role": "quality technician", "start": "2020", "end": "2023", "kind": "employee", "memories": ["m3", "m4"]},
+        {"org": "Ternquill Works", "role": "sole trader", "start": "2024", "end": "", "kind": "self_employed", "memories": ["m4", "m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Employer back in 2018?", "answer_org": "Cindrel Forge", "traps": ["same_year_handover", "possible_overlap"], "why": "2018 falls inside Cindrel employment, before the uncertain transition year."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "¿Dónde trabajaba en 2022?", "answer_org": "Halvex Orchard", "traps": ["same_year_handover", "spanish"], "why": "Halvex covers 2022, after Cindrel's recorded end year."},
+        {"id": "q3", "class": "decidable", "kind": "on_day", "query": "Which business was I running on 15 March 2025?", "answer_org": "Ternquill Works", "traps": ["exact_day", "precision"], "why": "That day is strictly inside the continuously running business begun in 2024."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where was I employed on 6 October 2020?", "answer_org": "", "traps": ["same_year_handover", "possible_overlap", "exact_day", "precision"], "why": "Neither 2020 boundary has a month or day, and overlap or a break is explicitly unresolved."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Which employer had I already left by the time Halvex Orchard hired me?", "answer_org": "", "traps": ["same_year_handover", "possible_overlap", "gap"], "why": "The user cannot establish whether Cindrel ended before or after the Halvex start."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What role did I have at Cindrel Forge?", "answer_org": "", "traps": [], "why": "The role was process technician."},
+        {"id": "q7", "class": "negative", "kind": "first_job", "query": "Was Cindrel Forge my very first job?", "answer_org": "", "traps": [], "why": "The notes do not establish the user's first-ever job; earliest recorded employment is not proof."}
+      ]
+    },
+    {
+      "id": "g06",
+      "title": "A renamed employer and an invented exit",
+      "traps": ["rename", "exact_day", "precision", "agent_competitor", "untrusted_end"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was a laboratory coordinator at Nuvora Lens from 2016 through 2021. I only know the start and end years.",
+          "written": "2022-01-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Nuvora Lens", "org": "Nuvora Prism", "relation": "employer"}],
+          "jobs": [{"org": "Nuvora Lens", "kind": "employee", "title": "laboratory coordinator", "status": "former", "polarity": "positive", "start": "2016", "end": "2021", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Name correction for my old employer: Nuvora Lens became Nuvora Prism in 2018. My employment continued unchanged through the rename.",
+          "written": "2022-01-11",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Nuvora Lens", "org": "Nuvora Prism", "relation": "employer"}, {"surface": "Nuvora Prism", "org": "Nuvora Prism", "relation": "employer"}],
+          "jobs": [{"org": "Nuvora Lens", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2018", "preceded_by": null, "followed_by": null, "also_called": "Nuvora Prism"}]
+        },
+        {
+          "id": "m3",
+          "text": "My sibling works at Zandrel Vault and says the office lift plays bird sounds.",
+          "written": "2022-05-03",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Zandrel Vault", "org": "Zandrel Vault", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m4",
+          "text": "I joined Pellwick Harbor in 2022 as a compliance analyst. This is still my current employer.",
+          "written": "2024-10-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pellwick Harbor", "org": "Pellwick Harbor", "relation": "employer"}],
+          "jobs": [{"org": "Pellwick Harbor", "kind": "employee", "title": "compliance analyst", "status": "current", "polarity": "positive", "start": "2022", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "Read that Nuvora Prism has planted a wildflower strip outside its building.",
+          "written": "2025-05-24",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Nuvora Prism", "org": "Nuvora Prism", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "The user left Pellwick Harbor in 2025 and moved directly to Zandrel Vault as a compliance lead in 2025, where the user remains employed.",
+          "written": "2026-09-14",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pellwick Harbor", "org": "Pellwick Harbor", "relation": "employer"}, {"surface": "Zandrel Vault", "org": "Zandrel Vault", "relation": "employer"}],
+          "jobs": [{"org": "Pellwick Harbor", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2025", "time": null, "preceded_by": null, "followed_by": "Zandrel Vault", "also_called": null}, {"org": "Zandrel Vault", "kind": "employee", "title": "compliance lead", "status": "current", "polarity": "positive", "start": "2025", "end": null, "time": null, "preceded_by": "Pellwick Harbor", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Nuvora Prism", "role": "laboratory coordinator", "start": "2016", "end": "2021", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Pellwick Harbor", "role": "compliance analyst", "start": "2022", "end": "", "kind": "employee", "memories": ["m4"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "on_day", "query": "Who employed me on 15 March 2019? I think the company used to be called Nuvora Lens.", "answer_org": "Nuvora Prism", "traps": ["rename", "exact_day", "precision"], "why": "The day lies strictly inside the trusted 2016–2021 stint, whose canonical employer is Nuvora Prism."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "Current employer, using my own notes?", "answer_org": "Pellwick Harbor", "traps": ["agent_competitor", "untrusted_end"], "why": "The user's current Pellwick job remains open; an agent-only exit cannot close it."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Where was I working on 1 January 2016?", "answer_org": "", "traps": ["exact_day", "precision", "rename"], "why": "A start sometime in 2016 does not establish employment on the year's first day."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "¿En qué empresa estaba el 31 de diciembre de 2021?", "answer_org": "", "traps": ["exact_day", "precision", "rename", "spanish"], "why": "Nuvora's end is known only to 2021, so employment on its last day is unresolved."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "Where did I move after leaving Pellwick Harbor?", "answer_org": "", "traps": ["agent_competitor", "untrusted_end"], "why": "Only the agent claims a Pellwick departure and a subsequent Zandrel job."},
+        {"id": "q6", "class": "negative", "kind": "how_long", "query": "Exactly how many months did I work at Nuvora Prism?", "answer_org": "", "traps": ["rename", "precision"], "why": "An exact month count cannot be computed from start and end years alone."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "Which company does my sibling work for?", "answer_org": "Zandrel Vault", "traps": ["agent_competitor"], "why": "The user's own note identifies Zandrel Vault as the sibling's employer."}
+      ]
+    },
+    {
+      "id": "g07",
+      "title": "A day job and an evening studio",
+      "traps": ["concurrent_slots", "agent_competitor", "untrusted_end", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I started my day job at Arvenholt Systems on 2019-04-08 as a support engineer. I am still employed there.",
+          "written": "2020-06-12",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Arvenholt Systems", "org": "Arvenholt Systems", "relation": "employer"}],
+          "jobs": [{"org": "Arvenholt Systems", "kind": "employee", "title": "support engineer", "status": "current", "polarity": "positive", "start": "2019-04-08", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "I opened my own evening illustration business, Kestrelune Studio, on 2021-02-01. I run it alongside my continuing day job at Arvenholt Systems.",
+          "written": "2021-02-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Kestrelune Studio", "org": "Kestrelune Studio", "relation": "self_employed"}, {"surface": "Arvenholt Systems", "org": "Arvenholt Systems", "relation": "employer"}],
+          "jobs": [{"org": "Kestrelune Studio", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2021-02-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Arvenholt Systems", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m3",
+          "text": "Bought a desk lamp from Pindlewax Supply. The warm setting is perfect for reading.",
+          "written": "2022-11-06",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Pindlewax Supply", "org": "Pindlewax Supply", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m4",
+          "text": "My cousin works at Vexlora Network and brought a spare umbrella when we met for lunch.",
+          "written": "2024-03-17",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Vexlora Network", "org": "Vexlora Network", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Alex Ríos left Arvenholt Systems in 2024 and immediately joined Vexlora Network as a support manager in 2024. This is the user's current day job.",
+          "written": "2025-08-21",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Ríos", "person": "user"}],
+          "organizations": [{"surface": "Arvenholt Systems", "org": "Arvenholt Systems", "relation": "employer"}, {"surface": "Vexlora Network", "org": "Vexlora Network", "relation": "employer"}],
+          "jobs": [{"org": "Arvenholt Systems", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2024", "time": null, "preceded_by": null, "followed_by": "Vexlora Network", "also_called": null}, {"org": "Vexlora Network", "kind": "employee", "title": "support manager", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": "Arvenholt Systems", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "My Arvenholt Systems day job and my own Kestrelune Studio evening business have both continued without a break since their starts. Both are still active.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Arvenholt Systems", "org": "Arvenholt Systems", "relation": "employer"}, {"surface": "Kestrelune Studio", "org": "Kestrelune Studio", "relation": "self_employed"}],
+          "jobs": [{"org": "Arvenholt Systems", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Kestrelune Studio", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Arvenholt Systems", "role": "support engineer; day job", "start": "2019-04-08", "end": "", "kind": "employee", "memories": ["m1", "m2", "m6"]},
+        {"org": "Kestrelune Studio", "role": "owner; evening illustration business", "start": "2021-02-01", "end": "", "kind": "self_employed", "memories": ["m2", "m6"]},
+        {"org": "Pindlewax Supply", "role": "desk lamp vendor", "start": "", "end": "", "kind": "vendor", "memories": ["m3"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "current", "query": "What's my current day-job employer?", "answer_org": "Arvenholt Systems", "traps": ["concurrent_slots", "agent_competitor", "untrusted_end"], "why": "The user confirms Arvenholt remains the day job despite the agent's competing claim."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "Which business of my own was I running in 2023?", "answer_org": "Kestrelune Studio", "traps": ["concurrent_slots"], "why": "The user's evening business began in 2021 and continued without a break."},
+        {"id": "q3", "class": "decidable", "kind": "on_day", "query": "Who employed me at my day job on 15 March 2025?", "answer_org": "Arvenholt Systems", "traps": ["concurrent_slots", "agent_competitor", "untrusted_end", "exact_day"], "why": "The user's continuous Arvenholt employment covers that day; the agent's proposed replacement is untrusted."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "What employer did I join immediately after leaving Arvenholt Systems?", "answer_org": "", "traps": ["agent_competitor", "untrusted_end", "concurrent_slots"], "why": "The user records no departure or successor, and the evening business is a concurrent track."},
+        {"id": "q5", "class": "undecidable", "kind": "previous", "query": "Who was my day-job employer before Arvenholt Systems?", "answer_org": "", "traps": ["concurrent_slots"], "why": "No trusted memory records an earlier day-job employer."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What title did I start with at Arvenholt Systems?", "answer_org": "", "traps": ["agent_competitor"], "why": "The user records the starting title as support engineer."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Where did I buy the lamp with the nice warm setting?", "answer_org": "Pindlewax Supply", "traps": ["vendor"], "why": "Pindlewax Supply sold the desk lamp; it is a vendor, not an employer."}
+      ]
+    },
+    {
+      "id": "g08",
+      "title": "Clients beside an employee role",
+      "traps": ["freelance_clients", "concurrent_slots", "vendor", "exact_day", "precision", "gap"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I started my own freelance design business, Mirrowen Practice, in 2017. It is my ongoing business.",
+          "written": "2018-02-05",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Mirrowen Practice", "org": "Mirrowen Practice", "relation": "self_employed"}],
+          "jobs": [{"org": "Mirrowen Practice", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2017", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a notebook from Nerwick Deskshop for my train sketches.",
+          "written": "2019-03-09",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Nerwick Deskshop", "org": "Nerwick Deskshop", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Elmcrux Foods was my packaging-design client from 2018 to 2020 through my own Mirrowen Practice. I never worked at Elmcrux Foods as an employee.",
+          "written": "2021-01-18",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Elmcrux Foods", "org": "Elmcrux Foods", "relation": "client"}, {"surface": "Mirrowen Practice", "org": "Mirrowen Practice", "relation": "self_employed"}],
+          "jobs": [{"org": "Elmcrux Foods", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": "2018", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Mirrowen Practice", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Elmcrux Foods", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "My friend works at Brelvian Transit and recommended a walking route from the depot to the river.",
+          "written": "2022-06-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Brelvian Transit", "org": "Brelvian Transit", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I was an employee at Brelvian Transit from 2020 through 2024, with the title service designer. I kept running Mirrowen Practice alongside it. I only saved the employment years.",
+          "written": "2025-01-22",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Brelvian Transit", "org": "Brelvian Transit", "relation": "employer"}, {"surface": "Mirrowen Practice", "org": "Mirrowen Practice", "relation": "self_employed"}],
+          "jobs": [{"org": "Brelvian Transit", "kind": "employee", "title": "service designer", "status": "former", "polarity": "positive", "start": "2020", "end": "2024", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Mirrowen Practice", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "Mirrowen Practice has operated continuously since 2017 and is still my own business. Sornwick Health has been its website-design client since 2021 and remains a client. I have never been an employee of Sornwick Health.",
+          "written": "2026-10-21",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Mirrowen Practice", "org": "Mirrowen Practice", "relation": "self_employed"}, {"surface": "Sornwick Health", "org": "Sornwick Health", "relation": "client"}],
+          "jobs": [{"org": "Mirrowen Practice", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2017", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Sornwick Health", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Sornwick Health", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Mirrowen Practice", "role": "owner; freelance design business", "start": "2017", "end": "", "kind": "self_employed", "memories": ["m1", "m3", "m5", "m6"]},
+        {"org": "Elmcrux Foods", "role": "packaging-design client", "start": "2018", "end": "2020", "kind": "client", "memories": ["m3"]},
+        {"org": "Brelvian Transit", "role": "service designer", "start": "2020", "end": "2024", "kind": "employee", "memories": ["m5"]},
+        {"org": "Sornwick Health", "role": "website-design client", "start": "2021", "end": "", "kind": "client", "memories": ["m6"]},
+        {"org": "Nerwick Deskshop", "role": "notebook vendor", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "What was the name of my own business in 2019?", "answer_org": "Mirrowen Practice", "traps": ["freelance_clients", "concurrent_slots"], "why": "Mirrowen Practice was the user's business; Elmcrux Foods was its client."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "Who was my actual employer in 2022, apart from the freelance work?", "answer_org": "Brelvian Transit", "traps": ["freelance_clients", "concurrent_slots"], "why": "The employee role was at Brelvian Transit; Sornwick was a client of the separate business."},
+        {"id": "q3", "class": "undecidable", "kind": "previous", "query": "Who was my employer immediately before Brelvian Transit?", "answer_org": "", "traps": ["freelance_clients", "concurrent_slots"], "why": "No earlier employee role is recorded; the freelance business continued and its client cannot be promoted to employer."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "Which company hired me after Brelvian Transit ended?", "answer_org": "", "traps": ["freelance_clients", "concurrent_slots", "gap"], "why": "No subsequent employee job is recorded; continuing self-employment and client work do not establish a new employer."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "Who was my employer on January 1, 2020?", "answer_org": "", "traps": ["exact_day", "precision", "freelance_clients"], "why": "Brelvian's start is only known to the year, and Elmcrux was a client rather than an employer."},
+        {"id": "q6", "class": "negative", "kind": "list", "query": "List the clients mentioned in my design notes.", "answer_org": "", "traps": ["freelance_clients"], "why": "The listed clients are Elmcrux Foods and Sornwick Health; the answer contains multiple organizations."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "¿Dónde compré el cuaderno para dibujar en el tren?", "answer_org": "Nerwick Deskshop", "traps": ["vendor", "spanish"], "why": "The notebook purchase was from Nerwick Deskshop."}
+      ]
+    },
+    {
+      "id": "g09",
+      "title": "An old ordering note and a study break",
+      "traps": ["import", "undated_order", "gap", "exact_day", "precision"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Yarrowfen Instruments was my employer immediately before Caldris Maps. I was a bench technician at Yarrowfen Instruments. I have lost the dates.",
+          "written": "2019-02-12",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Yarrowfen Instruments", "org": "Yarrowfen Instruments", "relation": "employer"}, {"surface": "Caldris Maps", "org": "Caldris Maps", "relation": "employer"}],
+          "jobs": [{"org": "Yarrowfen Instruments", "kind": "employee", "title": "bench technician", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Caldris Maps", "also_called": null}, {"org": "Caldris Maps", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Yarrowfen Instruments", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Read a short article about Yarrowfen Instruments restoring an old town bell.",
+          "written": "2019-09-04",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Yarrowfen Instruments", "org": "Yarrowfen Instruments", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My mapping technician job at Caldris Maps ran from 2018 through 2020.",
+          "written": "2021-01-16",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Caldris Maps", "org": "Caldris Maps", "relation": "employer"}],
+          "jobs": [{"org": "Caldris Maps", "kind": "employee", "title": "mapping technician", "status": "former", "polarity": "positive", "start": "2018", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m4",
+          "text": "I took an independent study break from 2021-01-01 through 2022-12-31. I held no job, ran no business, and took no clients during that whole interval.",
+          "written": "2023-01-03",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My cousin works at Ulnora Research and recommended the public garden next door.",
+          "written": "2023-03-08",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Ulnora Research", "org": "Ulnora Research", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "My first job after the study break was at Ulnora Research, beginning in 2023. I am still there as a field data coordinator. I have not saved my start month or day.",
+          "written": "2026-10-16",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ulnora Research", "org": "Ulnora Research", "relation": "employer"}],
+          "jobs": [{"org": "Ulnora Research", "kind": "employee", "title": "field data coordinator", "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": "the study break", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Yarrowfen Instruments", "role": "bench technician; immediately before Caldris Maps, dates unrecorded", "start": "", "end": "", "kind": "employee", "memories": ["m1"]},
+        {"org": "Caldris Maps", "role": "mapping technician", "start": "2018", "end": "2020", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Independent study break", "role": "study; no employment, business, or clients", "start": "2021-01-01", "end": "2022-12-31", "kind": "study", "memories": ["m4"]},
+        {"org": "Ulnora Research", "role": "field data coordinator", "start": "2023", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Employer just before Caldris Maps?", "answer_org": "Yarrowfen Instruments", "traps": ["import", "undated_order"], "why": "The imported first-person note explicitly provides the immediate predecessor despite missing dates."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "Where did I go to work after my study break?", "answer_org": "Ulnora Research", "traps": ["gap", "undated_order"], "why": "The user explicitly identifies Ulnora Research as the first job after the break."},
+        {"id": "q3", "class": "decidable", "kind": "in_year", "query": "¿Dónde trabajaba en 2024?", "answer_org": "Ulnora Research", "traps": ["spanish", "gap"], "why": "2024 falls inside the ongoing Ulnora job begun in 2023."},
+        {"id": "q4", "class": "undecidable", "kind": "in_year", "query": "Where was I working in 2015?", "answer_org": "", "traps": ["import", "undated_order"], "why": "Yarrowfen's position before Caldris supplies no calendar dates that establish employment in 2015."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "Who employed me on January 1, 2023?", "answer_org": "", "traps": ["gap", "exact_day", "precision"], "why": "The study break had ended, but the Ulnora start could be any later day in 2023."},
+        {"id": "q6", "class": "negative", "kind": "first_job", "query": "What was my first-ever job?", "answer_org": "", "traps": ["import", "undated_order"], "why": "Yarrowfen is only the earliest recorded employer; no memory establishes it as the first-ever job."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Did I work at Yarrowfen Instruments before Caldris Maps?", "answer_org": "", "traps": ["import", "undated_order"], "why": "Yes; the imported note explicitly states that order."}
+      ]
+    },
+    {
+      "id": "g10",
+      "title": "El archivo cambió de nombre",
+      "traps": ["spanish", "rename", "undated_order", "import", "agent_competitor", "exact_day"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Trabajé como corrector de pruebas en Solvren Taller justo antes de entrar en Brumalia Archivo. No guardé las fechas.",
+          "written": "2019-10-07",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Solvren Taller", "org": "Solvren Taller", "relation": "employer"}, {"surface": "Brumalia Archivo", "org": "Brumalia Datos", "relation": "employer"}],
+          "jobs": [{"org": "Solvren Taller", "kind": "employee", "title": "corrector de pruebas", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Brumalia Archivo", "also_called": null}, {"org": "Brumalia Archivo", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Solvren Taller", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "Mi familiar trabaja en Draxelia Sur y me contó que hay una biblioteca de intercambio en la oficina.",
+          "written": "2020-06-14",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Draxelia Sur", "org": "Draxelia Sur", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Mi empleo en Brumalia Archivo fue de 2019 a 2022, con el puesto de analista documental. En 2021 la empresa pasó a llamarse Brumalia Datos; fue solo un cambio de nombre, sin interrumpir mi empleo.",
+          "written": "2023-02-11",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Brumalia Archivo", "org": "Brumalia Datos", "relation": "employer"}, {"surface": "Brumalia Datos", "org": "Brumalia Datos", "relation": "employer"}],
+          "jobs": [{"org": "Brumalia Archivo", "kind": "employee", "title": "analista documental", "status": "former", "polarity": "positive", "start": "2019", "end": "2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Brumalia Datos"}]
+        },
+        {
+          "id": "m4",
+          "text": "Leí que Cevrano Norte donó árboles al parque del barrio.",
+          "written": "2024-04-18",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Cevrano Norte", "org": "Cevrano Norte", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Después de dejar Brumalia Datos, mi siguiente empleo fue en Cevrano Norte. Entré en 2023 como especialista en documentación y sigo trabajando allí.",
+          "written": "2026-10-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Brumalia Datos", "org": "Brumalia Datos", "relation": "employer"}, {"surface": "Cevrano Norte", "org": "Cevrano Norte", "relation": "employer"}],
+          "jobs": [{"org": "Brumalia Datos", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Cevrano Norte", "also_called": null}, {"org": "Cevrano Norte", "kind": "employee", "title": "especialista en documentación", "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": "Brumalia Datos", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "Alex Ríos trabajó en Draxelia Sur durante 2014 como auxiliar de archivo, antes de Solvren Taller.",
+          "written": "2026-10-24",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Ríos", "person": "user"}],
+          "organizations": [{"surface": "Draxelia Sur", "org": "Draxelia Sur", "relation": "employer"}, {"surface": "Solvren Taller", "org": "Solvren Taller", "relation": "employer"}],
+          "jobs": [{"org": "Draxelia Sur", "kind": "employee", "title": "auxiliar de archivo", "status": "former", "polarity": "positive", "start": null, "end": null, "time": "2014", "preceded_by": null, "followed_by": "Solvren Taller", "also_called": null}, {"org": "Solvren Taller", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Draxelia Sur", "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Solvren Taller", "role": "corrector de pruebas; immediately before Brumalia Datos, dates unrecorded", "start": "", "end": "", "kind": "employee", "memories": ["m1"]},
+        {"org": "Brumalia Datos", "role": "analista documental", "start": "2019", "end": "2022", "kind": "employee", "memories": ["m1", "m3", "m5"]},
+        {"org": "Cevrano Norte", "role": "especialista en documentación", "start": "2023", "end": "", "kind": "employee", "memories": ["m5"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "¿Dónde trabajé justo antes de Brumalia Datos?", "answer_org": "Solvren Taller", "traps": ["spanish", "rename", "undated_order", "import"], "why": "The imported note names Solvren as the immediate predecessor of the same employer under its old name."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "mi empresa actual?", "answer_org": "Cevrano Norte", "traps": ["spanish"], "why": "The user's recent capture explicitly says the Cevrano employment continues."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "¿En qué empresa trabajaba en 2014?", "answer_org": "", "traps": ["spanish", "agent_competitor", "undated_order"], "why": "Only the agent assigns an employer to 2014; Solvren's trusted ordering supplies no year."},
+        {"id": "q4", "class": "undecidable", "kind": "previous", "query": "Who employed me immediately before Solvren Taller?", "answer_org": "", "traps": ["agent_competitor", "undated_order"], "why": "The user's memories give no predecessor, and the agent's claimed earlier job is untrusted."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "¿Dónde trabajaba el 1 de enero de 2019?", "answer_org": "", "traps": ["spanish", "rename", "exact_day", "precision", "undated_order"], "why": "Brumalia's start year and Solvren's undated precedence do not assign that exact day."},
+        {"id": "q6", "class": "negative", "kind": "order_yes_no", "query": "¿Solvren Taller fue antes que Brumalia Archivo?", "answer_org": "", "traps": ["spanish", "undated_order", "import"], "why": "Sí; la nota importada afirma ese orden explícitamente."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "¿Dónde trabaja mi familiar que tiene biblioteca en la oficina?", "answer_org": "Draxelia Sur", "traps": ["spanish", "agent_competitor"], "why": "La captura personal identifica Draxelia Sur como la empresa del familiar."}
+      ]
+    },
+    {
+      "id": "g11",
+      "title": "A return while the craft business continues",
+      "traps": ["rehire", "concurrent_slots", "exact_day", "precision", "gap"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My first stint at Fennora Devices was from 2012 to 2014 as a repair technician.",
+          "written": "2014-12-29",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Fennora Devices", "org": "Fennora Devices", "relation": "employer"}],
+          "jobs": [{"org": "Fennora Devices", "kind": "employee", "title": "repair technician", "status": "former", "polarity": "positive", "start": "2012", "end": "2014", "time": "first stint", "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "After my first departure from Fennora Devices, my next work was running my own business, Quillmere Craft, which I opened in 2015. I still run it.",
+          "written": "2016-08-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Fennora Devices", "org": "Fennora Devices", "relation": "employer"}, {"surface": "Quillmere Craft", "org": "Quillmere Craft", "relation": "self_employed"}],
+          "jobs": [{"org": "Fennora Devices", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "first departure", "preceded_by": null, "followed_by": "Quillmere Craft", "also_called": null}, {"org": "Quillmere Craft", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2015", "end": null, "time": null, "preceded_by": "Fennora Devices", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m3",
+          "text": "My friend works at Rovelin Parks and found my missing scarf after our picnic.",
+          "written": "2018-05-28",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Rovelin Parks", "org": "Rovelin Parks", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m4",
+          "text": "I returned to Fennora Devices for a second stint from 2019 to 2021 as a repair supervisor. I kept Quillmere Craft running as my side business throughout.",
+          "written": "2022-02-06",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Fennora Devices", "org": "Fennora Devices", "relation": "employer"}, {"surface": "Quillmere Craft", "org": "Quillmere Craft", "relation": "self_employed"}],
+          "jobs": [{"org": "Fennora Devices", "kind": "employee", "title": "repair supervisor", "status": "former", "polarity": "positive", "start": "2019", "end": "2021", "time": "second stint", "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Quillmere Craft", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m5",
+          "text": "Read a news item about Fennora Devices sponsoring a public chess table.",
+          "written": "2023-07-13",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Fennora Devices", "org": "Fennora Devices", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "My next employee job after the second Fennora Devices stint was at Rovelin Parks, beginning in 2022 as a maintenance coordinator. I still hold that day job and have continuously run my own Quillmere Craft since 2015. I do not know the month or day I joined Rovelin Parks.",
+          "written": "2026-10-25",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Fennora Devices", "org": "Fennora Devices", "relation": "employer"}, {"surface": "Rovelin Parks", "org": "Rovelin Parks", "relation": "employer"}, {"surface": "Quillmere Craft", "org": "Quillmere Craft", "relation": "self_employed"}],
+          "jobs": [{"org": "Fennora Devices", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "second Fennora Devices stint", "preceded_by": null, "followed_by": "Rovelin Parks", "also_called": null}, {"org": "Rovelin Parks", "kind": "employee", "title": "maintenance coordinator", "status": "current", "polarity": "positive", "start": "2022", "end": null, "time": null, "preceded_by": "Fennora Devices", "followed_by": null, "also_called": null}, {"org": "Quillmere Craft", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2015", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Fennora Devices", "role": "repair technician", "start": "2012", "end": "2014", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Quillmere Craft", "role": "owner; later a side business", "start": "2015", "end": "", "kind": "self_employed", "memories": ["m2", "m4", "m6"]},
+        {"org": "Fennora Devices", "role": "repair supervisor", "start": "2019", "end": "2021", "kind": "employee", "memories": ["m4", "m6"]},
+        {"org": "Rovelin Parks", "role": "maintenance coordinator; day job", "start": "2022", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Who employed me in my day job in 2020?", "answer_org": "Fennora Devices", "traps": ["rehire", "concurrent_slots"], "why": "2020 lies inside the second Fennora employee stint, alongside the separate business."},
+        {"id": "q2", "class": "decidable", "kind": "in_year", "query": "¿Cómo se llamaba mi negocio propio en 2020?", "answer_org": "Quillmere Craft", "traps": ["concurrent_slots", "spanish"], "why": "Quillmere continued as the user's own business during the second Fennora stint."},
+        {"id": "q3", "class": "decidable", "kind": "after", "query": "Next employer after my second time at Fennora Devices?", "answer_org": "Rovelin Parks", "traps": ["rehire", "concurrent_slots"], "why": "The user explicitly identifies Rovelin as the next employee job after the second stint."},
+        {"id": "q4", "class": "undecidable", "kind": "after", "query": "Where did I work after leaving Fennora Devices?", "answer_org": "", "traps": ["rehire", "concurrent_slots"], "why": "The first departure led to running Quillmere, while the second led to Rovelin; the stint is unspecified."},
+        {"id": "q5", "class": "undecidable", "kind": "on_day", "query": "Who was my day-job employer on 1 January 2022?", "answer_org": "", "traps": ["exact_day", "precision", "gap", "concurrent_slots"], "why": "Rovelin's start could be later in 2022; the ongoing side business cannot fill an unknown employee slot."},
+        {"id": "q6", "class": "negative", "kind": "list", "query": "List all the employers and businesses in these notes, counting repeats once.", "answer_org": "", "traps": ["rehire", "concurrent_slots"], "why": "The distinct organizations are Fennora Devices, Quillmere Craft, and Rovelin Parks."},
+        {"id": "q7", "class": "negative", "kind": "title_in_job", "query": "What was my title when I went back to Fennora Devices?", "answer_org": "", "traps": ["rehire"], "why": "The second-stint title was repair supervisor."}
+      ]
+    },
+    {
+      "id": "g12",
+      "title": "The water job that never had a trusted end",
+      "traps": ["same_year_handover", "possible_overlap", "agent_competitor", "untrusted_end", "exact_day", "import", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Ashverin Media as an audience analyst from 2016 through 2020. I saved years, not months or days.",
+          "written": "2021-01-12",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Ashverin Media", "org": "Ashverin Media", "relation": "employer"}],
+          "jobs": [{"org": "Ashverin Media", "kind": "employee", "title": "audience analyst", "status": "former", "polarity": "positive", "start": "2016", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m2",
+          "text": "I joined Pelmora Water in 2020 as a reporting analyst and still work there. I cannot remember whether my Ashverin Media employment had ended when this job began; there may have been an overlap.",
+          "written": "2021-02-14",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pelmora Water", "org": "Pelmora Water", "relation": "employer"}, {"surface": "Ashverin Media", "org": "Ashverin Media", "relation": "employer"}],
+          "jobs": [{"org": "Pelmora Water", "kind": "employee", "title": "reporting analyst", "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Ashverin Media", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m3",
+          "text": "Bought a blue lunch box from Cromvex Market. It actually fits in my backpack.",
+          "written": "2022-03-19",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Cromvex Market", "org": "Cromvex Market", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m4",
+          "text": "My neighbor works at Threxen Labs and lent me a folding chair for the street party.",
+          "written": "2024-06-08",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Threxen Labs", "org": "Threxen Labs", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "The user ended employment at Pelmora Water in 2024 and joined Threxen Labs immediately afterward in 2024 as an analytics manager. The user remains at Threxen Labs.",
+          "written": "2025-05-20",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pelmora Water", "org": "Pelmora Water", "relation": "employer"}, {"surface": "Threxen Labs", "org": "Threxen Labs", "relation": "employer"}],
+          "jobs": [{"org": "Pelmora Water", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2024", "time": null, "preceded_by": null, "followed_by": "Threxen Labs", "also_called": null}, {"org": "Threxen Labs", "kind": "employee", "title": "analytics manager", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": "Pelmora Water", "followed_by": null, "also_called": null}]
+        },
+        {
+          "id": "m6",
+          "text": "I am still employed at Pelmora Water as a reporting analyst, continuously since 2020. I have never worked at Threxen Labs.",
+          "written": "2026-10-27",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pelmora Water", "org": "Pelmora Water", "relation": "employer"}, {"surface": "Threxen Labs", "org": "Threxen Labs", "relation": "other"}],
+          "jobs": [{"org": "Pelmora Water", "kind": "employee", "title": "reporting analyst", "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}, {"org": "Threxen Labs", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}]
+        }
+      ],
+      "timeline": [
+        {"org": "Ashverin Media", "role": "audience analyst", "start": "2016", "end": "2020", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Pelmora Water", "role": "reporting analyst", "start": "2020", "end": "", "kind": "employee", "memories": ["m2", "m6"]},
+        {"org": "Cromvex Market", "role": "lunch box vendor", "start": "", "end": "", "kind": "vendor", "memories": ["m3"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where was I working in 2018?", "answer_org": "Ashverin Media", "traps": ["import", "same_year_handover", "possible_overlap"], "why": "The imported user note places 2018 inside Ashverin employment, before the uncertain 2020 handover."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "Who do I work for now?", "answer_org": "Pelmora Water", "traps": ["agent_competitor", "untrusted_end"], "why": "The latest user capture confirms continuing Pelmora employment and explicitly denies the agent's competing employer."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "My employer on 15 June 2020?", "answer_org": "", "traps": ["same_year_handover", "possible_overlap", "exact_day", "precision"], "why": "The 2020 start and end lack finer dates, and the user explicitly leaves overlap unresolved."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Which employer had I already left when Pelmora Water hired me?", "answer_org": "", "traps": ["same_year_handover", "possible_overlap"], "why": "The user cannot remember whether Ashverin had ended when Pelmora began."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "¿A qué empresa fui después de dejar Pelmora Water?", "answer_org": "", "traps": ["agent_competitor", "untrusted_end", "spanish"], "why": "No trusted departure or successor exists; the user says Pelmora continues and denies the agent's proposed successor."},
+        {"id": "q6", "class": "negative", "kind": "how_long", "query": "How many days exactly was I at Ashverin Media?", "answer_org": "", "traps": ["precision", "import"], "why": "The exact duration cannot be calculated from the years 2016 and 2020 alone."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Who sold me that blue lunch box?", "answer_org": "Cromvex Market", "traps": ["vendor"], "why": "The purchase note names Cromvex Market as the vendor."}
+      ]
+    }
+  ]
+}

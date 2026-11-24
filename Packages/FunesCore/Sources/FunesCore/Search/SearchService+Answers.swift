@@ -96,7 +96,8 @@ extension SearchService {
             // touches loosely (one of its holders matched, a word of the predicate, or an operator or time cue).
             var rows: TimelineRows?, check: TimelineCheck?, cited: [UUID] = []
             if checked, !onDevice, case .sendable = view,
-               let p = answerUses.predicates(.timeline).first(where: { Self.touches(query, predicate: $0, plan: plan, graph: g) }) {
+               let p = answerUses.predicates(.timeline).first(where: { Self.touches(query, predicate: $0, plan: plan, graph: g)
+                   || Self.readsHolders(Set(read.map(\.db)), predicate: $0, graph: g) }) {
                 var rg = g
                 rg.uses = answerUses
                 let built = TimelineRows.build(rg, predicate: p, first: plan.matches.map(\.entity))
@@ -168,6 +169,15 @@ extension SearchService {
 
     /// Whether a search touches a *timeline* predicate, loosely (§10.3: a wrong include costs tokens, not an answer): one
     /// of its holders matched, a word of the predicate's lexicon, or an operator or time cue of the registry.
+    /// Whether the memories the answer reads state a fact of the predicate (any trust): the answer may then speak of
+    /// those jobs, so it gets the rows and its claims the check (13e.2's fix round: lists, "my own business these
+    /// days", a client's years).
+    static func readsHolders(_ read: Set<String>, predicate: String, graph: FactsGraph) -> Bool {
+        graph.facts.contains { f in
+            f.predicate == predicate && !f.negated && f.assertions.contains { !$0.fromUser && read.contains($0.memoryID) }
+        }
+    }
+
     static func touches(_ query: String, predicate: String, plan: FactsQueryPlan, graph: FactsGraph) -> Bool {
         let holders = Set(graph.facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
         if plan.matches.contains(where: { holders.contains($0.entity) }) { return true }

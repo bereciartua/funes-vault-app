@@ -1,11 +1,14 @@
 {
   "above_limit_in_payload" : 0,
   "calls" : 134,
-  "commit" : "ceb9d97060fa477ad47c870c0ac6ac43d5748f4b",
-  "date" : "2026-11-21T22:09:20Z",
+  "calls_file" : "astra-calls.jsonl",
+  "calls_recorded" : 134,
+  "calls_sha256" : "7f19b15f29659bbc2b6d72ae6e464a8911dd6fb29dba998eadc50eaec0faef33",
+  "commit" : "0fe54a51ac47e8f7d3fa32a6bd17903a8bc70e49",
+  "date" : "2026-11-22T07:06:16Z",
   "engine" : {
     "adapter" : "claude-code\/1;effort=low",
-    "batching" : "one-memory;pipeline=2",
+    "batching" : "one-memory;pipeline=3",
     "model" : "claude-code\/claude-haiku-5-5"
   },
   "fixture_sha256" : "f0d5fc813ebfb428a2308a04a5b4a61edfd797a9057eab26d66545eb19bb17fa",
@@ -14,7 +17,7 @@
   ],
   "label" : "swift-claude-claude-haiku-5-5-gates-r2",
   "limit" : "internal",
-  "lines_sha256" : "dc5764d8b27f29db038c906a286f5d842d77af9255de8f1421997dca5dd0ee2b",
+  "lines_sha256" : "57abcf851360db02fffc7b061f888e401006f0544cd841b501bb50c288eaecaa",
   "mode" : "live",
   "models_reported" : [
     "claude-haiku-5-5"
@@ -68,7 +71,7 @@
   "registry_version" : "v1-8338de9d268e",
   "responses" : 134,
   "responses_without_model" : 0,
-  "run_id" : "9d5ee0bd-430a-4cee-ba10-6f5f91ebc585",
+  "run_id" : "19a102f3-35a4-4d5c-ba21-05aee03320b7",
   "set" : "astra",
   "unmapped" : 0,
   "unsettled" : 0

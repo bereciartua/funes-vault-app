@@ -104,6 +104,41 @@ import Testing
         #expect(!named(agent, "Self-employed").isEmpty)
     }
 
+    /// 13e.2 r2: "my freelance business" is the one business a trusted memory called that, while it runs.
+    @Test func aPlaceholderCalledByTheBusinesssOwnLabelIsThatBusiness() {
+        let juxali = ("b", "My own freelance business, Juxali Illustration, has run since 2017.", "2022-05-16", true, FactsMemory.Source.capture,
+                      [fact(d, "Juxali Illustration", "2017", status: .current, slot: FX.own, label: "freelance business",
+                            quote: "My own freelance business, Juxali Illustration, has run since 2017")])
+        let later = ("c", "I took a study break in 2021 while keeping my freelance business going.", "2023-03-09", true, FactsMemory.Source.capture,
+                     [fact(d, "Self-employed", slot: FX.own, label: "freelance business", quote: "while keeping my freelance business going")])
+        let g = graph([juxali, later])
+        #expect(named(g, "Self-employed").isEmpty)
+        #expect(named(g, "Juxali Illustration").first?.assertions.count == 2)
+        // Without the owner word, with another label, or once the business has closed, it stays its own.
+        func alone(_ quote: String, label: String?, _ first: (String, String, String, Bool, FactsMemory.Source, [ExtractedFact]) = juxali) -> Bool {
+            let m = ("c", "I took a study break in 2021, \(quote).", "2023-03-09", true, FactsMemory.Source.capture,
+                     [fact(d, "Self-employed", slot: FX.own, label: label, quote: quote)])
+            return !named(graph([first, m]), "Self-employed").isEmpty
+        }
+        #expect(alone("while keeping a freelance business going", label: "freelance business"))
+        #expect(alone("while keeping my freelance work going", label: "freelance work"))
+        let closed = ("b", "My own freelance business, Juxali Illustration, ran from 2017 to 2020.", "2022-05-16", true, FactsMemory.Source.capture,
+                      [fact(d, "Juxali Illustration", "2017", "2020", status: .former, slot: FX.own, label: "freelance business",
+                            quote: "My own freelance business, Juxali Illustration, ran from 2017 to 2020")])
+        #expect(alone("while keeping my freelance business going", label: "freelance business", closed))
+        // "My other freelance business" is another one.
+        #expect(alone("while keeping my other freelance business going", label: "freelance business"))
+        // One the placeholder dates before the business began isn't it.
+        let early = ("c", "Imported notes: my freelance business started in 2008.", "2023-03-09", true, FactsMemory.Source.import,
+                     [fact(d, "Self-employed", "2008", slot: FX.own, label: "freelance business", quote: "my freelance business started in 2008")])
+        #expect(!named(graph([juxali, early]), "Self-employed").isEmpty)
+        // Two businesses with that label, one of them closed: neither.
+        let second = ("a", "My freelance business, Copper Finch, ran from 2010 to 2015.", "2016-01-10", true, FactsMemory.Source.capture,
+                      [fact(d, "Copper Finch", "2010", "2015", status: .former, slot: FX.own, label: "freelance business",
+                            quote: "My freelance business, Copper Finch, ran from 2010 to 2015")])
+        #expect(!named(graph([second, juxali, later]), "Self-employed").isEmpty)
+    }
+
     // MARK: An import's "current"
 
     @Test func anImportsCurrentHoldsAsOfItsOwnTime() {
@@ -395,6 +430,16 @@ import Testing
                      "Orlin Labs has never been my employer.", "Correction: I never worked at Orlin Labs."] {
             #expect(FactsGraph(registry: FX.registry).isNeverDenial(fact(d, "Orlin Labs", quote: text, positive: false), text: text), "\(text)")
         }
+    }
+
+    /// A line break ends the never-denial's sentence (a title, a list): a hard-wrapped import that breaks "I never
+    /// worked at X" across lines isn't read as one, and fails closed (13e.2 keeps this; the harness no longer wraps).
+    @Test func aNeverDenialBrokenAcrossLinesFailsClosed() {
+        for text in ["Nunca trabajé\nen Orlin Labs.", "I never worked\nat Orlin Labs."] {
+            #expect(!FactsGraph(registry: FX.registry).isNeverDenial(fact(d, "Orlin Labs", quote: text, positive: false), text: text), "\(text)")
+        }
+        let whole = "Notes\nNunca trabajé en Orlin Labs."
+        #expect(FactsGraph(registry: FX.registry).isNeverDenial(fact(d, "Orlin Labs", quote: "Nunca trabajé en Orlin Labs", positive: false), text: whole))
     }
 
     @Test func neverWordsThatDontDenyHoldingIt() {

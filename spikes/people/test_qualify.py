@@ -279,14 +279,160 @@ class LineMeasures(unittest.TestCase):
         t = Q.timeline_measures([ln], self.story(mems, tl), REG)
         self.assertEqual(t["wrong_facts"], 1)                                # a duplicate takes no stint: a wrong fact
 
+    def test_an_episode_in_the_wrong_slot_is_a_wrong_fact(self):
+        tl = [{"org": "Acme", "kind": "self_employed", "start": "2015", "end": "", "memories": ["m1"]}]
+        mems = [{"id": "m1", "source": "capture", "jobs": []}]
+        ep = {**self.ep("p1", ("2015-01-01", "2015-01-01"), None, ["m1"]), "slot": "employee"}
+        ln = self.line([("p1", "Acme")], [("p1", [["m1", "trusted"]])], [ep])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual(t["details"]["wrong_facts"], ["('s1', 'Acme', 'slot')"])
+        ep["slot"] = "self_employed"
+        self.assertEqual(Q.timeline_measures([ln], self.story(mems, tl), REG)["wrong_facts"], 0)
+
+    def test_a_rename_the_story_labels_is_one_stint(self):
+        """13e.2's scorer correction: a stated rename the story's trusted labels give ("Marlin Metrics" → "Marlin
+        Analytics") is that stint's, as one entity or one timeline group; an agent's label, a merge the story doesn't
+        make and a duplicate episode stay wrong."""
+        tl = [{"org": "Lattice Analytics", "kind": "employee", "start": "2016", "end": "2022-06-30", "memories": ["m1", "m2"]}]
+        label = {"id": "m2", "source": "capture", "organizations": [{"surface": "Lattice Metrics", "org": "Lattice Analytics",
+                                                                    "relation": "employer"}],
+                 "jobs": [{"org": "Lattice Analytics", "polarity": "positive", "also_called": "Lattice Metrics"}]}
+        bare = {"id": "m2", "source": "capture", "organizations": [], "jobs": []}
+        ep = self.ep("p1", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1", "m2"])
+        facts = [("p1", [["m1", "trusted"]]), ("p2", [["m2", "trusted"]])]
+
+        def grouped(members, extra=()):
+            ln = self.line([("p1", "Lattice Metrics"), ("p2", "Lattice Analytics"), ("p3", "Orlin")], facts + list(extra), [ep])
+            ln["state"]["timeline_groups"] = [members]
+            return ln
+        m1 = {"id": "m1", "source": "capture", "jobs": []}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], tl), REG)
+        self.assertEqual((t["wrong_facts"], t["wrong_dates"]), (0, 0), t["details"])
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, bare], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # unlabelled: the old name and the merge
+        agent = {**label, "source": "agent"}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, agent], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # only an agent's label: still wrong
+        marked = {**label, "trust": "untrusted"}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, marked], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # an untrusted import's label: still wrong
+        t = Q.timeline_measures([grouped(["p1", "p2", "p3"], [("p3", [["m1", "trusted"]])])], self.story([m1, label], tl), REG)
+        self.assertIn("merged", " ".join(t["details"]["wrong_facts"]))        # a member the story doesn't rename
+        dup = self.ep("p1", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1"])
+        ln = self.line([("p1", "Lattice Metrics"), ("p2", "Lattice Analytics")], facts,
+                       [self.ep("p2", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1", "m2"]), dup])
+        t = Q.timeline_measures([ln], self.story([m1, label], tl), REG)
+        self.assertEqual(t["wrong_facts"], 1, t["details"])                   # two episodes for one stint: one is wrong
+        # Never by containment: a labelled "Lattice Metrics" isn't "Lattice Metrics Consulting", and "Lattice Analytics"
+        # with "Lattice Analytics Consulting" is a merge the story doesn't make.
+        ln = self.line([("p1", "Lattice Metrics Consulting"), ("p2", "Lattice Analytics")], facts, [ep])
+        ln["state"]["timeline_groups"] = [["p1", "p2"]]
+        t = Q.timeline_measures([ln], self.story([m1, label], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])
+        ln = self.line([("p1", "Lattice Analytics Consulting"), ("p2", "Lattice Analytics")], facts, [ep])
+        ln["state"]["timeline_groups"] = [["p1", "p2"]]
+        t = Q.timeline_measures([ln], self.story([m1, bare], tl), REG)
+        self.assertIn("merged", " ".join(t["details"]["wrong_facts"]), t["details"])
+        # A labelled name a second stint (or a client) also has stops the scorer.
+        clash = tl + [{"org": "Lattice Metrics", "kind": "client", "start": "2019", "end": "", "memories": ["m2"]}]
+        with self.assertRaises(SystemExit):
+            Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], clash), REG)
+        suffixed = tl + [{"org": "Lattice Metrics Ltd", "kind": "vendor", "start": "", "end": "", "memories": []}]
+        with self.assertRaises(SystemExit):                                   # the same once the legal suffix goes
+            Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], suffixed), REG)
+        o = Q.org_measures([grouped(["p1", "p2"])], self.story([{**m1, "organizations": [{"org": "Lattice Analytics", "relation": "employer"}]},
+                                                                label], tl), REG)
+        self.assertEqual((o.get("works_at_right"), o.get("works_at_wrong", 0)), (2, 0))
+        o = Q.org_measures([grouped(["p1", "p2"])], self.story([m1, bare], tl), REG)
+        self.assertEqual(o.get("works_at_wrong", 0), 1)                       # the old name's unit, unlabelled
+
+
+class TimelineGateScoring(unittest.TestCase):
+    """13e.2's scorer (score_13e2.py): §10.4's owed rule read from the record, and the label rule's minimums."""
+
+    def test_the_owed_rule_from_the_record(self):
+        import score_13e2 as S
+        names = {"birch labs", "cedar systems"}
+        claim = lambda text, made=None, cites=(): {"text": text, "citations": [{"memory": m} for m in cites],
+                                                   **({} if made is None else {"comparisonMade": made})}
+        self.assertTrue(S.owed(claim("Before Cedar Systems you worked at Birch Labs."), "Where did I work?", names, set()))
+        self.assertTrue(S.owed(claim("Birch Labs."), "Where did I work in 2019?", names, set()))            # the search's year
+        self.assertTrue(S.owed(claim("Birch Labs.", made=True), "anything", names, set()))
+        self.assertTrue(S.owed(claim("A note.", cites=["m3"]), "anything", names, {"m3"}))                  # a rows-only memory
+        # made: false: only the claim's own selection cue (a date is a qualifier).
+        self.assertFalse(S.owed(claim("You joined Birch Labs in 2018.", made=False), "My title in 2019?", names, set()))
+        self.assertTrue(S.owed(claim("After Birch Labs you went to Cedar Systems.", made=False), "?", names, set()))
+        self.assertFalse(S.owed(claim("You were a designer.", made=None), "Where did I work in 2019?", names, set()))
+
+    def test_the_corrected_set_must_keep_its_minimums(self):
+        import score_13e2 as S
+        qs = [{"id": f"q{i}", "traps": ["rehire"]} for i in range(3)]
+        stories = {"s1": {"id": "s1", "queries": qs}}
+        lab = {("s1", q["id"]): {"class": "undecidable"} for q in qs}
+        probs = S.minimums(stories, lab)
+        self.assertTrue(any("decidable questions" in p for p in probs) and any("rehire" in p for p in probs))
+
+
+class TimelineRecordRules(unittest.TestCase):
+    """The record step's rules (the author's decision of 2026-11-24): the commit a run measured, product code, and the
+    author's waivers of the timeline gate."""
+
+    def test_a_results_only_dirty_stamp_is_the_commit(self):
+        sha = "a" * 40
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty", "dirty": False}), sha)
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty", "dirty": True}), sha + "+dirty")
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty"}), sha + "+dirty")     # no code flag: kept
+        self.assertEqual(Q.measured_commit({"commit": sha, "dirty": False}), sha)
+        self.assertIsNone(Q.product_code_changed_since(""))
+
+    def test_product_code_leaves_out_tests_and_scripts(self):
+        for f in ("Packages/FunesCore/Sources/FunesCore/Facts/TimelineCheck.swift", "Apps/FunesMac/App.swift",
+                  "scripts/test.sh", "FunesVault.xcodeproj/project.pbxproj", "spikes/people/registry.json"):
+            self.assertTrue(Q.is_product_code(f), f)
+        for f in ("Packages/FunesCore/Tests/FunesCoreTests/Support/FactsGateEvidence.swift", "spikes/people/qualify.py",
+                  "spikes/people/swift/Sources/x.swift"):
+            self.assertFalse(Q.is_product_code(f), f)
+        self.assertTrue(Q.is_product_code("spikes/people/sub/x.py"))    # only the spike's top-level scripts
+
+    def test_a_replay_compares_the_revision_counter_only(self):
+        self.assertEqual(Q.revision_counter("27f68ab7-4bda.27.w95Zpj_5"), "27")
+        self.assertEqual(Q.revision_counter("2ceae9cc-df72.27.wDWe0g4F"), "27")
+        self.assertNotEqual(Q.revision_counter("2ceae9cc-df72.28.wDWe0g4F"), "27")
+
+    def test_a_waiver_caps_owed_checks_and_marking_only(self):
+        w = {"waived": {"owed_checks": {"measure": "owed_skipped", "max": 2}, "marking": {"measure": "unmarked_inferred", "max": 1},
+                        "someone_else": {"measure": "someone_else", "max": 5}}}
+        gates = {"owed_checks": False, "marking": False, "someone_else": False, "p95": True}
+        m = {"owed_skipped": 2, "unmarked_inferred": 1, "someone_else": 1}
+        self.assertEqual(Q.unwaived_failures(gates, m, w), ["someone_else"])            # wrong answers are never waived
+        self.assertEqual(Q.unwaived_failures(gates, {**m, "owed_skipped": 3}, w), ["owed_checks", "someone_else"])
+        self.assertEqual(Q.unwaived_failures(gates, m, None), ["owed_checks", "marking", "someone_else"])
+        wrong = {"waived": {"owed_checks": {"measure": "unmarked_inferred", "max": 9}}}  # the cap must be the target's measure
+        self.assertEqual(Q.unwaived_failures({"owed_checks": False}, m, wrong), ["owed_checks"])
+
+    def test_a_waiver_is_bound_to_model_prompt_registry_and_read(self):
+        w = Q.timeline_waiver("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r4", "haiku")
+        self.assertIsNotNone(w)
+        self.assertEqual(set(w["waived"]), {"owed_checks", "marking"})
+        for args in (("codex/gpt-5.6-terra", "a13e2-3", "v1-8338de9d268e", "r4"), ("claude-code/claude-haiku-5-5", "a13e2-4", "v1-8338de9d268e", "r4"),
+                     ("claude-code/claude-haiku-5-5", "a13e2-3", "v1-000000000000", "r4"), ("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r5")):
+            self.assertIsNone(Q.timeline_waiver(*args, "haiku"), args)
+        # Bound to the answers it was given on: another engine's answers on the same read aren't covered.
+        self.assertIsNone(Q.timeline_waiver("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r4", "terra"))
+
 
 class Verify(unittest.TestCase):
-    def test_shipped_records_are_13e2s_records_step(self):
-        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; no timeline
-        # record and no attributes record (they lapsed with the registry until 13e.2's answer gates).
-        shipped = {(r["callGroup"], tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
-        self.assertEqual(shipped, {("people", ("recorded", "linked")), ("work", ("recorded",)), ("work", ("recorded", "linked"))})
-        preds = {p for r in json.loads(Q.RECORDS.read_text())["records"] for p in r["predicates"]}
+    def test_shipped_records_are_13e2s_records_and_gate(self):
+        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; then 13e.2's gate
+        # (r4): attributes (unscoped and sole_known) and works at's timeline for each answer model.
+        recs = json.loads(Q.RECORDS.read_text())["records"]
+        shipped = sorted((r["callGroup"], tuple(r["uses"]), r.get("basis", ""), tuple(r.get("answerModels", []))) for r in recs)
+        answer = [m for m in ("claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra")]
+        want = [("people", ("recorded", "linked"), "", ()), ("work", ("recorded",), "", ()), ("work", ("recorded", "linked"), "", ())]
+        want += [("people", ("attributes",), b, (m,)) for m in answer for b in ("", "sole_known")]
+        want += [("work", ("timeline",), "", (m,)) for m in answer]
+        self.assertEqual(shipped, sorted(want))
+        preds = {p for r in recs for p in r["predicates"]}
         self.assertTrue({"client", "works_at"} <= preds)
         self.assertEqual(Q.cmd_verify(None), 0)
 

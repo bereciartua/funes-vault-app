@@ -88,8 +88,44 @@ struct FactsValidator {
     static let namePrefix = "name:"
 
     func inText(_ s: String?) -> Bool { FactsSentText.contains(sent.sent, s ?? "") }
+
+    /// The numeric dates in a text, as written ("2014-06", "2019", "2020-03-15"): enough to tell whether a quote and
+    /// a date field speak of the same time.
+    static func dateTokens(_ text: String) -> Set<String> {
+        let ns = text as NSString
+        let re = try! NSRegularExpression(pattern: #"(?<![0-9])(1[89]|20)[0-9]{2}(-[0-9]{2}){0,2}(?![0-9])"#)
+        return Set(re.matches(in: text, range: NSRange(location: 0, length: ns.length)).map { ns.substring(with: $0.range) })
+    }
+    /// Whether a name the model gives is written within one line of `text` (13e.2). Quote matching tolerates
+    /// whitespace, line breaks included, so without this "Note Max" would match a title over a body that opens "Max".
+    func onOneLine(_ name: String, in text: String) -> Bool {
+        text.split(whereSeparator: \.isNewline).contains { FactsSentText.find(name, in: String($0)) != nil }
+    }
     func secret(_ s: String?) -> Bool { s.map { !SecretScanner.scan($0).isEmpty } ?? false }
     func capital(_ s: String) -> Bool { s.contains { $0.isUppercase } }
+    /// Whether an organization the model names reads as a name (13e.2 r2): "work" in "a difficult day at work", "the
+    /// office", a sentence's opening "The office" or "Mi trabajo" isn't an employer. A name has a capital letter, a digit
+    /// or an inner dot ("eBay", "37signals", "bol.com"), isn't a registry word, and isn't only an owner or determiner and
+    /// words a workplace is called (the language's workplace and work-noun words, organization predicates' query nouns).
+    func namesAnOrganization(_ s: String) -> Bool {
+        let t = s.trimmingCharacters(in: .whitespaces)
+        guard t.count >= 2, capital(t) || t.contains(where: \.isNumber) || t.dropFirst().dropLast().contains(".") else { return false }
+        if registry.lexicon[t.lowercased()] != nil { return false }
+        let words = FactsText.fold(t).split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        let common = Self.commonOrgWords(registry)
+        return words.contains { !common.contains($0) }
+    }
+    /// The kinds a timeline's holders are (an employer's).
+    static func organizationKinds(_ registry: FactsRegistry) -> Set<String> { Set(registry.timelinePredicates.map(registry.kindOf)) }
+    /// The words an organization's name can't consist of alone (`namesAnOrganization`), per registry.
+    static func commonOrgWords(_ registry: FactsRegistry) -> Set<String> {
+        let lang = registry.language
+        let kinds = organizationKinds(registry)
+        let nouns = registry.predicates.filter { kinds.contains(registry.kindOf($0.id)) }.flatMap { $0.queryNouns ?? [] }
+        let all = lang.notNames + lang.owners + lang.ownerWords + lang.anchorDeterminers + (lang.leadRefusedFirst ?? [])
+            + (lang.verbNouns ?? []) + nouns
+        return Set(all.flatMap { FactsText.fold($0).split(separator: " ").map(String.init) })
+    }
     func entity(_ rosterID: String) -> FactsEntity? { roster[rosterID].flatMap { graph.entities[$0] } }
     func isUnnamedGroup(_ e: FactsEntity?) -> Bool { e.map { $0.group != nil && $0.name == nil } ?? false }
     func folded(_ e: FactsEntity) -> Set<String> { Set((trusted ? e.trustedAliases : e.aliases).map { FactsText.fold($0) }) }
@@ -109,10 +145,11 @@ struct FactsValidator {
         // Things.
         for (i, t) in out["things"].array.enumerated() {
             guard let name = t["name"].string, let quote = t["quote"].string,
-                  let (q, span) = quoted(quote, holding: name) else { drop("thing_quote", i); continue }
+                  let (q, span) = quoted(quote, holding: name), onOneLine(name, in: q) else { drop("thing_quote", i); continue }
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             if trimmed.count < 2 || registry.lexicon[trimmed.lowercased()] != nil { drop("thing_not_a_name", i); continue }
             guard let kind = t["kind"].string.flatMap({ kinds[$0] }) else { drop("thing_kind", i); continue }
+            if Self.organizationKinds(registry).contains(kind), !namesAnOrganization(trimmed) { drop("thing_not_a_name", i); continue }
             if secret(name) { drop("thing_secret", i); continue }
             v.things.append(ExtractedThing(name: name, kind: kind, quote: q, span: span))
         }
@@ -124,7 +161,7 @@ struct FactsValidator {
         let asksForPeople = predicates.contains { registry.kindOf($0) == Self.personKind }
         for (i, p) in (asksForPeople ? out["people"].array : []).enumerated() {
             guard let name = p["name"].string, let quote = p["quote"].string, let ref = p["person"].string,
-                  let (q, span) = quoted(quote, holding: name) else { drop("person_quote", i); continue }
+                  let (q, span) = quoted(quote, holding: name), onOneLine(name, in: q) else { drop("person_quote", i); continue }
             let special = [Ref.new, .different, .ambiguous].map(\.rawValue)
             guard roster[ref] != nil || special.contains(ref) else { drop("person_id", i); continue }
             if FactsSentText.norm(name) == placeholder { continue }
@@ -159,8 +196,11 @@ struct FactsValidator {
             var fields: [String: String] = [:]
             for f in ["time", "start", "end", "preceded_by", "followed_by", "also_called"] {
                 guard let s = r[f].string, !s.isEmpty else { continue }
-                if !inText(s) { drop(f + "_absent", i); continue }
+                if !inText(s) || (["preceded_by", "followed_by", "also_called"].contains(f) && !onOneLine(s, in: sent.sent)) {
+                    drop(f + "_absent", i); continue
+                }
                 if secret(s) { drop(f + "_secret", i); continue }
+                if f == "also_called", Self.organizationKinds(registry).contains(registry.kindOf(pred)), !namesAnOrganization(s) { drop("also_called_not_a_name", i); continue }
                 fields[f] = s
             }
             var quals: [String: String] = [:]
@@ -189,8 +229,9 @@ struct FactsValidator {
             } else {
                 let nm = name ?? ""
                 let ph = graph.placeholder(pred, nm)
-                if nm.isEmpty || (ph == nil && !inText(nm)) { drop("fact_object", i); continue }
+                if nm.isEmpty || (ph == nil && (!inText(nm) || !onOneLine(nm, in: sent.sent))) { drop("fact_object", i); continue }
                 if ph == nil, namesHere.contains(FactsSentText.norm(nm)) { drop("fact_kind", i); continue }
+                if ph == nil, Self.organizationKinds(registry).contains(kind), !namesAnOrganization(nm) { drop("fact_not_a_name", i); continue }
                 if secret(nm) { drop("fact_secret", i); continue }
                 entityID = Ref.name.rawValue
                 name = ph ?? nm
@@ -198,9 +239,34 @@ struct FactsValidator {
             var label = r["label"].string
             if let l = label, !inText(l) || secret(l) { label = nil; drop("label_not_in_text", i) }
             let count = r["count"].int.flatMap { $0 >= 0 ? $0 : nil }
+            var status = r["status"].string.flatMap(FactAssertion.Status.init) ?? .unknown
+            // A "time" its quote contradicts: the quote has dates of its own and none of the time's (13e.2 r3's g01: "I
+            // left my first Acme stint in 2014-06" read with time 2017-09, the next sentence's return). Dropped; when
+            // the quote holds one date and an end or start word, that date is the end or start it states.
+            if let t = fields["time"] {
+                let own = Self.dateTokens(quote), its = Self.dateTokens(t)
+                let years = { (x: Set<String>) in Set(x.map { String($0.prefix(4)) }) }
+                if !own.isEmpty, !its.isEmpty, years(its).isDisjoint(with: years(own)) {
+                    fields["time"] = nil
+                    drop("time_not_in_quote", i)
+                    let words = FactsText.fold(quote)
+                    let lang = registry.language
+                    // Only with one kind of event word: "joined Acme in 2014 after leaving Birch" says nothing alone.
+                    let ends = lang.endEvents.contains { FactsText.cue(words, FactsText.fold($0)) }
+                    let starts = lang.startEvents.contains { FactsText.cue(words, FactsText.fold($0)) }
+                    if own.count == 1, fields["start"] == nil, fields["end"] == nil, let only = own.first, ends != starts {
+                        if ends {
+                            fields["end"] = only
+                            status = .former
+                        } else {
+                            fields["start"] = only
+                        }
+                    }
+                }
+            }
             var f = ExtractedFact(predicate: pred, name: name ?? "", entity: entityID, label: label, quote: quote,
                                   positive: polarity == .positive,
-                                  status: r["status"].string.flatMap(FactAssertion.Status.init) ?? .unknown,
+                                  status: status,
                                   deceased: r["deceased"].bool ?? false, only: r["only"].bool ?? false, count: count,
                                   time: fields["time"], start: fields["start"], end: fields["end"],
                                   precededBy: fields["preceded_by"], followedBy: fields["followed_by"],

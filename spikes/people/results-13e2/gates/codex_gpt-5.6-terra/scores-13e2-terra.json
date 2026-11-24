@@ -1,0 +1,167 @@
+{
+ "engine": "terra",
+ "model": "codex/gpt-5.6-terra",
+ "factsModel": "claude-code/claude-haiku-5-5",
+ "tag": "r4",
+ "inputs": {
+  "answers-terra/answers.jsonl": "b14b1f0ddf02c1c77fa3ff926759fcd1b1e50e9cbe8404da9309f04f1ab719bc",
+  "answers-terra/manifest.json": "813a259f65641d00c0843e500ee2e59e2ea32d16d287d875927fce128ad7dfe8",
+  "answers-terra/judge-opus.jsonl": "f9c30ceba05e2ad5077b3622cd2175b8fac8517134daf48b448e540433e27ed1",
+  "answers-terra/judge-astra.jsonl": "e955128c3e0f2fc3d9781bcfbf560d0f646d21072e46bce5201be8934317eed0",
+  "answers-terra/adjudicated.jsonl": "556abb93d6890dc1d9430dd59eedcabbfcb5101345e74180f400423646febeb7",
+  "read-r4/stories.jsonl": "1650eafe2020ec088e2b324734c4f6598a4d09f2c4dc0e5a8b11c66a3c3b13f4",
+  "read-r4/manifest.json": "512386714cf0ffc9a0feefae92d3e94e65d1980cbab5cad652413cc29781c9ad",
+  "read-r4/calls.jsonl": "3a4ffb0a3fad1b513a3785e95cb3ca894633280b5dbec726ab3dcb3753018cd2",
+  "labels-corrected.json": "a7f899330d6126c8a7b959b0f8cefcee8d922d6482eb568d798c9e239128da17",
+  "relabels.jsonl": "b69ed43dc148c99282e5485756b02cd8cae05dd67bc7b6bcdb480b83bd1bb4e2"
+ },
+ "set": {
+  "stories.json": "d8585f16dd0f356c0a3b455ad55490cdb4344ac4d1925cbe13b8989c4b4e723f",
+  "fillers.json": "19859e993012055d4257acce40bc602bc37317a594af183ff697e36345a46a4f"
+ },
+ "spikeG": {
+  "spike-g-terra-timeline/main-P.jsonl": "8f1f72a7c2b0ad07db2921ac9181a3d6ff0f73df1597ae3afecdca1bfd39ee3e",
+  "spike-g-terra-timeline/main-F.jsonl": "89366d2dcd1976e40ea02487388c18103f1723f09eb16393a4e9967d842f2667",
+  "spike-g-terra-timeline/astra-P.jsonl": "412e89557bcedacaa0d6281f72281c79ee3d678e916f0ec8a377f1432433a7fc",
+  "spike-g-terra-timeline/astra-F.jsonl": "56fcdb75c8e2cff8dd4b80543f05911a7602655dba04d36527b98ccf30a08fff"
+ },
+ "phaseA": {
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "5071e095f587fd94704d495893bc50c270fb5a4eff479c7fb74b917a6baf2469",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "c64420024978e2ed50cdb72949af003418d3757466abe3b7b790ebd0677e9c78",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "11addd49a5eb99e2249e5da52863cdcc303a5aad9edd79a4cd0a416bc6383901",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "49576f4d2c06fdec9db4379f7aa6e86f762a54f63fbc6d84c68c6061da3031b5"
+ },
+ "replay": {
+  "commit": "491740da3adb983716c77af34461ca634bfc099f",
+  "answerPromptVersion": "a13e2-3",
+  "registryVersion": "v1-8338de9d268e",
+  "files": {
+   "replay/answers-terra/answers.jsonl": "2e14863b6453c38a74d56d9a17d45a5948e8190c704ebae93bf2e144f7657ea9",
+   "replay/answers-terra/manifest.json": "8ee2db8f5ee55f596dcaaf2b3e418e4536149cd3e33da27cc205ac50788d177c",
+   "replay/answers-terra/mode": "b755cb248c3c4a7d94f835b4421809336e7015850342064be4dfa23349dcdcaa",
+   "replay/replay-read-r4/manifest.json": "729b201efbd062c450730266b259770a60144fc0118ba975eeedd93a9161aabb",
+   "replay/replay-read-r4/stories.jsonl": "86d136e5182453262d048eb570a21a48ba2d4bbbe88e729a7388c1f4af4613b5",
+   "replay/spike-g-terra-timeline/astra-F.jsonl": "2bd208b1b52c97b159219605598cfe6d0a91c8b64b3fb71b9648ec9b45e90d57",
+   "replay/spike-g-terra-timeline/astra-P.jsonl": "412e89557bcedacaa0d6281f72281c79ee3d678e916f0ec8a377f1432433a7fc",
+   "replay/spike-g-terra-timeline/main-F.jsonl": "51d8feb2d000c6624417aca5723545973c3965ee6b6f9f931e5d8c629773f795",
+   "replay/spike-g-terra-timeline/main-P.jsonl": "8f1f72a7c2b0ad07db2921ac9181a3d6ff0f73df1597ae3afecdca1bfd39ee3e",
+   "replay/spike-g-terra-timeline/manifest-spikeg.json": "9ed7bbd82f9f541cf95e3abc69e516891b8e8c0f74d59ad324a7fe79bf32f157"
+  }
+ },
+ "measures": {
+  "decidable": 60,
+  "decidable_right": 58,
+  "decidable_right_rate": 0.9666666666666667,
+  "decidable_unmarked_wrong": 0,
+  "decidable_marked_wrong": 0,
+  "undecidable": 60,
+  "undecidable_not_sure": 60,
+  "undecidable_not_sure_rate": 1.0,
+  "undecidable_no_answer": 14,
+  "negatives": 48,
+  "negative_wrong_R_per_sample": {},
+  "negative_wrong_P": 4,
+  "someone_else": 0,
+  "owed_skipped": 0,
+  "unmarked_inferred": 0,
+  "failed": 0,
+  "p95_ms": 14099.2,
+  "live_answers_timed": 168,
+  "samples": 1
+ },
+ "facts": {
+  "gate read": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('x03', 'Small Current Studio', '2019-02', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('w02', 'Cedar Press', '2020-09', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  }
+ },
+ "gates": {
+  "complete": true,
+  "decidable_right": true,
+  "decidable_wrong": true,
+  "undecidable_not_sure": true,
+  "negatives": true,
+  "someone_else": true,
+  "owed_checks": true,
+  "marking": true,
+  "p95": true,
+  "facts": true,
+  "spike_g": true
+ },
+ "problems": [],
+ "originalLabels": {
+  "measures": {
+   "decidable": 60,
+   "decidable_right": 58,
+   "decidable_right_rate": 0.9666666666666667,
+   "decidable_unmarked_wrong": 0,
+   "decidable_marked_wrong": 0,
+   "undecidable": 60,
+   "undecidable_not_sure": 60,
+   "undecidable_not_sure_rate": 1.0,
+   "undecidable_no_answer": 14,
+   "negatives": 48,
+   "negative_wrong_R_per_sample": {},
+   "negative_wrong_P": 4,
+   "someone_else": 0,
+   "owed_skipped": 0,
+   "unmarked_inferred": 0,
+   "failed": 0,
+   "p95_ms": 14099.2,
+   "live_answers_timed": 168,
+   "samples": 1
+  },
+  "gates": {
+   "complete": true,
+   "decidable_right": true,
+   "decidable_wrong": true,
+   "undecidable_not_sure": true,
+   "negatives": true,
+   "someone_else": true,
+   "owed_checks": true,
+   "marking": true,
+   "p95": true
+  }
+ },
+ "date": "2026-11-24"
+}

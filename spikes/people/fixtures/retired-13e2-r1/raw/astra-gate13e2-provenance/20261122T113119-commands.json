@@ -1,0 +1,16 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc \"sed -n '300,580p' input.json\"",
+ "/bin/zsh -lc \"sed -n '300,580p' input.json\"",
+ "/bin/zsh -lc \"sed -n '580,850p' input.json\"",
+ "/bin/zsh -lc \"sed -n '580,850p' input.json\"",
+ "/bin/zsh -lc \"sed -n '850,1100p' input.json\"",
+ "/bin/zsh -lc \"sed -n '850,1100p' input.json\"",
+ "/bin/zsh -lc \"sed -n '286,302p' input.json\"",
+ "/bin/zsh -lc \"sed -n '286,302p' input.json\"",
+ "/bin/zsh -lc \"grep -n 'Independent study break\\\\|Full-time independent study break' input.json\"",
+ "/bin/zsh -lc \"grep -n 'Independent study break\\\\|Full-time independent study break' input.json\""
+]

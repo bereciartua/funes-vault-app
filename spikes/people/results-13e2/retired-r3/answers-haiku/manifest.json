@@ -1,0 +1,93 @@
+{
+  "answerPromptVersion" : "a13e2-2",
+  "batching" : "one-memory;pipeline=3",
+  "calls" : {
+    "cached" : 0,
+    "live" : 336,
+    "uncached" : 0
+  },
+  "commit" : "484f515f9d9c094cc1a4a4765dab91df5215eb7f",
+  "date" : "2026-11-24T01:49:58Z",
+  "dirty" : false,
+  "engine" : {
+    "model" : "haiku",
+    "provider" : "claude-code"
+  },
+  "fillersSha256" : "1f233e43086197d152ca7fea5f7c122b986a3c85e7b545e3914b443e5fa432df",
+  "mode" : "live",
+  "modelsReported" : [
+    "claude-haiku-5-5"
+  ],
+  "options" : {
+    "calls" : "\/private\/tmp\/claude-502\/-Users-mib-Library-Mobile-Documents-com-apple-CloudDocs-Projects--iCloud--Personal-Funes-Vault-App\/c3e85913-c343-424b-8275-d37fe45ba7a9\/scratchpad\/wt-d\/spikes\/people\/results-13e2\/read-r3\/calls.jsonl",
+    "engine" : "haiku",
+    "phase" : "answers",
+    "reps" : "1",
+    "set" : "gate-13e2"
+  },
+  "promptVersions" : {
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
+  },
+  "readCallsSha256" : "2a01a6397724e5ade103cce7c9438a17cb1d6aa491ed2fdb122205608cc73d9c",
+  "readDigests" : {
+    "g01" : "fc28b81829c68971b45e22144be69f2141b4fc0c2264a1fe5120681934d7abdc",
+    "g02" : "568729662fd38c32913f93746ed8cb483fcbc5094b60618e1b51bf26bfb59dec",
+    "g03" : "454ae7f21c768e415e0431b1c9eacf5378ab020d6ddf26348340134b9b653cd3",
+    "g04" : "75456bdb8f3425b593191b55d359927a49ac69863ae57d83af27fb45b28b05c5",
+    "g05" : "6ddc348ec03ad4e0ea7149d5a12a58ab06e5436f80ddefed7a288829590b2236",
+    "g06" : "a0651634a365b90be9d9f926beb12d0637e2c0fc91cc2f2acc3e8e2820ce719b",
+    "g07" : "ec38a29f38828066c8d096d689ef10bbd1789dd19f40a14c34c7994d7497f2ee",
+    "g08" : "011f5269e6cd72e9352fdcec7505c1f2f59ce1d2c7739ce59517febdca18528b",
+    "g09" : "37a5833699c2592264e53129519d55ce269b59677ef89ba399daaa8cd3c89fa3",
+    "g10" : "334c0f95fc752ef99528f16847d2549d5c35029f6fa59fd00e15ddcff6abad36",
+    "g11" : "1050fda2f2b67b2e571ce55b9342ceb756a0795a2eeca4a4f1c902768cd0ab3f",
+    "g12" : "2ad969122280c57a249252b2037b38ec2812fab08f972f93395aa12eab084f1d",
+    "g13" : "fc73e3d6b58cd93ccd8bc53738c6463b051d4a0709eec8cb0c837228f9949b20",
+    "g14" : "4652785a69b8ad5481cff9332593508da8afdac03902600d0ed520b3a1f48ca8",
+    "g15" : "fd74eb3c5b2180b1b83809d4bb3e8711548b49e0f1f17ec8c6f3efe5270c2750",
+    "g16" : "0ddf9365ffe6fd310c59b1facd29c478780a9322385922d484d6d1da3e9d1464",
+    "g17" : "6103d5df4c952f1687ecdc157450abf99a9528091315a10cab5f343b384d22d4",
+    "g18" : "d04870256ba5d38a6f0fc2a856c0a9ffcd526c8d56a6b7a2619eec47be91a926",
+    "g19" : "2ffd5f30af47a2f44556ba54ba669860e6d087ee11088bc0d58c5434ce4ce4e2",
+    "g20" : "979bded32e22483b0e6590b3f35587ea587ac77fd122882900b2d9b16f39dc71",
+    "g21" : "b095db3e0a2091638ca583f8a8aae20ae84e2bf11f013c26a4444babb3d2f5dc",
+    "g22" : "ddf575374612601b83f997ecd58abd7924f995a29e6f328c55f6ca7b7a35e188",
+    "g23" : "415e1e816441c99be386c928ed64a6bdfb6302bb5f9a5f6ca4f5d3e60b36ba37",
+    "g24" : "0d97a00b570df095ac7f945de30dd5ce8f8f3f0d7d08dbeace058324b1bdc37c"
+  },
+  "records" : {
+    "answers.jsonl" : "34f00405945c2b8c61f3f95079cebb07848bf6173778d0906c2a2dc52f0fdd72"
+  },
+  "registryVersion" : "v1-8338de9d268e",
+  "reps" : 1,
+  "set" : "gate-13e2",
+  "stories" : [
+    "g01",
+    "g02",
+    "g03",
+    "g04",
+    "g05",
+    "g06",
+    "g07",
+    "g08",
+    "g09",
+    "g10",
+    "g11",
+    "g12",
+    "g13",
+    "g14",
+    "g15",
+    "g16",
+    "g17",
+    "g18",
+    "g19",
+    "g20",
+    "g21",
+    "g22",
+    "g23",
+    "g24"
+  ],
+  "storiesSha256" : "a5bb017ef9a942177749ff5f49809cca2906c78d51238003f9749d1df474f253",
+  "unsettled" : 0
+}

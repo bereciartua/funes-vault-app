@@ -118,6 +118,19 @@ import Testing
         #expect(a.checks.notSure == 1)
     }
 
+    /// 13e.2 r3: "couldn't check" beside a checked claim adds nothing, so it's dropped; alone it stays.
+    @Test func anUncheckedLineBesideACheckedClaimIsDropped() async throws {
+        try vault()
+        let (a, _) = try await base.answer(q, search: base.service(Self.config)) { p in
+            [Self.claim(p, "Before Cedar Systems you worked at Birch Labs.", title: "Second job", quote: "worked at Birch Labs",
+                        comparison: Self.comparison(p, answer: "Birch Labs")),
+             Self.claim(p, "Birch Labs came right before Cedar Systems.", title: "Second job", quote: "worked at Birch Labs",
+                        comparison: nil)]
+        }
+        #expect(a.claims.map(\.text) == ["Before Cedar Systems: Birch Labs."])
+        #expect(a.checks.checked == 1 && a.checks.agreed == 1 && a.checks.notSure == 0 && a.dropped == 1)
+    }
+
     @Test func aClaimThatNamesNoTimelineEntityOwesNoCheck() async throws {
         try vault()
         let (a, _) = try await base.answer("What did I do at work before lunch?", search: base.service(Self.config)) { p in

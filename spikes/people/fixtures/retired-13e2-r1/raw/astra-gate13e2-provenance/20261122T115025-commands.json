@@ -1,0 +1,6 @@
+[
+ "/bin/zsh -lc 'cat input.json notes.md'",
+ "/bin/zsh -lc 'cat input.json notes.md'",
+ "/bin/zsh -lc \"grep -o '\\\"id\\\":\\\"f12[9]\\\"[\"'^}]*'\"\\\\|\\\"id\\\":\\\"f13[0-2]\\\"[\"'^}]*'\"' input.json\"",
+ "/bin/zsh -lc \"grep -o '\\\"id\\\":\\\"f12[9]\\\"[\"'^}]*'\"\\\\|\\\"id\\\":\\\"f13[0-2]\\\"[\"'^}]*'\"' input.json\""
+]

@@ -2,7 +2,10 @@ import Foundation
 
 /// A timeline question: which predicate, which operator, and what it's anchored on (memory processing §11.7).
 public struct TimelineIntent: Sendable, Equatable {
-    public enum Operator: String, Sendable { case before, after, year, current, previous }
+    /// `atStart`, `endedBefore` and `first` come only from an answer's comparison (13e.2's fix round), never from a
+    /// search's grammar: who the user was still with just before a job began, the job they had already left by then,
+    /// and the earliest one recorded.
+    public enum Operator: String, Sendable { case before, after, year, current, previous, atStart = "at_start", endedBefore = "ended_before", first }
 
     public var predicate: String
     public var op: Operator
@@ -143,6 +146,80 @@ extension FactsGraph {
             + registry.lexicon.filter { $0.value.predicate == predicate }.map(\.key)
             + (lang.subjectWords ?? []) + (lang.operatorModifiers ?? []).flatMap { $0.split(separator: " ").map(String.init) }
             + (cue ? (lang.cueBoundWords ?? []) : [])
+    }
+
+    /// Whether a search asks for the organization (the which/where/who/name frames below), its whole text read: for
+    /// a claim the model made no comparison for (13e.2's fix round).
+    func asksForHolder(_ query: String, predicate: String) -> Bool {
+        let q = FactsText.fold(query)
+        return asksWhich(q, outside: [], predicate: predicate) || asksWho(q, predicate: predicate)
+    }
+
+    /// Two more shapes of the ask, for the check only (13e.2 round 4; the search's own reading is `asksWhich`): a who-word
+    /// ("Who was my salaried employer on…", "Who had me on day-job payroll on…", "¿Quién me tenía en nómina el…") or a
+    /// follow-up opening on a joining word ("And my employer on 1 July 2021?"), then only question, between, first-person
+    /// owner, subject-frame, ordinal or time-preposition words up to a whole noun of the predicate or slot phrase, and
+    /// after it only more of those nouns or slot words before the end, a time preposition, an operator or a date. "Who
+    /// was my manager at my employer?", "Who was her employer in 2019?", "Who was my salaried manager on…" and "Who
+    /// worked for my employer in 2020?" ask for someone, not the holder.
+    private func asksWho(_ q: String, predicate: String) -> Bool {
+        let lang = registry.language
+        guard let frames = lang.askFrames, let p = registry.predicate(predicate) else { return false }
+        var words = FactsText.matches(Self.wordRE, in: q).map { $0.group(0)! }
+        let joining = (lang.foldLeadWords ?? []).filter { listed(FactsText.fold($0), lang.functionWords) }
+        var n = 0
+        while n < words.count - 1, listed(words[n], joining) { n += 1 }
+        words.removeFirst(n)
+        let who = (lang.whWords ?? []).filter { !listed(FactsText.fold($0), (frames["which"] ?? []) + (frames["where"] ?? [])) }
+        guard let first = words.first else { return false }
+        var j = 0
+        if listed(first, who) {
+            // A who frame is `asksWhich`'s to read ("Who did I work for at my last job?" asks for a person).
+            let text = words.joined(separator: " ")
+            if (frames["who_frames"] ?? []).contains(where: { FactsText.has(text, FactsText.fold($0)) }) { return false }
+            j = 1
+        } else if n == 0 {
+            return false
+        }
+        let slotPhrases = (p.slotCues ?? [:]).values.flatMap { $0 }.map { FactsText.fold($0) }
+        let nounList = (p.queryNouns ?? []) + registry.lexicon.filter { $0.value.predicate == predicate }.map(\.key)
+        let slotWords = slotPhrases.flatMap { $0.split(separator: " ").map(String.init) }
+        // The predicate's verb cues (its cues that aren't nouns): "Who worked for…" asks who did the work.
+        let cues = Set(p.queryCues ?? []).subtracting(nounList).subtracting(slotWords).map { FactsText.fold($0) }
+        let frameWords = (lang.subjectFrames ?? []).flatMap { FactsText.fold($0).split(separator: " ").map(String.init) }
+        let times = lang.timePrepositions + lang.dayPrepositions + lang.yearPrepositions + lang.rangePrepositions
+        let ops = lang.operators.before + lang.operators.after + lang.operators.previous + lang.operators.current
+        let between = (lang.questionWords + (lang.askBetween ?? []) + lang.owners + frameWords + Array(lang.episodeOrdinals.keys)
+            + lang.episodeFirst + times).filter { !listed(FactsText.fold($0), cues) }
+        let tail = times + ops.flatMap { FactsText.fold($0).split(separator: " ").map(String.init) } + lang.months.values.flatMap { $0 }
+        // A slot phrase's own words go on a noun ("day-job payroll"); its function words ("my business") don't.
+        let plain = lang.functionWords + lang.owners + (lang.askBetween ?? []) + times + lang.questionWords
+        let onWords = slotWords.filter { !listed($0, plain) }
+        // The whole phrase at k (its word count), or 0.
+        func phrase(_ k: Int) -> Int {
+            if listed(words[k], nounList) { return 1 }
+            let from = words[k...].joined(separator: " ")
+            return slotPhrases.filter { from == $0 || from.hasPrefix($0 + " ") }.map { $0.split(separator: " ").count }.max() ?? 0
+        }
+        while j < words.count {
+            let m = phrase(j)
+            if m > 0 {
+                var k = j + m
+                while k < words.count, listed(words[k], nounList) || listed(words[k], onWords) { k += 1 }
+                return k == words.count || listed(words[k], tail) || words[k].allSatisfy(\.isNumber)
+            }
+            if listed(words[j], cues) || !listed(words[j], between) { return false }
+            j += 1
+        }
+        return false
+    }
+
+    /// The kind of work the whole search names: words of exactly one slot value ("employer", "my own business"), else
+    /// nil (13e.2's fix round).
+    func askedSlot(_ query: String, predicate: String) -> String? {
+        guard let p = registry.predicate(predicate) else { return nil }
+        let q = FactsText.fold(query)
+        return slotValue(q, p, from: 0, to: (q as NSString).length)
     }
 
     /// The question asks for the organization (13e.1): a "which" word with a noun of the predicate or a slot word after

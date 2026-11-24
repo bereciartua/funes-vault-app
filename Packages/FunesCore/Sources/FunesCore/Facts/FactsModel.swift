@@ -513,7 +513,8 @@ public struct FactsGraph: Sendable {
             if kind == "person" {
                 pid = r.entity == "name" ? here[FactsText.fold(r.name)] : (regroup[r.entity] ?? r.entity)
             } else {
-                pid = foldedPlaceholder(r, mem: mem, others: newFacts) ?? entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
+                pid = foldedPlaceholder(r, mem: mem, others: newFacts) ?? labelledPlaceholder(r, mem: mem, others: newFacts)
+                    ?? entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
             }
             guard let pid, let ent = entities[pid] else { continue }
             landed[ri] = pid
@@ -532,13 +533,17 @@ public struct FactsGraph: Sendable {
             if !r.positive, status == .current, !existing.isEmpty {
                 status = .former         // "not back together", "no longer": it isn't current now, not that it never was
             } else if !r.positive {
-                let never = trusted && isNeverDenial(r, text: mem.text, names: Array(entities[pid]?.aliases ?? []))
-                for i in existing where trusted || !facts[i].trusted {
+                let shape = trusted ? neverDenial(r, text: mem.text, names: Array(entities[pid]?.aliases ?? [])) : nil
+                let never = shape != nil
+                let slot = shape ?? nil              // a slot-limited never ("never an employee of X") leaves other slots
+                let slotKey = registry.predicate(pred)?.slot
+                for i in existing where (trusted || !facts[i].trusted)
+                    && (slot == nil || facts[i].assertions.allSatisfy { a in slotKey.map { a.qualifiers[$0] == slot || (a.qualifiers[$0] == nil && !a.trusted) } ?? false }) {
                     facts[i].negated = true
                     if never { facts[i].neverDenied = true; neverTargets.insert(i) }
                 }
                 if never {
-                    denyNamesakes(of: pid, name: r.name, predicate: pred, kind: kind)
+                    denyNamesakes(of: pid, name: r.name, predicate: pred, kind: kind, slot: slot)
                     // Nothing of its own to negate: kept as a negated fact, so the denial is stored and holds against an
                     // agent's claim read later.
                     if existing.isEmpty, let last = facts.lastIndex(where: { $0.entity == pid && $0.predicate == pred }), facts[last].negated {
@@ -670,6 +675,43 @@ public struct FactsGraph: Sendable {
         return hits.count == 1 ? hits[0] : nil
     }
 
+    /// A placeholder the user calls by the role phrase a trusted memory gave one named business (13e.2 r2): "my own
+    /// freelance business, Juxali Illustration, has run since 2017", then "while keeping my freelance business going".
+    /// The quote has an owner word right before that same label; exactly one named trusted holder of the predicate has an
+    /// assertion with the placeholder's slot value and that label; it holds now (its latest trusted episode isn't ended);
+    /// and this memory neither ends nor denies it nor contrasts it. Else nil, and the placeholder is its own entity.
+    func labelledPlaceholder(_ r: ExtractedFact, mem: FactsMemory, others: [ExtractedFact]) -> String? {
+        guard mem.trusted, r.positive, r.status != .former, r.end == nil, placeholder(r.predicate, r.name) != nil,
+              let label = r.label.map({ FactsText.fold($0) }), !label.isEmpty,
+              let p = registry.predicate(r.predicate), let slot = p.slot, let value = r.qualifiers[slot] else { return nil }
+        let quote = FactsText.fold(r.quote)
+        let owners = registry.language.owners.map { FactsText.escape(FactsText.fold($0)) }
+        // The label right after the owner word: "my other freelance business" is another one.
+        let owned = "(?<!\\w)(?:" + owners.joined(separator: "|") + ")\\s+" + FactsText.escape(label) + "(?!\\w)"
+        guard FactsText.first(FactsText.regex(owned), in: quote) != nil else { return nil }
+        if (registry.language.negationWords ?? []).contains(where: { FactsText.has(quote, FactsText.fold($0)) }) { return nil }
+        let kind = registry.kindOf(r.predicate)
+        // Every named holder with that label and slot value, closed or not: two businesses called that never fold.
+        let named = facts.filter { f in
+            f.predicate == r.predicate && !f.negated && f.trusted
+                && (entities[f.entity]?.name.map { placeholder(r.predicate, $0) == nil } ?? false)
+                && f.assertions.contains(where: { $0.trusted && $0.qualifiers[slot] == value && $0.label.map { FactsText.fold($0) } == label })
+        }
+        guard Set(named.map(\.entity)).count == 1, let f = named.first, let e = entities[f.entity] else { return nil }
+        guard let last = factEpisodes(f).filter(\.trusted).last, last.ongoing else { return nil }
+        // Only while it ran: nothing the placeholder dates (its start or time, else a capture's own date) before it.
+        let since = last.tstart?.lo ?? DateRange.minDay
+        let when = parser.parse(r.start ?? r.time)?.hi ?? (mem.source == .import ? nil : parser.day(mem.written))
+        if let w = when, w < since { return nil }
+        let mine = Set(e.aliases.map { FactsText.normName($0, kind: kind, registry: registry) })
+        if others.contains(where: { o in o.predicate == r.predicate && mine.contains(FactsText.normName(o.name, kind: kind, registry: registry))
+            && (!o.positive || o.status == .former || o.end != nil) }) { return nil }
+        if notSame.contains(where: { $0.contains(e.id) && $0.contains { entities[$0]?.name.map { placeholder(r.predicate, $0) != nil } ?? false } }) {
+            return nil
+        }
+        return e.id
+    }
+
     /// A denial that says it never held ("I never worked at Orlin Labs"), with no date of its own: not "no longer".
     /// A never-denial (13e.1), fail closed, in the denied name's own clause (up to punctuation), one of two shapes:
     /// "I (have) never worked at Orlin Labs" / "Nunca trabajé en Orlin Labs" (before the never-word only first-person
@@ -678,20 +720,27 @@ public struct FactsGraph: Sendable {
     /// never-word, owners, the predicate's nouns and those function words). Nothing else in the clause ("before 2020",
     /// "as an employee", "full-time", "but I did", "my brother"), no date of its own, and not a "no longer".
     func isNeverDenial(_ r: ExtractedFact, text: String, names: [String] = []) -> Bool {
-        guard !r.positive, r.status != .current, r.time == nil, r.start == nil, r.end == nil else { return false }
+        neverDenial(r, text: text, names: names) != nil
+    }
+
+    /// The never-denial's shape (`isNeverDenial`), with the slot it's limited to: "I have never been an employee of
+    /// Orlin Labs" (13e.2 r3) carries one of the predicate's slot phrases between the never-word and the name, and denies
+    /// that slot only (`.some(slot)`); a plain never denies every slot (`.some(nil)`); nil when it isn't one.
+    func neverDenial(_ r: ExtractedFact, text: String, names: [String] = []) -> String?? {
+        guard !r.positive, r.status != .current, r.time == nil, r.start == nil, r.end == nil else { return nil }
         let lang = registry.language
         let never = (lang.neverWords ?? []).map { $0.lowercased() }
-        guard !never.isEmpty else { return false }
+        guard !never.isEmpty else { return nil }
         let ns = text as NSString
         let quoteAt = r.span ?? ns.range(of: r.quote)
-        guard quoteAt.location != NSNotFound else { return false }
+        guard quoteAt.location != NSNotFound else { return nil }
         // The denied name inside the quote (the fact's own name, else the entity's).
         var at = NSRange(location: NSNotFound, length: 0)
         for n in ([r.name] + names) where !n.isEmpty {
             let hit = ns.range(of: n, options: [.caseInsensitive, .diacriticInsensitive], range: quoteAt)
             if hit.location != NSNotFound { at = hit; break }
         }
-        guard at.location != NSNotFound else { return false }
+        guard at.location != NSNotFound else { return nil }
         // The whole sentence (a comma doesn't end it: "Before 2020, I never worked at X" is qualified). Compared
         // lowercased, not folded: "trabajó" (he) isn't "trabajé" (I).
         let stops = CharacterSet(charactersIn: ".!?;\n")
@@ -711,26 +760,41 @@ public struct FactsGraph: Sendable {
         let between = fold(lang.neverBetweenWords ?? []).union(cues)
         // "I never worked at X": first-person words, the never-word, then cues and function words; nothing after X.
         if let k = before.firstIndex(where: never.contains), after.isEmpty {
-            return before[..<k].allSatisfy(lead.contains) && before[(k + 1)...].allSatisfy(between.contains)
+            guard before[..<k].allSatisfy(lead.contains) else { return nil }
+            let mid = Array(before[(k + 1)...])
+            if mid.allSatisfy(between.contains) { return .some(nil) }
+            // "I have never been an employee of X": one slot phrase, whole, ending right before X; around it only
+            // what the plain shape allows (13e.2 r3).
+            for (slot, phrases) in (p?.slotCues ?? [:]).sorted(by: { $0.key < $1.key }) {
+                for phrase in phrases {
+                    let w = phrase.lowercased().split { !$0.isLetter && $0 != "'" && $0 != "’" }.map(String.init)
+                    guard !w.isEmpty, mid.count >= w.count, Array(mid.suffix(w.count)) == w else { continue }
+                    if mid.dropLast(w.count).allSatisfy(between.contains) { return .some(slot) }
+                }
+            }
+            return nil
         }
         // "X has never been my employer": X opens the clause.
         if before.isEmpty, let k = after.firstIndex(where: never.contains) {
             let aux = fold(lang.pairBefore + ["has", "have", "had", "ha", "han", "fue", "sido", "estado", "been"])
-            return after[..<k].allSatisfy(aux.contains) && after[(k + 1)...].allSatisfy { between.contains($0) || aux.contains($0) || fold(lang.owners).contains($0) }
+            return after[..<k].allSatisfy(aux.contains) && after[(k + 1)...].allSatisfy { between.contains($0) || aux.contains($0) || fold(lang.owners).contains($0) } ? .some(nil) : nil
         }
-        return false
+        return nil
     }
 
     /// A trusted never-denial also negates the facts of that predicate held by entities only untrusted memories named,
     /// under exactly the same normalised name (never a first name or a name inside another): an agent's claim the user
     /// denies (§11.9). It adds them no alias, evidence or link.
-    mutating func denyNamesakes(of pid: String, name: String, predicate: String, kind: String) {
+    /// `slot`: a slot-limited denial ("never an employee of X") reaches only facts whose every assertion is in that slot.
+    mutating func denyNamesakes(of pid: String, name: String, predicate: String, kind: String, slot: String? = nil) {
+        let slotKey = registry.predicate(predicate)?.slot
         // A person's single name is shared too often ("Ana"): only a full name reaches another entity.
         let forms = Set(([name] + Array(entities[pid]?.trustedAliases ?? [])).map { FactsText.normName($0, kind: kind, registry: registry) }
             .filter { !$0.isEmpty && (kind != FactsPrompt.personKind || $0.contains(" ")) })
         for e in orderedEntities where e.id != pid && e.kind == kind && e.trustedAliases.isEmpty && e.group == nil {
             guard e.aliases.contains(where: { forms.contains(FactsText.normName($0, kind: kind, registry: registry)) }) else { continue }
-            for i in facts.indices where facts[i].entity == e.id && facts[i].predicate == predicate && !facts[i].trusted {
+            for i in facts.indices where facts[i].entity == e.id && facts[i].predicate == predicate && !facts[i].trusted
+                && (slot == nil || facts[i].assertions.allSatisfy { a in slotKey.map { a.qualifiers[$0] == slot || a.qualifiers[$0] == nil } ?? false }) {
                 facts[i].negated = true
                 facts[i].neverDenied = true
                 neverTargets.insert(i)

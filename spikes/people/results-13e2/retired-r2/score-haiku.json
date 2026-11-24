@@ -1,0 +1,206 @@
+{
+ "engine": "haiku",
+ "problems": [],
+ "measures": {
+  "decidable": 61,
+  "decidable_right": 27,
+  "decidable_right_rate": 0.4426229508196721,
+  "decidable_unmarked_wrong": 0,
+  "decidable_marked_wrong": 0,
+  "undecidable": 59,
+  "undecidable_not_sure": 58,
+  "undecidable_not_sure_rate": 0.9830508474576272,
+  "undecidable_no_answer": 5,
+  "negatives": 48,
+  "negative_wrong_R_per_sample": {},
+  "negative_wrong_P": 1,
+  "someone_else": 0,
+  "owed_skipped": 3,
+  "unmarked_inferred": 0,
+  "failed": 0,
+  "p95_ms": 7115.65,
+  "live_answers_timed": 168,
+  "samples": 1
+ },
+ "gates": {
+  "complete": true,
+  "decidable_right": false,
+  "decidable_wrong": true,
+  "undecidable_not_sure": true,
+  "negatives": true,
+  "someone_else": true,
+  "owed_checks": false,
+  "marking": true,
+  "p95": true,
+  "facts": false
+ },
+ "lists": {
+  "decidable_missed": [
+   "g03|q1|R|1",
+   "g03|q2|R|1",
+   "g04|q1|R|1",
+   "g04|q4|R|1",
+   "g05|q1|R|1",
+   "g05|q2|R|1",
+   "g05|q3|R|1",
+   "g06|q1|R|1",
+   "g07|q3|R|1",
+   "g08|q2|R|1",
+   "g09|q2|R|1",
+   "g09|q3|R|1",
+   "g11|q1|R|1",
+   "g11|q2|R|1",
+   "g12|q1|R|1",
+   "g13|q3|R|1",
+   "g14|q2|R|1",
+   "g15|q1|R|1",
+   "g15|q3|R|1",
+   "g16|q1|R|1",
+   "g16|q2|R|1",
+   "g17|q1|R|1",
+   "g17|q2|R|1",
+   "g18|q1|R|1",
+   "g18|q2|R|1",
+   "g19|q3|R|1",
+   "g20|q1|R|1",
+   "g20|q2|R|1",
+   "g21|q1|R|1",
+   "g21|q2|R|1",
+   "g22|q1|R|1",
+   "g22|q2|R|1",
+   "g23|q3|R|1",
+   "g24|q1|R|1"
+  ],
+  "decidable_wrong": [],
+  "undecidable_answered": [
+   "g18|q3|R|1 rows=yes"
+  ],
+  "negative_wrong_R": [],
+  "negative_wrong_P": [
+   "g19|q6|P|1"
+  ],
+  "someone_else": [],
+  "owed_skipped": [
+   "g05|q7|R|1 claim 1 (judge: temporal, unchecked)",
+   "g21|q4|R|1 claim 1 (judge: temporal, unchecked)",
+   "g21|q4|R|1 claim 3 (judge: temporal, unchecked)"
+  ],
+  "unmarked_inferred": [],
+  "failed": []
+ },
+ "original_labels": {
+  "measures": {
+   "decidable": 60,
+   "decidable_right": 27,
+   "decidable_right_rate": 0.45,
+   "decidable_unmarked_wrong": 0,
+   "decidable_marked_wrong": 0,
+   "undecidable": 60,
+   "undecidable_not_sure": 59,
+   "undecidable_not_sure_rate": 0.9833333333333333,
+   "undecidable_no_answer": 5,
+   "negatives": 48,
+   "negative_wrong_R_per_sample": {},
+   "negative_wrong_P": 1,
+   "someone_else": 0,
+   "owed_skipped": 3,
+   "unmarked_inferred": 0,
+   "failed": 0,
+   "p95_ms": 7115.65,
+   "live_answers_timed": 168,
+   "samples": 1
+  },
+  "gates": {
+   "complete": true,
+   "decidable_right": false,
+   "decidable_wrong": true,
+   "undecidable_not_sure": true,
+   "negatives": true,
+   "someone_else": true,
+   "owed_checks": false,
+   "marking": true,
+   "p95": true
+  }
+ },
+ "facts": {
+  "gate read": {
+   "wrong_facts": [
+    "('g01', 'work')",
+    "('g02', 'work')",
+    "('g03', 'work')",
+    "('g04', 'work')",
+    "('g05', 'Ternquill Works', 'slot')",
+    "('g05', 'Ternquill Works', 'unassigned')",
+    "('g06', 'work')",
+    "('g07', 'work')",
+    "('g08', 'work')",
+    "('g09', 'work')",
+    "('g10', 'work')",
+    "('g11', 'work')",
+    "('g12', 'work')",
+    "('g13', 'work')",
+    "('g14', 'Mavique Fibers', 'unassigned')",
+    "('g14', 'work')",
+    "('g15', 'work')",
+    "('g16', 'work')",
+    "('g17', 'work')",
+    "('g18', 'work')",
+    "('g19', 'work')",
+    "('g20', 'work')",
+    "('g21', 'work')",
+    "('g22', 'work')",
+    "('g23', 'work')",
+    "('g24', 'work')"
+   ],
+   "wrong_dates": [
+    "('g04', 'Dovrix Studio', '', 'end')",
+    "('g09', 'Yarrowfen Instruments', '', 'end')",
+    "('g10', 'Solvren Taller', '', 'end')",
+    "('g14', 'Ruzento Mobility', '2020', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [
+    "('g21', 'Self-employed')"
+   ],
+   "pass": false
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('x03', 'Small Current Studio', '2019-02', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('w02', 'Cedar Press', '2020-09', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  }
+ },
+ "pass": false
+}
