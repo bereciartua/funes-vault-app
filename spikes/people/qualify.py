@@ -791,6 +791,15 @@ def replay_files(engine):
             "spikeg": (f"spike-g-{engine}", [f"{s}-{arm}.jsonl" for s in ("main", "astra") for arm in ("P", "F")])}
 
 
+def revision_counter(rev):
+    """A facts revision without what differs between two fixture vaults or registries: "<epoch>.<counter>.<digest>",
+    where the epoch is the vault's and the digest hashes the facts index key (the registry fingerprint among it). The
+    author's decision of 2026-11-24 ("Go with A"): 13d's replay at a later registry sends byte-identical requests (every
+    answer from the cache) and gives the same records and marks, so only the counter is compared."""
+    parts = rev.split(".")
+    return parts[1] if len(parts) > 1 else rev
+
+
 MARK_FIELDS = ("inferred", "basis", "factIds", "corrections")
 
 
@@ -801,7 +810,7 @@ def normalized(path, marks=True):
     for line in Path(path).read_text().splitlines():
         r = {k: v for k, v in json.loads(line).items() if k != "reused"}
         if r.get("factsRevision"):
-            r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
+            r["factsRevision"] = revision_counter(r["factsRevision"])
         r["claims"] = [{**c, "factIds": len(c["factIds"])} if "factIds" in c else c for c in r.get("claims", [])]
         if not marks:
             r["claims"] = [{k: v for k, v in c.items() if k not in MARK_FIELDS} for c in r["claims"]]

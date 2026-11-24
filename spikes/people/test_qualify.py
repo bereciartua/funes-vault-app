@@ -394,6 +394,11 @@ class TimelineRecordRules(unittest.TestCase):
             self.assertFalse(Q.is_product_code(f), f)
         self.assertTrue(Q.is_product_code("spikes/people/sub/x.py"))    # only the spike's top-level scripts
 
+    def test_a_replay_compares_the_revision_counter_only(self):
+        self.assertEqual(Q.revision_counter("27f68ab7-4bda.27.w95Zpj_5"), "27")
+        self.assertEqual(Q.revision_counter("2ceae9cc-df72.27.wDWe0g4F"), "27")
+        self.assertNotEqual(Q.revision_counter("2ceae9cc-df72.28.wDWe0g4F"), "27")
+
     def test_a_waiver_caps_owed_checks_and_marking_only(self):
         w = {"waived": {"owed_checks": {"measure": "owed_skipped", "max": 2}, "marking": {"measure": "unmarked_inferred", "max": 1},
                         "someone_else": {"measure": "someone_else", "max": 5}}}
