@@ -1,0 +1,34 @@
+{
+  "note": "Phase 13e.2: the author's waivers on the timeline gate, read by qualify.py (timeline_waiver, unwaived_failures) and FactsGateEvidence. A waiver names one answer model, its answer prompt version, the registry version and the gate read, with the digests of that read's calls and that engine's answers; it caps each waived target's measure at what that read measured. Only owed checks and marking can be waived: wrong answers, the facts, completeness, Spike G and latency always gate.",
+  "waivers": [
+    {
+      "gate": "timeline-answers",
+      "answerModel": "claude-code/claude-haiku-5-5",
+      "answerPromptVersion": "a13e2-3",
+      "registryVersion": "v1-8338de9d268e",
+      "tag": "r4",
+      "readCallsSha256": "3a4ffb0a3fad1b513a3785e95cb3ca894633280b5dbec726ab3dcb3753018cd2",
+      "answersSha256": "d18d371e6fee3920bba2f0e0e3e39ec1c4d4c87c00559f6b9422e16290fa5d14",
+      "waived": {
+        "owed_checks": {
+          "measure": "owed_skipped",
+          "max": 2
+        },
+        "marking": {
+          "measure": "unmarked_inferred",
+          "max": 1
+        }
+      },
+      "measured": "r4 (Claude Haiku 5.5): decidable right 60 of 60, 0 wrong; undecidable \"not sure\" 58 of 60; negatives R 1 vs P 5; someone else 0; facts pass; p95 8.1 s; owed checks skipped 2; unmarked inferred 1. GPT-5.6-Terra passed every gate on the same read.",
+      "items": [
+        "g20 q3 R1 claim 1: owed a check, none ran; the answer names the right organization (decidable, right)",
+        "g20 q5 R1 claim 2: owed a check, none ran; the answer says the memories don't establish it (undecidable, not sure)",
+        "g05 q7 R1 claim 2: a true statement the judges call inferred, left unmarked (negative, not wrong)"
+      ],
+      "by": "the author",
+      "decision": "Let's finish round 4 first but after that no more rounds and let's ship everything on, timeline and answers",
+      "date": "2026-11-24",
+      "reason": "Round 4 was the last round. Every miss is a correct claim that skipped a check or a mark, not a wrong answer; the gates on wrong answers, the facts and Spike G all pass. The two weeks' review of 10 timeline answers on the author's vault still applies."
+    }
+  ]
+}

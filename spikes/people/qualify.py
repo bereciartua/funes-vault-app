@@ -1018,12 +1018,14 @@ def timeline_blockers():
     return out
 
 
-def timeline_inputs(engine, tag):
+def timeline_inputs(engine, tag, waiver=None):
     """The evidence a timeline record rests on, repo-relative under results-13e2/ and the set."""
     files = [f"answers-{engine}/answers.jsonl", f"answers-{engine}/manifest.json", f"answers-{engine}/judge-opus.jsonl",
              f"answers-{engine}/judge-astra.jsonl", f"answers-{engine}/adjudicated.jsonl",
              f"read-{tag}/stories.jsonl", f"read-{tag}/manifest.json", f"read-{tag}/calls.jsonl"]
     files += ["labels-corrected.json"] + [f for f in ("relabels.jsonl", "fact-disputes.jsonl") if (R13E2 / f).exists()]
+    if waiver:
+        files.append("waivers.json")
     return files
 
 
@@ -1050,6 +1052,71 @@ def code_changed_since(commit):
     return [f for f in p.stdout.split() if not f.endswith("Resources/facts-qualification.json")]
 
 
+def measured_commit(x):
+    """The commit a run measured. FactsHarness stamps "<sha>+dirty" when anything in the tree changed, results included;
+    the run's own `dirty` flag covers code only, so with it false the code was the commit's (a run that wrote its
+    results inside the tree, as r4 did). A run whose code was dirty, or that names no flag, keeps the suffix. The flag
+    covers every path `swift test` builds or reads (Packages; Apps and scripts too), not the Xcode project or the spike's
+    registry copy, which the harness never reads (the manifest's registryVersion covers the bundled registry). Live runs
+    only: a replay must be at a clean commit."""
+    c = x.get("commit") or ""
+    if c.endswith("+dirty") and x.get("dirty") is False:
+        return c[: -len("+dirty")]
+    return c
+
+
+def is_product_code(f):
+    """Code that ships: not the test support and harnesses (Packages/*/Tests), nor the spike's scripts and Swift."""
+    return not (re.match(r"Packages/[^/]+/Tests/", f) or re.fullmatch(r"spikes/people/[^/]+\.py", f)
+                or f.startswith("spikes/people/swift/"))
+
+
+def product_code_changed_since(commit):
+    """The timeline gate's code check (the author's decision of 2026-11-24): product code changed since `commit`; None
+    if unknown. Test support and scoring scripts may change after a live run, because the replays at one clean commit
+    must reproduce its read and answers exactly (`timeline_replay_problems`)."""
+    changed = code_changed_since(commit) if commit else None
+    return None if changed is None else [f for f in changed if is_product_code(f)]
+
+
+TIMELINE_WAIVERS = HERE / "results-13e2" / "waivers.json"
+# The targets a waiver may name, each with the measure it caps. Wrong answers (decidable wrong, someone else, negatives),
+# the facts, completeness, Spike G and latency are never waived.
+TIMELINE_WAIVABLE = {"owed_checks": "owed_skipped", "marking": "unmarked_inferred"}
+
+
+def timeline_waiver(model, answer_prompt_version, registry_version, tag, engine):
+    """The author's waiver for one answer model's timeline gate (results-13e2/waivers.json), or None. It holds only for
+    the answer model, answer prompt version, registry version and gate read it names, and for the very read calls and
+    answers it was given on (their digests)."""
+    if not TIMELINE_WAIVERS.exists():
+        return None
+    calls, answers = R13E2 / f"read-{tag}" / "calls.jsonl", R13E2 / f"answers-{engine}" / "answers.jsonl"
+    return next((w for w in json.loads(TIMELINE_WAIVERS.read_text())["waivers"]
+                 if w.get("gate") == "timeline-answers" and w.get("answerModel") == model
+                 and w.get("answerPromptVersion") == answer_prompt_version and w.get("registryVersion") == registry_version
+                 and w.get("tag") == tag and calls.exists() and answers.exists()
+                 and w.get("readCallsSha256") == sha(calls) and w.get("answersSha256") == sha(answers)), None)
+
+
+def unwaived_failures(gates, measures, waiver):
+    """The failing gates a waiver doesn't cover: it names the target, caps its measure, and the measure is within it."""
+    out = []
+    for k, ok in gates.items():
+        if ok:
+            continue
+        t = (waiver or {}).get("waived", {}).get(k)
+        if t and TIMELINE_WAIVABLE.get(k) == t.get("measure") and isinstance(measures.get(t["measure"]), int) \
+                and measures[t["measure"]] <= t.get("max", -1):
+            continue
+        out.append(k)
+    return out
+
+
+def scores_waiver(sc):
+    return timeline_waiver(sc["model"], sc["replay"]["answerPromptVersion"], sc["replay"]["registryVersion"], sc["tag"], sc["engine"])
+
+
 def timeline_replay_problems(engine, model, replay, tag, facts_record=None, check_code=True):
     """Why the evidence doesn't tie the live read and answers, and their replays, to one set and the frozen code
     ([] = it does)."""
@@ -1072,10 +1139,12 @@ def timeline_replay_problems(engine, model, replay, tag, facts_record=None, chec
         x = m[name]
         if x.get("dirty") or not x.get("commit"):
             probs.append(f"{name}: on a dirty tree")
+        if "replay" in name and (x.get("commit") or "").endswith("+dirty"):
+            probs.append(f"{name}: not at a clean commit")
         if check_code:
-            changed = code_changed_since(x.get("commit", "HEAD"))
+            changed = product_code_changed_since(x.get("commit") if "replay" in name else measured_commit(x))
             if changed is None or changed:
-                probs.append(f"{name}: frozen code changed since its commit ({(changed or ['unknown'])[:3]})")
+                probs.append(f"{name}: product code changed since its commit ({(changed or ['unknown'])[:3]})")
         if any(x.get(k) != v for k, v in set_sha.items()):
             probs.append(f"{name}: not on the set's current files")
         if x.get("options", {}).get("only") or x.get("options", {}).get("index") == "keyword":
@@ -1121,11 +1190,18 @@ def timeline_replay_problems(engine, model, replay, tag, facts_record=None, chec
             if c[1] or not c[0]:
                 probs.append(f"answers: records made on a dirty tree or without a commit ({c})")
             else:
-                changed = code_changed_since(c[0])
+                changed = product_code_changed_since(measured_commit({"commit": c[0], "dirty": c[1]}))
                 if changed is None or changed:
-                    probs.append(f"answers: records made at {c[0][:8]}, and frozen code changed since")
+                    probs.append(f"answers: records made at {c[0][:8]}, and product code changed since")
     if rrep.get("commit") != arep.get("commit"):
         probs.append("the two replays aren't at one commit")
+    sg = Path(replay) / f"spike-g-{engine}-timeline" / "manifest-spikeg.json"
+    if sg.exists():
+        g = json.loads(sg.read_text())
+        if g.get("commit") != arep.get("commit"):
+            probs.append("Spike G's replay isn't at the replays' commit")
+        if g.get("answerPromptVersion") != arep.get("answerPromptVersion") or g.get("registryVersion") != arep.get("registryVersion"):
+            probs.append("Spike G's replay isn't at the answers' prompt and registry versions")
     if facts_record:
         e = rd.get("engine", {})
         if f"{e.get('provider')}/{e.get('model')}" != facts_record["model"] or e.get("adapter") != facts_record["adapter"]:
@@ -1155,10 +1231,12 @@ def spikeg_timeline_problems(engine, model, replay, check_code=True):
             probs.append(f"{name}: options {o}")
         if x.get("dirty") or not x.get("commit"):
             probs.append(f"{name}: on a dirty tree")
+        if mode == "replay" and (x.get("commit") or "").endswith("+dirty"):
+            probs.append(f"{name}: not at a clean commit")
         if check_code:
-            changed = code_changed_since(x.get("commit", "HEAD"))
+            changed = product_code_changed_since(x.get("commit") if mode == "replay" else measured_commit(x))
             if changed is None or changed:
-                probs.append(f"{name}: frozen code changed since its commit")
+                probs.append(f"{name}: product code changed since its commit")
         if mode == "live" and not model_identified(x, model):
             probs.append(f"{name}: the provider reported {x.get('modelsReported')}")
     for n in ("main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl"):
@@ -1209,7 +1287,8 @@ def cmd_timeline_scores(a):
         for f in Path(a.replay, sub).iterdir():
             if f.is_file():
                 shutil.copy(f, dest / "replay" / sub / f.name)
-    inputs = timeline_inputs(a.engine, a.tag)
+    m0 = json.loads((Path(a.replay) / f"answers-{a.engine}" / "manifest.json").read_text())
+    inputs = timeline_inputs(a.engine, a.tag, timeline_waiver(a.model, m0["answerPromptVersion"], m0["registryVersion"], a.tag, a.engine))
     m = json.loads((dest / "replay" / f"answers-{a.engine}" / "manifest.json").read_text())
     out = {"engine": a.engine, "model": a.model, "factsModel": a.facts_model, "tag": a.tag,
            "inputs": {p: sha(R13E2 / p) for p in inputs}, "set": {f: sha(GATE_SET / f) for f in ("stories.json", "fillers.json")},
@@ -1227,7 +1306,7 @@ def cmd_timeline_scores(a):
 
 
 def timeline_record_problems(sc):
-    probs = [f"{k}: fails" for k, v in sc["gates"].items() if not v] + sc.get("problems", [])
+    probs = [f"{k}: fails" for k in unwaived_failures(sc["gates"], sc["measures"], scores_waiver(sc))] + sc.get("problems", [])
     rec, _ = phase_a_lines(sc["factsModel"])
     if rec is None:
         probs.append("no works at {recorded, linked} record for the Facts engine")
@@ -1259,6 +1338,11 @@ def cmd_timeline_records(a):
                       f"{sc['measures']['samples']} sample(s) of R; Spike G with the rows on; the facts behind the rows",
               "evidence": evidence, "recordedAt": sc["date"], "answerModels": [sc["model"]],
               "answerPromptVersion": sc["replay"]["answerPromptVersion"]}
+    waived = [k for k, v in sc["gates"].items() if not v]
+    if waived:
+        w = scores_waiver(sc)
+        record["gate"] += "; waived by the author (" + w["date"] + "): " + ", ".join(
+            f"{k} ({w['waived'][k]['measure']} {sc['measures'][w['waived'][k]['measure']]})" for k in waived)
     print(json.dumps(record, indent=1, ensure_ascii=False))
     if a.write:
         f = json.loads(RECORDS.read_text())
@@ -1285,7 +1369,7 @@ def verify_timeline_record(r, reg):
     rec0, _ = phase_a_lines(sc["factsModel"])
     probs += timeline_replay_problems(sc["engine"], sc["model"], scores.parent / "replay", sc["tag"], rec0, check_code=False)
     again, _, _ = timeline_gates(sc["engine"], sc["model"], sc["factsModel"], sc["tag"])
-    probs += [f"{k}: fails (recomputed)" for k, v in again["gates"].items() if not v]
+    probs += [f"{k}: fails (recomputed)" for k in unwaived_failures(again["gates"], again["measures"], scores_waiver(sc))]
     if again["measures"] != sc["measures"]:
         probs.append("the measures recomputed from the evidence differ from the scores")
     p2, rec = timeline_record_problems(sc)

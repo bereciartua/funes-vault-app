@@ -373,13 +373,61 @@ class TimelineGateScoring(unittest.TestCase):
         self.assertTrue(any("decidable questions" in p for p in probs) and any("rehire" in p for p in probs))
 
 
+class TimelineRecordRules(unittest.TestCase):
+    """The record step's rules (the author's decision of 2026-11-24): the commit a run measured, product code, and the
+    author's waivers of the timeline gate."""
+
+    def test_a_results_only_dirty_stamp_is_the_commit(self):
+        sha = "a" * 40
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty", "dirty": False}), sha)
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty", "dirty": True}), sha + "+dirty")
+        self.assertEqual(Q.measured_commit({"commit": sha + "+dirty"}), sha + "+dirty")     # no code flag: kept
+        self.assertEqual(Q.measured_commit({"commit": sha, "dirty": False}), sha)
+        self.assertIsNone(Q.product_code_changed_since(""))
+
+    def test_product_code_leaves_out_tests_and_scripts(self):
+        for f in ("Packages/FunesCore/Sources/FunesCore/Facts/TimelineCheck.swift", "Apps/FunesMac/App.swift",
+                  "scripts/test.sh", "FunesVault.xcodeproj/project.pbxproj", "spikes/people/registry.json"):
+            self.assertTrue(Q.is_product_code(f), f)
+        for f in ("Packages/FunesCore/Tests/FunesCoreTests/Support/FactsGateEvidence.swift", "spikes/people/qualify.py",
+                  "spikes/people/swift/Sources/x.swift"):
+            self.assertFalse(Q.is_product_code(f), f)
+        self.assertTrue(Q.is_product_code("spikes/people/sub/x.py"))    # only the spike's top-level scripts
+
+    def test_a_waiver_caps_owed_checks_and_marking_only(self):
+        w = {"waived": {"owed_checks": {"measure": "owed_skipped", "max": 2}, "marking": {"measure": "unmarked_inferred", "max": 1},
+                        "someone_else": {"measure": "someone_else", "max": 5}}}
+        gates = {"owed_checks": False, "marking": False, "someone_else": False, "p95": True}
+        m = {"owed_skipped": 2, "unmarked_inferred": 1, "someone_else": 1}
+        self.assertEqual(Q.unwaived_failures(gates, m, w), ["someone_else"])            # wrong answers are never waived
+        self.assertEqual(Q.unwaived_failures(gates, {**m, "owed_skipped": 3}, w), ["owed_checks", "someone_else"])
+        self.assertEqual(Q.unwaived_failures(gates, m, None), ["owed_checks", "marking", "someone_else"])
+        wrong = {"waived": {"owed_checks": {"measure": "unmarked_inferred", "max": 9}}}  # the cap must be the target's measure
+        self.assertEqual(Q.unwaived_failures({"owed_checks": False}, m, wrong), ["owed_checks"])
+
+    def test_a_waiver_is_bound_to_model_prompt_registry_and_read(self):
+        w = Q.timeline_waiver("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r4", "haiku")
+        self.assertIsNotNone(w)
+        self.assertEqual(set(w["waived"]), {"owed_checks", "marking"})
+        for args in (("codex/gpt-5.6-terra", "a13e2-3", "v1-8338de9d268e", "r4"), ("claude-code/claude-haiku-5-5", "a13e2-4", "v1-8338de9d268e", "r4"),
+                     ("claude-code/claude-haiku-5-5", "a13e2-3", "v1-000000000000", "r4"), ("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r5")):
+            self.assertIsNone(Q.timeline_waiver(*args, "haiku"), args)
+        # Bound to the answers it was given on: another engine's answers on the same read aren't covered.
+        self.assertIsNone(Q.timeline_waiver("claude-code/claude-haiku-5-5", "a13e2-3", "v1-8338de9d268e", "r4", "terra"))
+
+
 class Verify(unittest.TestCase):
-    def test_shipped_records_are_13e2s_records_step(self):
-        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; no timeline
-        # record and no attributes record (they lapsed with the registry until 13e.2's answer gates).
-        shipped = {(r["callGroup"], tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
-        self.assertEqual(shipped, {("people", ("recorded", "linked")), ("work", ("recorded",)), ("work", ("recorded", "linked"))})
-        preds = {p for r in json.loads(Q.RECORDS.read_text())["records"] for p in r["predicates"]}
+    def test_shipped_records_are_13e2s_records_and_gate(self):
+        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; then 13e.2's gate
+        # (r4): attributes (unscoped and sole_known) and works at's timeline for each answer model.
+        recs = json.loads(Q.RECORDS.read_text())["records"]
+        shipped = sorted((r["callGroup"], tuple(r["uses"]), r.get("basis", ""), tuple(r.get("answerModels", []))) for r in recs)
+        answer = [m for m in ("claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra")]
+        want = [("people", ("recorded", "linked"), "", ()), ("work", ("recorded",), "", ()), ("work", ("recorded", "linked"), "", ())]
+        want += [("people", ("attributes",), b, (m,)) for m in answer for b in ("", "sole_known")]
+        want += [("work", ("timeline",), "", (m,)) for m in answer]
+        self.assertEqual(shipped, sorted(want))
+        preds = {p for r in recs for p in r["predicates"]}
         self.assertTrue({"client", "works_at"} <= preds)
         self.assertEqual(Q.cmd_verify(None), 0)
 

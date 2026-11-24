@@ -55,4 +55,31 @@ import Testing
         let engineFree = FactsQualification(records: [record([.recorded, .linked, .timeline])])
         #expect(engineFree.uses(engines: engines, registry: reg, promptVersions: versions).isOn(d, .timeline))
     }
+
+    /// The record step's evidence rules (the author's decision of 2026-11-24): a waiver caps only owed checks and
+    /// marking, at the measured value, for exactly the model, answer prompt, registry and read it names.
+    @Test func aTimelineWaiverCapsOnlyOwedChecksAndMarking() throws {
+        let w: [String: Any] = ["waived": ["owed_checks": ["measure": "owed_skipped", "max": 2], "marking": ["measure": "unmarked_inferred", "max": 1],
+                                           "someone_else": ["measure": "someone_else", "max": 5]]]
+        let gates = ["owed_checks": false, "marking": false, "someone_else": false, "p95": true]
+        let m: [String: Any] = ["owed_skipped": 2, "unmarked_inferred": 1, "someone_else": 1]
+        #expect(FactsGateEvidence.unwaived(gates, measures: m, waiver: w) == ["someone_else"])
+        #expect(FactsGateEvidence.unwaived(gates, measures: m.merging(["owed_skipped": 3]) { $1 }, waiver: w) == ["owed_checks", "someone_else"])
+        #expect(FactsGateEvidence.unwaived(gates, measures: m, waiver: nil) == ["marking", "owed_checks", "someone_else"])
+        let file = FileManager.default.temporaryDirectory.appending(path: "waivers-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try JSONSerialization.data(withJSONObject: ["waivers": [["gate": "timeline-answers", "answerModel": "claude-code/claude-haiku-5-5",
+            "answerPromptVersion": "a13e2-3", "registryVersion": "v1-x", "tag": "r4", "readCallsSha256": "c1", "answersSha256": "a1"]]]).write(to: file)
+        func waived(_ model: String = "claude-code/claude-haiku-5-5", reg: String = "v1-x", tag: String = "r4", calls: String? = "c1", answers: String? = "a1") -> Bool {
+            FactsGateEvidence.timelineWaiver(model: model, answerPromptVersion: "a13e2-3", registryVersion: reg, tag: tag,
+                                             readCallsSha256: calls, answersSha256: answers, file: file) != nil
+        }
+        #expect(waived())
+        #expect(!waived("codex/gpt-5.6-terra") && !waived(reg: "v1-y") && !waived(tag: "r5"))
+        // Bound to the read and the answers it was given on.
+        #expect(!waived(calls: "c2") && !waived(answers: "a2") && !waived(calls: nil))
+        // A timeline record with answer models needs 13e.2's scores, not 13e.1's.
+        let r = record([.timeline], answerModels: ["claude-code/claude-haiku-5-5"], answerPrompt: SearchAnswerer.promptVersion)
+        #expect(FactsGateEvidence.problems(r, registry: reg) == ["no scores-13e2-<engine>.json in the evidence"])
+    }
 }

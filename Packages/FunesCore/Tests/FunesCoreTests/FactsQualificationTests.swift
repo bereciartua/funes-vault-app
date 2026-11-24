@@ -264,7 +264,12 @@ import Testing
         where r.adapter.hasPrefix(id + "/") && !r.adapter.hasPrefix("\(id)/\(rev);") { out.append("adapter revision") }
         // And it turns on what it lists, for its own engine, with the bundle's other records (its uses' prerequisites).
         let mine = bundle.filter { $0.engine == r.engine && $0.callGroup == r.callGroup }
-        let on = FactsQualification(records: mine).uses(engines: [r.callGroup: r.engine], registry: registry, promptVersions: versions)
+        // A record measured with answer models counts for those answers: checked as the first of them reads it, with the
+        // whole bundle (a timeline record measured with an answer model needs that model's attributes beside it).
+        let answer = r.answerModels.first.map { FactsQualification.AnswerKey(model: $0, promptVersion: r.answerPromptVersion) }
+        let engines = answer == nil ? [r.callGroup: r.engine] : Dictionary(bundle.map { ($0.callGroup, $0.engine) }, uniquingKeysWith: { a, _ in a })
+        let on = FactsQualification(records: answer == nil ? mine : bundle.filter { engines[$0.callGroup] == $0.engine })
+            .uses(engines: engines, registry: registry, promptVersions: versions, answer: answer)
         for p in r.predicates { for u in r.uses where !on.isOn(p, FactsUse(rawValue: u) ?? .recorded, basis: r.basis) { out.append("\(p) \(u) stays off") } }
         for p in r.predicates {
             guard let pred = registry.predicate(p), pred.callGroup == r.callGroup else { out.append("\(p) isn't in \(r.callGroup)"); continue }
@@ -414,18 +419,30 @@ import Testing
 
     @Test func whatShipsIsHaikusPersonPoolClientAndWorksAt() {
         // 13e.2's records step (Phase B on 13e.1's code, ceb9d97): the person pool {recorded, linked}, client {recorded}
-        // and works at {recorded, linked}, all Haiku. The timeline and bridges stay unqualified (13e.2's gate decides the
-        // timeline; bridges are retired). 13d's attributes records lapsed with the registry until 13e.2's answer gates.
-        #expect(FactsQualification.bundled.records.count == 3)
+        // and works at {recorded, linked}, all Haiku. Then 13e.2's gate (r4): for each answer model, Claude Haiku 5.5 and
+        // GPT-5.6-Terra, the person *attributes* (unscoped and sole_known) and works at's *timeline*, at this answer
+        // prompt (Haiku's timeline under the author's waiver). Plain search gets no timeline or bridges; attributes count
+        // there as recorded, and go to an answer only when a record covers its model.
+        #expect(FactsQualification.bundled.records.count == 9)
         let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
         #expect(Set(on.predicates(.linked)) == Set(persons + ["works_at"]))
         #expect(Set(on.predicates(.recorded)) == Set(persons + ["client", "works_at"]))
-        #expect([FactsUse.timeline, .bridges, .attributes].allSatisfy { on.predicates($0).isEmpty })
+        #expect([FactsUse.timeline, .bridges].allSatisfy { on.predicates($0).isEmpty })
         for model in ["claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra"] {
             let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
                                                          answer: .init(model: model, promptVersion: SearchAnswerer.promptVersion))
-            #expect(answer.predicates(.attributes).isEmpty, "\(model)")
+            #expect(Set(answer.predicates(.attributes)) == Set(persons), "\(model)")
+            #expect(answer.predicates(.timeline) == ["works_at"], "\(model)")
+            #expect(answer.predicates(.bridges).isEmpty, "\(model)")
+            // Another answer prompt: neither.
+            let old = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
+                                                      answer: .init(model: model, promptVersion: "a13d-1"))
+            #expect(old.predicates(.attributes).isEmpty && old.predicates(.timeline).isEmpty, "\(model)")
         }
+        // An answer model the gates didn't run: neither.
+        let other = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
+                                                    answer: .init(model: "claude-code/claude-opus-5-5", promptVersion: SearchAnswerer.promptVersion))
+        #expect(other.predicates(.attributes).isEmpty && other.predicates(.timeline).isEmpty)
         // Another engine gets nothing.
         let opus = FactsQualification.bundled.uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
         #expect(FactsUse.allCases.allSatisfy { opus.predicates($0).isEmpty })
