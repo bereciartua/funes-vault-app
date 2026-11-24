@@ -33,7 +33,8 @@ import Testing
         let s = jobs()
         let stray = "First question: where did I work before Acme?"
         let it = s.intent(stray)
-        #expect(it.map { s.answer($0, query: stray).basis } == .ambiguous)
+        // Told, or since 13e.1 no intent at all (every word of the question counts): never the first stint's answer.
+        #expect(it.map { s.answer($0, query: stray).basis } ?? .ambiguous == .ambiguous)
         let q = "Where did I work before Acme the first time?"
         #expect(s.intent(q).map { s.name(s.answer($0, query: q).entity) } == "EarlierCo")
     }

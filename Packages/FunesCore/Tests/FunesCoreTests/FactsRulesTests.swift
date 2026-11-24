@@ -142,7 +142,7 @@ import Testing
 
     @Test func intentNegativesAndPositives() {
         let s = stateWith([fact(d, "Acme", "2015", "2018", status: .former), fact(d, "Initech", "2019", status: .current)])
-        for q in ["What was my job before Initech?", "What was I doing right before joining Initech?"] {
+        for q in ["What was my job before Initech?", "Where did I work right before joining Initech?"] {   // 13e.1: "what was I doing" fails closed
             #expect(s.intent(q).map { [$0.predicate, $0.op.rawValue] } == [d, "before"], "\(q)")
         }
         for q in ["What was my title at Initech before the promotion?", "What did we use before Initech moved to Slack?",

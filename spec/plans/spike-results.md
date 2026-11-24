@@ -1170,3 +1170,26 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
 - **A wrong attribute:** Terra made 5 wrong-person claims to Haiku's 10. But the trap that names nobody is still misattributed 3 of 3.
 - **Terra never hedges an inferred claim itself,** so code marking is required. The marking rule gains one case: a claim citing a memory that carries an attribute is inferred when the search names the attributed entity (by name or role phrase) and the cited text doesn't; it marks all 5 wrong-person claims seen. ADR-0032 decision 7 stands, with that addition.
 - **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule, with 0 wrong answers.
+
+## Spike T: answers checked by the time model
+**21 Nov 2026, during Phase 13e; it led to 13e.2 and ADR-0032's amendment of that date.** The details and raw records are in [`spikes/people/SPIKE-T.md`](../../spikes/people/SPIKE-T.md), `results-spike-t/` and `results-spike-t2/`. The spike ran on 13e.1's code.
+
+- **The question:** after 13e.1's live gate missed on the timeline, and at the author's request to embrace LLMs more, can models read the question and answer, with code keeping the guarantees?
+- **Round 1** (work13 and mixed, with held-out wordings and stories by GPT-6-Astra, Haiku and Terra, about 2,250 calls):
+  - the grammar answered 9 of 67 held-out decidable questions;
+  - a model reading all of a story's memories named the right organization on every one, but named one on 10 to 14 of 38 undecidable ones;
+  - a model writing a typed intent, with the time model answering, held back on 35 to 38 of 38 undecidable questions, but answered only 42 of 67 decidable ones (plumbing: no stint field, unnormalised dates, an agent's competing claim). It also read 20 to 47 of 102 adversarial non-work questions as timeline questions.
+- **Round 2** (12 fresh stories by Astra, each searched among 40 fillers, top 10; a recorded live Haiku read; 28 decidable, 28 undecidable and 28 negative questions per engine, one sample):
+  - the answer model with the work rows, checked by the time model, named the right organization on 26 (Haiku) and 25 (Terra) of 28 decidable questions, a wrong one on none, and held back on 27 of 28 undecidable ones. Two of Haiku's 26 stated no comparison and went unchecked: under 13e.2's rule they'd be "not sure" (24). With rows, Haiku answered 2 of 28 negative questions wrongly, against 0 without;
+  - today's path named the right one on 20 and 23, and Terra guessed on 15 undecidable questions;
+  - the rows alone added 3 to 5 right answers over search alone;
+  - p95 for one answer call: 8 to 10 s.
+- **Limits:**
+  - organization-selection scores (the model's own field, matched loosely), not judged claims;
+  - one sample of 12 stories;
+  - keyword search with fillers that name no organization;
+  - "without untrusted evidence" dropped only agents' notes;
+  - the check confirmed the stint the model picked on two rehire questions;
+  - its rescues were mostly exact days inside year-precision ranges.
+
+  The reviews of the amendment turned these into 13e.2's design rules and its larger, blind gate.

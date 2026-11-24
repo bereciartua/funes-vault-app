@@ -180,7 +180,7 @@ enum SearchFacts {
         var tl: FactsQueryPlan.Timeline?
         if let t = plan.timeline, t.decided {
             tl = t
-            let answer = Set(t.answer)
+            let answer = t.answerGroup.isEmpty ? Set(t.answer) : t.answerGroup   // a stated rename's names too
             for f in g.facts where f.predicate == t.predicate && answer.contains(f.entity) && !f.negated {
                 for a in f.assertions where a.states && !a.fromUser { stating.insert(a.memoryID) }
             }
@@ -243,7 +243,9 @@ enum SearchFacts {
             if !admitted.isEmpty {
                 for l in index.links[id.db] ?? [] {
                     guard let e = l.entity else { continue }
-                    if e == anchor, admitting.contains(l.basis) { demoted = true; break }
+                    if e == anchor || tl?.anchorGroup.contains(e) == true, admitting.contains(l.basis) { demoted = true; break }
+                    // The answer's other names aren't another entity (a stated rename, 13e.1).
+                    if tl?.answerGroup.contains(e) == true { continue }
                     if !matched.contains(e), g.entities[e]?.name != nil, FactsSearchIndex.fullBases.contains(l.basis) {
                         demoted = true
                         break

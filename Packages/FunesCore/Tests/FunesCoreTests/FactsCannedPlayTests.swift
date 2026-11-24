@@ -192,6 +192,14 @@ import Testing
         return r
     }
 
+    /// Wrong answers the author accepted as known issues after a blind set was written (13e.1): each fails if it stops
+    /// failing, so a fix shows. The canary's c04-q1: Ari partnered 2018 to some time in 2019, Blair from March 2019, and the
+    /// user can't tell whether they overlapped; the same-year hand-over rule (H3b) answers "Ari" where the question is
+    /// undecidable. The time model has no way to hold a stated possible overlap yet (plan, later work).
+    static let knownIssues: [String: [(story: String, query: String, why: String)]] = [
+        "canary-13a2": [("c04", "c04-q1", "same-year hand-over answers a stated possible overlap")],
+    ]
+
     /// The blind sets present in the repo (none before GPT-6-Astra writes them after the freeze).
     static var blindSets: [(name: String, fixture: URL, registry: URL?)] {
         let dir = FactsHarness.repo.appending(path: "spikes/people/fixtures")
@@ -214,7 +222,13 @@ import Testing
             let registry = try set.registry.map { try FactsRegistry.decode(Data(contentsOf: $0)) } ?? .bundled
             let r = try Self.run(fixture, registry: registry)
             print("canned play \(set.name): " + r.judged.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", "))
-            #expect(r.bad.isEmpty, "\(set.name): \(r.bad)")
+            let known = r.bad.filter { b in Self.knownIssues[set.name, default: []].contains { b.hasPrefix($0.story + "#") && b.contains(" \($0.query) ") } }
+            #expect(r.bad.filter { !known.contains($0) }.isEmpty, "\(set.name): \(r.bad)")
+            for k in Self.knownIssues[set.name, default: []] {
+                withKnownIssue("\(set.name) \(k.query): \(k.why)") {
+                    #expect(!known.contains { $0.hasPrefix(k.story + "#") && $0.contains(" \(k.query) ") }, "\(set.name): \(known)")
+                }
+            }
             #expect(r.hiddenInSendable.isEmpty, "\(set.name): \(r.hiddenInSendable)")
             #expect(r.judged.values.reduce(0, +) > 0, "\(set.name): no questions")
             // Not vacuous: on its own labels a blind set answers some decidable question right (coverage is the live gate's).

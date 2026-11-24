@@ -173,7 +173,34 @@ class Thresholds(unittest.TestCase):
             r = reads(mixed={**people(), "orgs": orgs(**bad)}, work13={**people(), "orgs": orgs(**bad)})
             self.assertTrue(Q.judge_gate(gate, r, REG), (gate, bad))
 
+    def test_timeline_coverage_waiver(self):
+        # 13e.1: the author waived the timeline's coverage target only, for one registry version, with a floor.
+        import tempfile
+        saved = Q.WAIVERS
+        self.addCleanup(lambda: setattr(Q, "WAIVERS", saved))
+        def waiver(**kw):
+            w = {"gate": "timeline", "target": "decidable_coverage", "floor": 0.40, "registry_version": "v1-aaa"}
+            w.update(kw)
+            f = Path(tempfile.mkdtemp()) / "waivers.json"
+            f.write_text(json.dumps({"waivers": [w]}))
+            Q.WAIVERS = f
+        waiver()
+        low = reads(work13={**people(), "timeline": timeline(right=20)}, mixed={**people(), "timeline": timeline(right=16)})
+        self.assertEqual(Q.judge_gate("timeline", low, REG, "v1-aaa"), [])
+        self.assertTrue(Q.judge_gate("timeline", low, REG, "v1-bbb"))              # another registry: not waived
+        none = reads(work13={**people(), "timeline": timeline(right=5, right_gap=0)}, mixed={**people(), "timeline": timeline()})
+        self.assertTrue(Q.judge_gate("timeline", none, REG, "v1-aaa"))             # under the waiver's floor
+        bad = reads(work13={**people(), "timeline": timeline(right=20, wrong_answers=1)}, mixed={**people(), "timeline": timeline()})
+        self.assertTrue(Q.judge_gate("timeline", bad, REG, "v1-aaa"))
+        waiver(floor=0.0)
+        self.assertTrue(Q.judge_gate("timeline", none, REG, "v1-aaa"))             # a floor is never under 40%
+        waiver(registry_version=None)
+        self.assertTrue(Q.judge_gate("timeline", low, REG, "v1-aaa"))              # bound to nothing: waives nothing
+
     def test_timeline_and_floors(self):
+        saved = Q.WAIVERS
+        Q.WAIVERS = Path("/nonexistent/waivers.json")              # the targets as the table states them
+        self.addCleanup(lambda: setattr(Q, "WAIVERS", saved))
         good = reads(work13={**people(), "timeline": timeline()}, mixed={**people(), "timeline": timeline(decidable=34)})
         self.assertEqual(Q.judge_gate("timeline", good, REG), [])
         for bad in (dict(wrong_facts=1), dict(wrong_dates=2), dict(right=25), dict(wrong_answers=1), dict(triggered=1),
@@ -185,11 +212,82 @@ class Thresholds(unittest.TestCase):
         self.assertTrue(Q.judge_gate("timeline", r, REG))                                          # still met on mixed
 
 
+class LineMeasures(unittest.TestCase):
+    """The measures themselves, on synthetic dumps (13e.1): full-basis works-at units, untrusted-only facts and episodes
+    apart unless the story denies them, and one-to-one assignment of a rehire's episodes."""
+    @staticmethod
+    def day(s):
+        from datetime import date
+        return date.fromisoformat(s).toordinal()
+
+    def ep(self, ent, start, end, mems, trusted=True):
+        r = lambda a, b: [self.day(a), self.day(b), "day"] if a else None
+        return {"predicate": "works_at", "entity": ent, "start": r(*start) if start else None, "end": r(*end) if end else None,
+                "trusted": trusted, "memories": mems}
+
+    def line(self, entities, facts, episodes, story="s1"):
+        ents = [{"id": i, "kind": "organization", "name": n, "aliases": [n], "group": None, "count": None, "deceased": False}
+                for i, n in entities]
+        fs = [{"entity": e, "type": "works_at", "label": None, "cls": None, "only": False, "evidence": ev, "negated": False,
+               "stating": [m for m, _ in ev], "assertions": [{"memory": m, "trust": t} for m, t in ev]} for e, ev in facts]
+        st = {"user_aliases": [], "entities": ents, "facts": fs, "names": [], "decisions": [], "things": [], "memories": {},
+              "episodes": episodes, "succession": {}}
+        return {"story": story, "state": st, "swift_judged": {}, "swift_answers": {}}
+
+    def story(self, memories, timeline):
+        return {"s1": {"id": "s1", "memories": memories, "timeline": timeline, "queries": []}}
+
+    def test_works_at_counts_full_basis_units_and_reports_untrusted_ones(self):
+        st = self.story([{"id": "m1", "source": "capture", "organizations": [{"org": "Acme", "relation": "employer"}]},
+                         {"id": "m2", "source": "agent", "organizations": [{"org": "Orlin", "relation": "employer"}]}],
+                        [{"org": "Acme", "kind": "employee", "start": "2015", "end": "", "memories": ["m1"]}])
+        ln = self.line([("p1", "Acme"), ("p2", "Orlin")], [("p1", [["m1", "trusted"]]), ("p2", [["m2", "untrusted"]])], [])
+        o = Q.org_measures([ln], st, REG)
+        self.assertEqual((o.get("works_at_right"), o.get("works_at_wrong", 0)), (1, 0))
+        self.assertEqual((o.get("works_at_untrusted_right", 0), o.get("works_at_untrusted_wrong")), (0, 1))
+
+    def test_untrusted_only_facts_are_apart_unless_the_story_denies_them(self):
+        tl = [{"org": "Acme", "kind": "employee", "start": "2015", "end": "", "memories": ["m1"]}]
+        mems = [{"id": "m1", "source": "capture", "jobs": []}, {"id": "m2", "source": "agent", "jobs": []}]
+        ln = self.line([("p1", "Acme"), ("p2", "Orlin")], [("p1", [["m1", "trusted"]]), ("p2", [["m2", "untrusted"]])],
+                       [self.ep("p1", ("2015-01-01", "2015-01-01"), None, ["m1"]),
+                        self.ep("p2", ("2020-01-01", "2020-01-01"), ("2021-01-01", "2021-01-01"), ["m2"], trusted=False)])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual((t["wrong_facts"], t["untrusted_wrong_facts"]), (0, 1))
+        mems[0]["jobs"] = [{"org": "Orlin", "polarity": "negative"}]          # "I never worked at Orlin" in the user's note
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual((t["wrong_facts"], t["untrusted_wrong_facts"]), (1, 0))
+        mems[0]["jobs"], mems[1]["jobs"] = [], [{"org": "Orlin", "polarity": "negative"}]   # an agent's denial doesn't count
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual(t["wrong_facts"], 0)
+
+    def test_a_rehire_is_assigned_one_to_one(self):
+        tl = [{"org": "Acme", "kind": "employee", "start": "2014", "end": "2016", "memories": ["m1", "m2"]},
+              {"org": "Acme", "kind": "employee", "start": "2019-07-01", "end": "2024-04-30", "memories": ["m1", "m3"]}]
+        mems = [{"id": m, "source": "capture", "jobs": []} for m in ("m1", "m2", "m3")]
+        first = self.ep("p1", ("2014-01-01", "2014-12-31"), ("2016-12-31", "2016-12-31"), ["m2"])
+        second = self.ep("p1", ("2019-07-01", "2019-07-01"), ("2024-04-30", "2024-04-30"), ["m1", "m3"])
+        ln = self.line([("p1", "Acme")], [("p1", [["m1", "trusted"], ["m2", "trusted"], ["m3", "trusted"]])], [second, first])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual((t["wrong_facts"], t["wrong_dates"]), (0, 0))       # m1 recalls both: the dates decide
+        stray = self.ep("p1", ("2010-01-01", "2010-01-01"), ("2011-01-01", "2011-01-01"), ["m1"])
+        ln = self.line([("p1", "Acme")], [("p1", [["m1", "trusted"], ["m2", "trusted"], ["m3", "trusted"]])], [second, first, stray])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual(t["wrong_facts"], 1)                                # overlaps no stint of its organization
+        dup = self.ep("p1", ("2019-07-01", "2019-07-01"), ("2024-04-30", "2024-04-30"), ["m3"])
+        ln = self.line([("p1", "Acme")], [("p1", [["m1", "trusted"], ["m2", "trusted"], ["m3", "trusted"]])], [second, first, dup])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual(t["wrong_facts"], 1)                                # a duplicate takes no stint: a wrong fact
+
+
 class Verify(unittest.TestCase):
-    def test_what_ships_verifies(self):
-        # 13a.2's Gates step shipped Haiku's person pool {recorded, linked} and client {recorded}; works at missed.
-        shipped = {(tuple(r["predicates"]), tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
-        self.assertEqual({p for ps, _ in shipped for p in ps} & {"works_at"}, set())
+    def test_shipped_records_are_13e2s_records_step(self):
+        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; no timeline
+        # record and no attributes record (they lapsed with the registry until 13e.2's answer gates).
+        shipped = {(r["callGroup"], tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
+        self.assertEqual(shipped, {("people", ("recorded", "linked")), ("work", ("recorded",)), ("work", ("recorded", "linked"))})
+        preds = {p for r in json.loads(Q.RECORDS.read_text())["records"] for p in r["predicates"]}
+        self.assertTrue({"client", "works_at"} <= preds)
         self.assertEqual(Q.cmd_verify(None), 0)
 
     def test_a_record_without_a_13a2_gate_fails(self):

@@ -26,9 +26,12 @@ import Testing
         try SearchGate.applyPeople(v, ids: ids, texts: texts, backfill: SearchGate.spike(s.backfill))
         let search = SearchService(store: v.store, indexer: nil)
         let queries = try SearchGate.queries(SearchGate.spike(s.queries))
+        let shipsLinks = try await v.store.writer.read { db in try SearchGate.shipped.uses(db) }.predicates(.linked).isEmpty == false
         for (arm, config) in [("shipped", SearchGate.shipped), ("every declared", SearchGate.everyDeclared)] {
             let (t, lines) = try await SearchGate.compare(search, facts: config, queries: queries, ids: ids, now: Self.now)
             #expect(t.passes, "\(arm): \(t)\n\(lines.joined(separator: "\n"))")
+            // While nothing ships (13e.1's records await its gate runs), the shipped arm is plain search.
+            if arm == "shipped", !shipsLinks { continue }
             #expect(t.matched > 0 && t.admitted > 0, "\(arm): the feature wasn't exercised: \(t)")
         }
     }

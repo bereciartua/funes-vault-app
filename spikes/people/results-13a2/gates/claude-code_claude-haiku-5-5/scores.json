@@ -42,27 +42,25 @@
   "timeline": {
    "problems": [
     "r1 work13: 5 wrong facts",
-    "r1 work13: 9 wrong dates",
-    "r1 work13: decidable right 14 + 0 with a gap told, of 51",
-    "r1 mixed: decidable right 13 + 2 with a gap told, of 28",
-    "r2 work13: 5 wrong facts",
-    "r2 work13: 7 wrong dates",
-    "r2 work13: decidable right 15 + 0 with a gap told, of 51",
-    "r2 mixed: 2 wrong dates",
-    "r2 mixed: decidable right 13 + 2 with a gap told, of 28"
+    "r1 work13: decidable right 14 + 4 with a gap told, of 48",
+    "r1 work13: 2 wrong answers, 0 negatives triggered",
+    "r2 work13: 4 wrong facts",
+    "r2 work13: decidable right 15 + 4 with a gap told, of 48",
+    "r2 work13: 1 wrong answers, 0 negatives triggered"
    ],
-   "record": null,
+   "record": false,
    "sets": [
     "work13",
     "mixed"
-   ]
+   ],
+   "waived": {
+    "registry_version": "v1-8338de9d268e",
+    "target": "decidable_coverage"
+   }
   },
   "works_at": {
-   "problems": [
-    "r1: works at 202/208",
-    "r2: works at 203/209"
-   ],
-   "record": false,
+   "problems": [],
+   "record": true,
    "sets": [
     "mixed",
     "work13"
@@ -70,26 +68,26 @@
   }
  },
  "inputs": {
-  "swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json": "590ec79e5805b734a5bc5dae7ed80a48c9e547806fc1b17b60a640da851de96a",
-  "swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl": "23440c120304f1d572a2940807f5de4684f5639ad0ce02c99d15fb476b6dabb0",
-  "swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json": "3d91e6708eb02dd4b40c7e4e08ee6313f295a83d76f0714d879fc65ccdd1d6de",
-  "swift-claude-claude-haiku-5-5-gates-r1/main.jsonl": "de9c16c82f524a7cb41ae5aa0a500f0245340ae32e871286c3996aa1f77652af",
-  "swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json": "e2a3dac9b4e65ecc3cc1a4a897c56561076f2b8ffde66a77ac87ccf459f0746f",
-  "swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "a2badd0b472fe85b987d402aa514ec65b917bc2450b1da95ad84d564d8416cdc",
-  "swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json": "64eb15ac893ef773255e0b640d1d3359ca7cb9ff12234ce7824e38d197da90ed",
-  "swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl": "e7a198029ea8a887f58723c2dbe6be4b7375ea12568efc387cf97f16b5cdc1cf",
-  "swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json": "f5b385cd8934141ae4b40adbfdd9e6f98e9840ba7cd522addce6fe7bc2933851",
-  "swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "0439ec9757050d6071a406cdbd1e9a6f4af2d3327766b509e8587e7892395125",
-  "swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json": "cd1856029c3bab8ffa4ed9e9c5406e3f010392cec8039ed21caa75f8a84ee416",
-  "swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl": "6d907ddc3bc28141ee51b1f51f0295cb3a9b1fbf75a90a5e34d25ea38f2e7dab",
-  "swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json": "314fa46d0393dbe5c8e3c823a0ffa173d3aa11661208beea4f31f29bfeca7add",
-  "swift-claude-claude-haiku-5-5-gates-r2/main.jsonl": "d7f6206c83351f883f653fce7d4af3de1008f5165caee33d77ffa30325caf234",
-  "swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json": "93d9c0fadfdfab588c8e8ae87776f98fbc13b8e6457db99e229c2f06010d3d10",
-  "swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "1f6350876a45e45170102be6b88fe50bb4ffd6c5fb7e62f7a385b9301725175d",
-  "swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json": "e54dbd55a1c176e390c6e964421c866703f66f9d0a67ed028212fb2003281011",
-  "swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl": "aaea2ec3fd63aaa74036a5f22c4ad113e93ca173a87473b6e49a4285b3c7411f",
-  "swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json": "accbacfdd95cb019e518b95624fc950f88791cc585c7b64190e65b75109fb44f",
-  "swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "98918520046fa1088bfa3a3a808b820ea6a33d9c116cf3a8c51915c53d4d4f86"
+  "swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json": "d792ddcd01ec4addc4521cf1b9063a66e629d7187a283a5b979ef3875ff396af",
+  "swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl": "ac671621e10e7f7fb0f17e08e61267dce3a5dc5d8890bad2f61117dad59d21e2",
+  "swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json": "92570012e4f02b3a7889fb93eef29fdddd06f8d6f49dfa9af99b757fe863ebe2",
+  "swift-claude-claude-haiku-5-5-gates-r1/main.jsonl": "eb1b88141de6614f0d9e38f215f22f53c2ee1e52cf23dabf25fc518e3ecc940b",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json": "6ce6cb13cc5ed2d0baacf5d39d677e0885afb97630802f93f254bcfa4db4e809",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "eaba06c721fb9b1f93f119c6e288b944868b8e08477954b03687d845d4af7e78",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json": "402e77bf077da09d5cde9d3431e80dda82c693e282ebe0fd2da7b729817ef2cc",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl": "e83f31aa83409656dcc424a618a73baff679ebaa68daef2a7c1693c1d1ca65e2",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json": "a0b55f926b77a17683cfd32e2a805f9653de293910047082ba1fc8024611d716",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "beb5d50e8984bdfe1441fa8b5c3000bca84b9ae3c4120e2631dd26ebf22665eb",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json": "b23a65ca228dca87cadc90fdbb08fe5ffe868557af759917357f31ccffeab61c",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl": "dc5764d8b27f29db038c906a286f5d842d77af9255de8f1421997dca5dd0ee2b",
+  "swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json": "148932e974e6bc7f4d75acba553cfd39dcd7e44d634ba37052b91c8258bed39d",
+  "swift-claude-claude-haiku-5-5-gates-r2/main.jsonl": "00a4aa6b5afff4006f4b2d20785c96b27a734d265db082616974c2eed75ab6f6",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json": "bb9f1af00b3764e7d9c089bfaf62674d4f8a6410e2cb3c0a01f46991e62b6538",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "fb58029ae9ea62cdaa7212119d8e8c34877e228e103dc97db2116e16c29814a6",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json": "c638d484a473d08278c3b9c5ea32a92de743cd7663c8c0c179beb2ea562e622c",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl": "29983c2bbb2b4bf882bca7aa1d47e600dc5ca870ee63975958c3ffc3713be801",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json": "33858b38aad9a3ab544625ca5231c9e24f21f23759673c7795a8f5ba8d7d31ea",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "3edfb248230759228adc37522f8956ee36faf5b678e314935b33f24798f612b4"
  },
  "measures": {
   "r1": {
@@ -134,14 +132,14 @@
       "other_family": 6,
       "parent": 4,
       "partner": 8,
-      "sibling": 23
+      "sibling": 22
      },
-     "full_right": 58,
+     "full_right": 57,
      "full_wrong": 0,
      "outside_lexicon": 0,
      "recall_right": 77,
      "recall_truth": 79,
-     "sole_known_right": 12,
+     "sole_known_right": 13,
      "sole_known_wrong": 0
     },
     "plays": {
@@ -154,11 +152,12 @@
     "orgs": {
      "clients": 5,
      "clients_as_employer": 0,
-     "clients_recorded": 4,
+     "clients_recorded": 5,
      "vendors": 5,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 89
+     "works_at_right": 80,
+     "works_at_untrusted_right": 10
     },
     "people": {
      "forbidden": 0,
@@ -189,6 +188,8 @@
      "decidable": 28,
      "details": {
       "triggered": [],
+      "untrusted_wrong_dates": [],
+      "untrusted_wrong_facts": [],
       "wrong_answers": [],
       "wrong_dates": [
        "('x03', 'Small Current Studio', '2019-02', 'end')"
@@ -198,12 +199,14 @@
      "inferred_ends": 0,
      "malformed": 0,
      "negatives": 16,
-     "right": 13,
-     "right_gap": 2,
+     "right": 21,
+     "right_gap": 4,
      "succession_cross_slot": 0,
      "succession_unexplained": 0,
      "succession_untrusted": 0,
      "triggered": 0,
+     "untrusted_wrong_dates": 0,
+     "untrusted_wrong_facts": 0,
      "wrong_answers": 0,
      "wrong_dates": 1,
      "wrong_facts": 0
@@ -211,26 +214,26 @@
    },
    "persons": {
     "people": {
-     "forbidden": 6,
+     "forbidden": 1,
      "full_by_predicate": {
-      "care": 55,
+      "care": 54,
       "child": 37,
-      "colleague": 21,
+      "colleague": 20,
       "friend": 10,
       "manager": 16,
       "other": 43,
-      "other_family": 42,
+      "other_family": 41,
       "parent": 38,
       "partner": 23,
-      "sibling": 13
+      "sibling": 14
      },
      "full_right": 296,
-     "full_wrong": 2,
+     "full_wrong": 0,
      "outside_lexicon": 0,
      "recall_right": 375,
      "recall_truth": 394,
      "sole_known_right": 37,
-     "sole_known_wrong": 4
+     "sole_known_wrong": 1
     },
     "plays": {
      "expected": 66,
@@ -240,72 +243,77 @@
    },
    "work13": {
     "orgs": {
-     "clients": 4,
+     "clients": 7,
      "clients_as_employer": 0,
-     "clients_recorded": 3,
-     "vendors": 6,
+     "clients_recorded": 7,
+     "vendors": 7,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 113,
-     "works_at_wrong": 6
+     "works_at_right": 91,
+     "works_at_untrusted_right": 7,
+     "works_at_untrusted_wrong": 8,
+     "works_at_wrong": 3
     },
     "people": {
      "forbidden": 0,
      "full_by_predicate": {
-      "colleague": 3,
-      "friend": 1,
-      "manager": 3,
-      "other_family": 2,
-      "sibling": 1
+      "colleague": 2,
+      "manager": 5,
+      "parent": 2,
+      "sibling": 3
      },
-     "full_right": 10,
+     "full_right": 12,
      "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 13,
-     "recall_truth": 17,
+     "recall_right": 14,
+     "recall_truth": 15,
      "sole_known_right": 0,
      "sole_known_wrong": 0
     },
     "plays": {
-     "expected": 17,
+     "expected": 16,
      "extra": 0,
      "missing": 0
     },
     "timeline": {
-     "decidable": 51,
+     "decidable": 48,
      "details": {
       "triggered": [],
-      "wrong_answers": [],
-      "wrong_dates": [
-       "('w01', 'Brindle Systems', '2015-02-02', 'end')",
-       "('w02', 'Copper Finch Studio', '2019-03', 'end')",
-       "('w03', 'Fenwick Audio', '2014-01', 'end')",
-       "('w03', 'Fenwick Audio', '2014-01', 'start')",
-       "('w04', 'Lattice Harbor Labs', '2017', 'end')",
-       "('w05', 'Nudo Estudio', '2018', 'end')",
-       "('w09', 'Holloway Maps', '2014', 'end')",
-       "('w09', 'Holloway Maps', '2014', 'start')",
-       "('w11', 'Mossline Translation', '2017-09', 'end')"
+      "untrusted_wrong_dates": [
+       "('w01', 'Alder Mapworks', '2018-03-15', 'end')"
       ],
+      "untrusted_wrong_facts": [
+       "('w01', 'Kestrel Labs')",
+       "('w03', 'Oxbow Grid')",
+       "('w06', 'Jetty Power')",
+       "('w11', 'Tile Foods')"
+      ],
+      "wrong_answers": [
+       "('w12', 'q1')",
+       "('w12', 'q2')"
+      ],
+      "wrong_dates": [],
       "wrong_facts": [
-       "('w01', 'Orlin Labs')",
-       "('w04', 'Silver Shoal')",
-       "('w05', 'Self-employed')",
-       "('w07', 'Bellwether Optics')",
-       "('w10', 'Nácar Digital')"
+       "('w03', 'Marlin Analytics', 'merged')",
+       "('w03', 'Marlin Metrics')",
+       "('w08', 'Granito Pago')",
+       "('w12', 'Prisma Salud')",
+       "('w12', 'Prisma Salud', 'merged')"
       ]
      },
-     "inferred_ends": 1,
+     "inferred_ends": 0,
      "malformed": 0,
      "negatives": 8,
      "right": 14,
-     "right_gap": 0,
+     "right_gap": 4,
      "succession_cross_slot": 0,
      "succession_unexplained": 0,
      "succession_untrusted": 0,
      "triggered": 0,
-     "wrong_answers": 0,
-     "wrong_dates": 9,
+     "untrusted_wrong_dates": 1,
+     "untrusted_wrong_facts": 4,
+     "wrong_answers": 2,
+     "wrong_dates": 0,
      "wrong_facts": 5
     }
    }
@@ -323,14 +331,14 @@
       "other_family": 4,
       "parent": 9,
       "partner": 11,
-      "sibling": 12
+      "sibling": 13
      },
-     "full_right": 75,
+     "full_right": 76,
      "full_wrong": 0,
      "outside_lexicon": 1,
      "recall_right": 88,
      "recall_truth": 98,
-     "sole_known_right": 11,
+     "sole_known_right": 10,
      "sole_known_wrong": 0
     },
     "plays": {
@@ -357,9 +365,9 @@
      "full_right": 56,
      "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 76,
+     "recall_right": 75,
      "recall_truth": 79,
-     "sole_known_right": 13,
+     "sole_known_right": 12,
      "sole_known_wrong": 0
     },
     "plays": {
@@ -376,7 +384,8 @@
      "vendors": 5,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 88
+     "works_at_right": 81,
+     "works_at_untrusted_right": 9
     },
     "people": {
      "forbidden": 0,
@@ -407,48 +416,51 @@
      "decidable": 28,
      "details": {
       "triggered": [],
+      "untrusted_wrong_dates": [],
+      "untrusted_wrong_facts": [],
       "wrong_answers": [],
       "wrong_dates": [
-       "('x03', 'Small Current Studio', '2019-02', 'end')",
-       "('x03', 'Small Current Studio', '2019-02', 'start')"
+       "('x01', 'Cinder Arc', '2022-09', 'end')"
       ],
       "wrong_facts": []
      },
      "inferred_ends": 0,
      "malformed": 0,
      "negatives": 16,
-     "right": 13,
-     "right_gap": 2,
+     "right": 21,
+     "right_gap": 4,
      "succession_cross_slot": 0,
      "succession_unexplained": 0,
      "succession_untrusted": 0,
      "triggered": 0,
+     "untrusted_wrong_dates": 0,
+     "untrusted_wrong_facts": 0,
      "wrong_answers": 0,
-     "wrong_dates": 2,
+     "wrong_dates": 1,
      "wrong_facts": 0
     }
    },
    "persons": {
     "people": {
-     "forbidden": 5,
+     "forbidden": 3,
      "full_by_predicate": {
       "care": 54,
       "child": 37,
-      "colleague": 20,
+      "colleague": 21,
       "friend": 10,
       "manager": 16,
       "other": 43,
       "other_family": 42,
       "parent": 38,
       "partner": 23,
-      "sibling": 14
+      "sibling": 13
      },
-     "full_right": 295,
-     "full_wrong": 2,
+     "full_right": 297,
+     "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 374,
+     "recall_right": 375,
      "recall_truth": 394,
-     "sole_known_right": 37,
+     "sole_known_right": 36,
      "sole_known_wrong": 3
     },
     "plays": {
@@ -459,71 +471,76 @@
    },
    "work13": {
     "orgs": {
-     "clients": 4,
+     "clients": 7,
      "clients_as_employer": 0,
-     "clients_recorded": 3,
-     "vendors": 6,
+     "clients_recorded": 7,
+     "vendors": 7,
      "vendors_as_client": 0,
      "vendors_as_employer": 0,
-     "works_at_right": 115,
-     "works_at_wrong": 6
+     "works_at_right": 93,
+     "works_at_untrusted_right": 8,
+     "works_at_untrusted_wrong": 8,
+     "works_at_wrong": 2
     },
     "people": {
      "forbidden": 0,
      "full_by_predicate": {
-      "colleague": 3,
-      "friend": 1,
-      "manager": 3,
-      "other_family": 2,
-      "sibling": 1
+      "colleague": 2,
+      "manager": 5,
+      "parent": 2,
+      "sibling": 3
      },
-     "full_right": 10,
+     "full_right": 12,
      "full_wrong": 0,
      "outside_lexicon": 0,
-     "recall_right": 13,
-     "recall_truth": 17,
+     "recall_right": 14,
+     "recall_truth": 15,
      "sole_known_right": 0,
      "sole_known_wrong": 0
     },
     "plays": {
-     "expected": 17,
+     "expected": 16,
      "extra": 0,
      "missing": 0
     },
     "timeline": {
-     "decidable": 51,
+     "decidable": 48,
      "details": {
       "triggered": [],
-      "wrong_answers": [],
-      "wrong_dates": [
-       "('w01', 'Brindle Systems', '2015-02-02', 'end')",
-       "('w02', 'Copper Finch Studio', '2019-03', 'end')",
-       "('w05', 'Nudo Estudio', '2018', 'end')",
-       "('w09', 'Holloway Maps', '2014', 'end')",
-       "('w09', 'Holloway Maps', '2014', 'start')",
-       "('w10', 'Prisma Analítica', '2016', 'end')",
-       "('w11', 'Mossline Translation', '2017-09', 'end')"
+      "untrusted_wrong_dates": [
+       "('w01', 'Alder Mapworks', '2018-03-15', 'end')"
       ],
+      "untrusted_wrong_facts": [
+       "('w01', 'Kestrel Labs')",
+       "('w03', 'Oxbow Grid')",
+       "('w06', 'Jetty Power')",
+       "('w11', 'Tile Foods')"
+      ],
+      "wrong_answers": [
+       "('w03', 'q2')"
+      ],
+      "wrong_dates": [],
       "wrong_facts": [
-       "('w01', 'Orlin Labs')",
-       "('w04', 'Silver Shoal')",
-       "('w05', 'Self-employed')",
-       "('w07', 'Bellwether Optics')",
-       "('w10', 'Nácar Digital')"
+       "('w03', 'Marlin Analytics', 'merged')",
+       "('w03', 'Marlin Metrics')",
+       "('w03', 'Marlin Metrics', 'merged')",
+       "('w08', 'Granito Pago')"
       ]
      },
-     "inferred_ends": 1,
+     "inferred_ends": 0,
      "malformed": 0,
      "negatives": 8,
      "right": 15,
-     "right_gap": 0,
+     "right_gap": 4,
      "succession_cross_slot": 0,
      "succession_unexplained": 0,
      "succession_untrusted": 0,
      "triggered": 0,
-     "wrong_answers": 0,
-     "wrong_dates": 7,
-     "wrong_facts": 5
+     "untrusted_wrong_dates": 1,
+     "untrusted_wrong_facts": 4,
+     "wrong_answers": 1,
+     "wrong_dates": 0,
+     "wrong_facts": 4
     }
    }
   }
@@ -531,7 +548,7 @@
  "model": "claude-code/claude-haiku-5-5",
  "port_fidelity": {
   "pass": true,
-  "sha256": "6a11e34fa15c00ad655cdf2c3f570f11a2e4b5f0eb725e0e06e867b52ad2281d"
+  "sha256": "4cef5e0c457a28dcb0779402a970ca474bb894afdd84bb4e19710856f784386c"
  },
  "reads": [
   "r1",

@@ -64,6 +64,19 @@ REPO = HERE.parent.parent
 REGISTRY = REPO / "Packages/FunesCore/Sources/FunesCore/Resources/facts-registry.json"
 RECORDS = REPO / "Packages/FunesCore/Sources/FunesCore/Resources/facts-qualification.json"
 EVIDENCE = HERE / "results-13a2" / "gates"
+WAIVERS = HERE / "results-13e1" / "waivers.json"
+
+
+def waived(gate, target, registry_version=None):
+    """The author's waiver of one target of a gate (13e.1), or None. It holds only for the registry version it names
+    (a later grammar needs the author again), when one is given."""
+    if not WAIVERS.exists():
+        return None
+    w = next((w for w in json.loads(WAIVERS.read_text())["waivers"] if w["gate"] == gate and w["target"] == target), None)
+    # Bound to one registry version: none named, or another, waives nothing.
+    if not w or not w.get("registry_version") or w["registry_version"] != registry_version:
+        return None
+    return w
 
 SETS = {"persons": ["main", "astra", "mixed", "persons"], "client": ["mixed", "work13"], "works_at": ["mixed", "work13"],
         "timeline": ["work13", "mixed"], "sole_known": ["main", "astra", "mixed", "persons"], "canary": ["canary13"]}
@@ -143,10 +156,12 @@ def org_measures(lines, stories, reg):
             for a in f.get("assertions", []):
                 ok = any(a["memory"] in stint_mems.get(o, ()) or mention_rel.get((a["memory"], o)) in ("employer", "self_employed")
                          for o in truth)
-                key = (a["memory"], ent)                       # one unit per memory and organization in a play
+                # One unit per memory and organization in a play. The gate is full-basis links (the acceptance table):
+                # an untrusted memory's link is reported apart, as score.py counts people's (13e.1).
+                key = (a["memory"], ent, a.get("trust") == "untrusted")
                 units[key] = units.get(key, True) and ok
-        for ok in units.values():
-            m["works_at_right" if ok else "works_at_wrong"] += 1
+        for (_, _, untrusted), ok in units.items():
+            m[("works_at_untrusted_" if untrusted else "works_at_") + ("right" if ok else "wrong")] += 1
         for o, t in orgs.items():
             hit_emp = bool(match[o])
             hit_client = bool(client and F.entity_matches(state, client, o))
@@ -181,7 +196,15 @@ def timeline_measures(lines, stories, reg, person=False):
     succession checks. Wrong facts and dates are counted per distinct (story, item): wrong in any order is wrong.
     Questions are counted from the truth: a play with no judgment for one counts it as a miss (a negative as
     triggered), and a line without its dumps counts as malformed. `person`: the canary's person timeline predicate
-    (its own registry), whose truth stints are the partner episodes."""
+    (its own registry), whose truth stints are the partner episodes.
+
+    Untrusted-only facts and episodes (only an agent's or other untrusted text states them; Your Timeline marks them
+    "from text you didn't write") are judged apart and reported, not gated (the author's amendment, 13e.1), except an
+    untrusted fact the story's own labels deny ("I never worked at X" in a trusted memory): that stays a wrong fact.
+    Answers are judged whatever they rest on. Each trusted episode is assigned one to one to a truth stint of its
+    organization: one sharing its memories and overlapping its dates first, then one overlapping its dates, then one
+    sharing its memories. An episode left without a stint of its own (a duplicate, or one organization read as two
+    entities) is a wrong fact."""
     import facts as F
     from run_facts import load_state
     emp = next(p["id"] for p in reg["predicates"] if "timeline" in p.get("uses", [])
@@ -189,45 +212,102 @@ def timeline_measures(lines, stories, reg, person=False):
     kinds = ("partner",) if person else ("employee", "self_employed")
     m = Counter()
     wrong_facts, wrong_dates, wrong_answers, triggered = set(), set(), set(), set()
+    untrusted_facts, untrusted_dates = set(), set()
     for r in lines:
         st = stories[r["story"]]
         state = load_state(r["state"])
         stints = [t for t in st.get("timeline", []) if t["kind"] in kinds]
         if "episodes" not in r["state"] or "succession" not in r["state"] or "swift_judged" not in r:
             m["malformed"] += 1
-        others = [t for t in st.get("timeline", []) if t["kind"] not in ("employee", "self_employed")]
         names = {e["id"]: e for e in r["state"]["entities"]}
+        # The story's own trusted denials: a negative job label in a memory that isn't an agent's.
+        denied = set()
+        for mm in st["memories"]:
+            if mm.get("source") == "agent":
+                continue
+            for j in mm.get("jobs", []):
+                if j.get("polarity") == "negative" and j.get("org"):
+                    denied |= set(F.entity_matches(state, emp, j["org"]))
         for f in r["state"]["facts"]:
             if f["type"] != emp or f.get("negated"):
                 continue
-            if not any(f["entity"] in F.entity_matches(state, emp, t["org"]) for t in stints):
-                wrong_facts.add((r["story"], (names.get(f["entity"]) or {}).get("name")))
-        for e in r["state"].get("episodes", []):
-            if e["predicate"] != emp:
+            if any(f["entity"] in F.entity_matches(state, emp, t["org"]) for t in stints):
                 continue
-            mine = [t for t in stints if e["entity"] in F.entity_matches(state, emp, t["org"])]
-            if not mine:
+            item = (r["story"], (names.get(f["entity"]) or {}).get("name"))
+            only_untrusted = bool(f["evidence"]) and all(x[1] == "untrusted" for x in f["evidence"])
+            (untrusted_facts if only_untrusted and f["entity"] not in denied else wrong_facts).add(item)
+
+        def overlaps(e, t):
+            a, b = _range(t["start"]), _range(t["end"])
+            lo = a[0] if a else -10**9
+            hi = b[1] if b else 10**9
+            es = e["start"][0] if e["start"] else -10**9
+            ee = e["end"][1] if e["end"] else 10**9
+            return es <= hi and lo <= ee
+
+        eps = [e for e in r["state"].get("episodes", []) if e["predicate"] == emp]
+        # A stated rename is one entity on the timeline: its episodes carry the group's stand-in (13e.1). Truth is the
+        # story's, not the system's merge: a group's episode fits a stint only if every member's name is that stint's
+        # organization by a loose rule (one name inside the other), so a wrong merge leaves it unassigned, a wrong fact.
+        group_of = {x: set(g) for g in r["state"].get("timeline_groups", []) for x in g}
+
+        def norm(n):
+            n = F.fold(n or "")
+            for suf in (" inc.", " inc", " ltd.", " ltd", " llc", " gmbh", " s.a.", " sa", " s.l.", " sl"):
+                if n.endswith(suf):
+                    n = n[: -len(suf)]
+            return n.strip()
+
+        def loose(ent, org):
+            a = [norm(x) for x in ((names.get(ent) or {}).get("aliases") or [(names.get(ent) or {}).get("name")])]
+            o = norm(org)
+            return any(x and (x in o or o in x) for x in a)
+        assign = {}
+        for trust_pass in (True, False):
+            group = [e for e in eps if bool(e.get("trusted", True)) == trust_pass]
+            taken = set()
+            def options(e):
+                ids = group_of.get(e["entity"], {e["entity"]})
+                mine = [i for i, t in enumerate(stints) if ids & set(F.entity_matches(state, emp, t["org"]))
+                        and (len(ids) == 1 or all(loose(x, t["org"]) for x in ids))]
+                mems = set(e.get("memories", []))
+                tiers = ([i for i in mine if mems & set(stints[i].get("memories", [])) and overlaps(e, stints[i])],
+                         [i for i in mine if overlaps(e, stints[i])],
+                         # by memories alone only for an undated episode: a dated one overlapping no stint is wrong
+                         [i for i in mine if mems & set(stints[i].get("memories", []))] if not (e["start"] or e["end"]) else [])
+                return mine, tiers
+            # Fewest options first, so an episode with one fitting stint isn't crowded out.
+            for e in sorted(group, key=lambda e: sum(len(x) for x in options(e)[1])):
+                mine, tiers = options(e)
+                if not mine:
+                    ids = group_of.get(e["entity"], {e["entity"]})
+                    if len(ids) > 1 and any(ids & set(F.entity_matches(state, emp, t["org"])) for t in stints):
+                        # a merge the story doesn't make: its episode is no stint's
+                        (wrong_facts if trust_pass else untrusted_facts).add((r["story"], (names.get(e["entity"]) or {}).get("name"), "merged"))
+                    continue
+                pick = next((i for tier in tiers for i in tier if i not in taken), None)
+                if pick is None:
+                    item = (r["story"], (names.get(e["entity"]) or {}).get("name"), "unassigned")
+                    (wrong_facts if trust_pass else untrusted_facts).add(item)
+                    continue
+                if trust_pass:
+                    taken.add(pick)
+                assign[id(e)] = pick
+        for e in eps:
+            if id(e) not in assign:
                 continue
-            mems = set(e.get("memories", []))
-            def overlaps(t):
-                a, b = _range(t["start"]), _range(t["end"])
-                lo = a[0] if a else -10**9
-                hi = b[1] if b else 10**9
-                es = e["start"][0] if e["start"] else -10**9
-                ee = e["end"][1] if e["end"] else 10**9
-                return es <= hi and lo <= ee
-            # The stint the episode's own memories state first (a rehire's episodes are told apart by them), else by dates.
-            t = next((t for t in mine if mems & set(t.get("memories", []))), None) or next((t for t in mine if overlaps(t)), mine[0])
+            t = stints[assign[id(e)]]
+            sink = wrong_dates if e.get("trusted", True) else untrusted_dates
             for bound, truth in (("start", t["start"]), ("end", t["end"])):
                 got, want = e[bound], _range(truth)
                 if got is None or got[2] == "handover":
                     continue                                   # unknown isn't wrong; a hand-over start is for role resolution only
                 if want is None:
                     if bound == "end":                          # a current stint given an end
-                        wrong_dates.add((r["story"], t["org"], t["start"], bound))
+                        sink.add((r["story"], t["org"], t["start"], bound))
                     continue
                 if got[1] < want[0] or got[0] > want[1]:
-                    wrong_dates.add((r["story"], t["org"], t["start"], bound))
+                    sink.add((r["story"], t["org"], t["start"], bound))
         answers = r.get("swift_answers") or {}
         for q in st.get("queries", []):
             neg = q["kind"] in ("negative", "role_in_stint")
@@ -249,9 +329,12 @@ def timeline_measures(lines, stories, reg, person=False):
     return {"right": m["right"], "right_gap": m["right_gap"], "decidable": decidable,
             "negatives": m["triggered"] + m["quiet"], "wrong_answers": len(wrong_answers), "triggered": len(triggered),
             "wrong_facts": len(wrong_facts), "wrong_dates": len(wrong_dates),
+            "untrusted_wrong_facts": len(untrusted_facts), "untrusted_wrong_dates": len(untrusted_dates),
             "succession_untrusted": m["succession_untrusted"], "succession_cross_slot": m["succession_cross_slot"],
             "succession_unexplained": m["succession_unexplained"], "inferred_ends": m["inferred_ends"], "malformed": m["malformed"],
             "details": {"wrong_facts": sorted(map(str, wrong_facts)), "wrong_dates": sorted(map(str, wrong_dates)),
+                        "untrusted_wrong_facts": sorted(map(str, untrusted_facts)),
+                        "untrusted_wrong_dates": sorted(map(str, untrusted_dates)),
                         "wrong_answers": sorted(map(str, wrong_answers)), "triggered": sorted(map(str, triggered))}}
 
 
@@ -283,7 +366,7 @@ def ratio(a, b):
     return a / b if b else 0.0
 
 
-def judge_gate(gate, reads, reg):
+def judge_gate(gate, reads, reg, registry_version=None):
     """Problems with a gate's measures over its reads ([] = it passes). `reads`: {read: {set: measures}}."""
     t, probs = THRESHOLDS, []
     if len(reads) < t["reads"]:
@@ -354,7 +437,10 @@ def judge_gate(gate, reads, reg):
                     probs.append(f"{at}: {tm['wrong_facts']} wrong facts")
                 if tm["wrong_dates"] > t["wrong_dates"]:
                     probs.append(f"{at}: {tm['wrong_dates']} wrong dates")
-                if ratio(tm["right"] + tm["right_gap"], tm["decidable"]) < t["decidable"]:
+                cov = ratio(tm["right"] + tm["right_gap"], tm["decidable"])
+                w = gate == "timeline" and waived("timeline", "decidable_coverage", registry_version)
+                # A waived target keeps its floor, never under 40%: a run that answers almost nothing still fails.
+                if cov < (max(0.40, w.get("floor", t["decidable"])) if w else t["decidable"]):
                     probs.append(f"{at}: decidable right {tm['right']} + {tm['right_gap']} with a gap told, of {tm['decidable']}")
                 if tm["wrong_answers"] or tm["triggered"]:
                     probs.append(f"{at}: {tm['wrong_answers']} wrong answers, {tm['triggered']} negatives triggered")
@@ -475,7 +561,7 @@ def pf_problems(pf, commit):
 
 # The timeline is measured, not recorded, in 13a.2 (the author's decision: works at ships linked only).
 RECORD_SHAPE = {"persons": ("people", None, ["recorded", "linked"]), "client": ("work", "client", ["recorded"]),
-                "works_at": ("work", "works_at", ["recorded", "linked"])}
+                "works_at": ("work", "works_at", ["recorded", "linked"]), "timeline": ("work", "works_at", ["timeline"])}
 
 
 def cmd_scores(a):
@@ -493,8 +579,10 @@ def cmd_scores(a):
     pf = json.loads(Path(a.port_fidelity).read_text()) if a.port_fidelity else None
     block = blockers()
     gates = {}
+    versions = {m.get("registry_version") for ms in manifests.values() for m in ms.values()}
+    regv = versions.pop() if len(versions) == 1 else None
     for gate in SETS:
-        probs = judge_gate(gate, {rd: measures[rd] for rd in reads}, reg)
+        probs = judge_gate(gate, {rd: measures[rd] for rd in reads}, reg, regv)
         rec = None
         if gate in RECORD_SHAPE:
             group = RECORD_SHAPE[gate][0]
@@ -505,6 +593,8 @@ def cmd_scores(a):
             probs += pf_problems(pf, ms[0][0]["commit"] if ms else None) + block
             rec = not probs
         gates[gate] = {"sets": SETS[gate], "problems": probs, "record": rec}
+        if gate == "timeline" and waived("timeline", "decidable_coverage", regv):
+            gates[gate]["waived"] = {"target": "decidable_coverage", "registry_version": regv}
     out = {"format": "funes.facts-gates.v1", "model": a.model, "reads": sorted(reads), "thresholds": THRESHOLDS,
            "measures": measures, "gates": gates, "inputs": inputs,
            "port_fidelity": {"pass": bool(pf and pf.get("pass")), "sha256": sha(a.port_fidelity) if a.port_fidelity else None}}
@@ -512,6 +602,15 @@ def cmd_scores(a):
     for g, v in gates.items():
         state = "record" if v["record"] else ("measured" if v["record"] is None else "NO RECORD")
         print(f"{g}: {state}" + "".join(f"\n  - {p}" for p in v["problems"]))
+
+
+def coverage_note(gate, sc):
+    """For a timeline record with its coverage target waived: the coverage measured, per read and set."""
+    if gate != "timeline" or not sc["gates"]["timeline"].get("waived"):
+        return ""
+    parts = [f"{rd} {s} {m[s]['timeline']['right'] + m[s]['timeline']['right_gap']}/{m[s]['timeline']['decidable']}"
+             for rd, m in sorted(sc["measures"].items()) for s in SETS["timeline"]]
+    return "; decidable coverage waived by the author (13e.1), measured " + ", ".join(parts)
 
 
 def cmd_records(a):
@@ -542,7 +641,7 @@ def cmd_records(a):
         records.append({"predicates": preds, "uses": uses, "basis": "", "callGroup": group, "model": model,
                         "adapter": m0["engine"]["adapter"], "batching": m0["engine"]["batching"],
                         "promptVersion": m0["prompt_versions"][group], "registryVersion": m0["registry_version"],
-                        "gate": f"13a.2 {gate}: " + ", ".join(SETS[gate]) + f", reads {', '.join(sc['reads'])}",
+                        "gate": f"13a.2 {gate}: " + ", ".join(SETS[gate]) + f", reads {', '.join(sc['reads'])}" + coverage_note(gate, sc),
                         "evidence": sorted(evidence), "recordedAt": m0["date"][:10]})
     print(json.dumps(records, indent=1))
     if a.write and records:
@@ -591,7 +690,7 @@ def verify_record(r, reg):
         for s in SETS[gate]:
             if json.dumps(recomputed[rd].get(s), sort_keys=True) != json.dumps(sc["measures"].get(rd, {}).get(s), sort_keys=True):
                 probs.append(f"{rd} {s}: measures recomputed from the evidence differ from scores.json")
-    probs += judge_gate(gate, recomputed, reg)
+    probs += judge_gate(gate, recomputed, reg, r.get("registryVersion"))
     listed = sorted(e for e in r["evidence"] if e.endswith("-manifest.json"))
     found = sorted(str((d / f.name).relative_to(REPO)) for d in reads.values() for f in d.glob("*-manifest.json") if f.name[:-14] in SETS[gate])
     if listed != found:

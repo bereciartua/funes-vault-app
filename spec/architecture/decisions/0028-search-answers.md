@@ -10,6 +10,14 @@
 - a cloud answer reads the results as re-ranked with sendable facts only; a shown result outside that set isn't read, and its slot isn't refilled;
 - the iPhone's held-answer key gains a facts revision: the phone drops its held answer, and one in flight, when it changes. The Mac holds no answer; it drops one in flight.
 
+**Amended again by [ADR-0032](0032-facts-about-you.md) (2026-11-21, the model answers and the time model checks):**
+- for a timeline question, the input carries the *timeline* predicate's trusted rows and up to 6 trusted memories they cite, in place of the 2 bridges (up to 16 memories, 15,000 + 6,000 characters; "Read 10 results and N from your history");
+- a claim may carry a structured comparison. Code decides when a claim owes a check, and checks it against the time model on trusted evidence:
+  - the claim stands, is marked ("text you didn't write says otherwise"), becomes "not sure" ("Funes can't tell which job came before Acme"), or is dropped;
+  - code words the checked line, in place of the claim's text;
+- Apple on-device and local engines get no rows;
+- an iPhone needs the `checked` capability to get rows. Its held answer is still dropped when the facts revision changes.
+
 **Context.**
 - **Search finds the right memories, but the fact is buried.** The author's feedback after daily use of both apps: for "What's my title at Chatham?" the right memories come back on the first page, but the answer sits in the middle of one result's body, and an older memory says something else. Today a result's snippet is the first 160 characters of its body (`CompanionHandlers.snippet`, and the Vault's one-line preview), so the sentence that answers is usually cut off, and the only way to the fact is opening memory after memory.
 - **The author asked for an optional, configurable model step** that reads the question and the first page of results and narrows them down or answers, on the Mac and the iPhone, keeping search as it is.

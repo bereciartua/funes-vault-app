@@ -265,7 +265,9 @@ struct PeopleRead {
 
     /// A fact's episodes while its predicate's timeline is on (derived: succession, conflicts, orders).
     func episodes(_ f: LearnedFact) -> [Episode] {
-        graph.episodes(f.predicate).filter { $0.entity == f.entity }.stableSorted { $0.sortKey }
+        // A stated rename's episodes stand under one of its names (13e.1): each name's page shows them.
+        let id = graph.timelineEntity(f.predicate, f.entity)
+        return graph.episodes(f.predicate).filter { $0.entity == id }.stableSorted { $0.sortKey }
     }
 
     /// A fact's dated rows as the timeline shows them. Timeline on: every episode, derived. Off: only your own rows,
@@ -338,7 +340,9 @@ struct PeopleRead {
             : e.start == nil && e.end == nil ? nil
             : DateRange(lo: e.start?.lo ?? DateRange.minDay, hi: e.end?.hi ?? DateRange.maxDay)
         return PeopleDirectory.TimelineEpisode(
-            index: index, factID: factID(f) ?? "", entity: f.entity, name: name(f.entity) ?? "",
+            // A stated rename shows under both names ("Lattice Harbor / Lattice Harbor Labs", 13e.1).
+            index: index, factID: factID(f) ?? "", entity: f.entity,
+            name: { let n = graph.timelineNames(f.predicate, f.entity).joined(separator: " / "); return n.isEmpty ? name(f.entity) ?? "" : n }(),
             start: e.tstart, end: e.end, ongoing: e.ongoing, former: e.former, inferredEnd: e.inferredEnd,
             conflictStart: e.conflictStart, conflictEnd: e.conflictEnd, untrusted: !e.trusted, kind: kind, titles: titles,
             stating: Array(stating), previous: previous, selector: selector,
@@ -352,7 +356,8 @@ struct PeopleRead {
             let on = uses.isOn(p.id, .timeline)
             let all = on ? graph.episodes(p.id) : []
             var eps: [PeopleDirectory.TimelineEpisode] = []
-            for f in graph.facts where f.predicate == p.id && !f.negated {      // Hide is for the list only
+            // Hide is for the list only; a stated rename's rows once, under the name that stands for it.
+            for f in graph.facts where f.predicate == p.id && !f.negated && (!on || graph.timelineEntity(p.id, f.entity) == f.entity) {
                 eps += timelineEpisodes(f, all: all)
             }
             eps.sort { a, b in

@@ -1,558 +1,625 @@
 {
-  "registry_json": "{\"version\":\"canary-13a2\",\"note\":\"ADR-0032 decision 2, memory processing §11.2: what each kind of fact means and how it's used. FunesCore's Facts/ reads this; no Swift code names a predicate or carries its words.\",\"language\":{\"owners\":[\"my\",\"mi\",\"mis\",\"the user's\"],\"status_cues\":{\"former\":[\"old\",\"former\",\"previous\",\"anterior\",\"antiguo\",\"antigua\"],\"current\":[\"new\",\"current\",\"actual\",\"nuevo\",\"nueva\"]},\"modifiers\":[\"only\",\"other\",\"old\",\"new\",\"late\",\"former\",\"current\",\"younger\",\"older\",\"little\",\"big\",\"best\",\"elder\",\"eldest\",\"youngest\",\"engineering\",\"product\",\"step\",\"previous\",\"first\"],\"only_words\":[\"only\"],\"date_cue_words\":[\"previous\",\"anterior\"],\"operators\":{\"before\":[\"before\",\"antes de\",\"prior to\"],\"after\":[\"after\",\"después de\",\"despues de\",\"following\",\"followed\"],\"previous\":[\"previous\",\"anterior\",\"last\",\"former\"],\"current\":[\"current\",\"now\",\"actual\",\"currently\",\"actualmente\",\"ahora\",\"hoy\"]},\"operator_adverbs\":[\"immediately\",\"right\",\"straight\",\"just\",\"inmediatamente\",\"justo\"],\"wh_words\":[\"where\",\"what\",\"which\",\"who\",\"whom\",\"donde\",\"que\",\"cual\",\"cuales\",\"quien\",\"quienes\"],\"episode_first\":[\"first\",\"primera\",\"primer\",\"initial\"],\"episode_last\":[\"return\",\"returned\",\"rejoin\",\"rejoined\",\"again\",\"volver\",\"volvi\",\"regres*\"],\"episode_ordinals\":{\"second\":2,\"segunda\":2,\"segundo\":2,\"third\":3,\"tercera\":3,\"tercer\":3,\"tercero\":3,\"fourth\":4,\"cuarta\":4,\"cuarto\":4},\"pair_before\":[\"is\",\"was\",\"es\",\"era\"],\"pair_after\":[\"is\",\"es\"],\"not_names\":[\"i\",\"the\",\"my\",\"yo\",\"el\",\"la\",\"mi\"],\"pair_adverbs\":[\"also\",\"still\",\"now\",\"también\",\"ahora\"],\"stop_names\":[\"will\",\"may\",\"rosa\",\"sol\",\"mark\",\"bill\",\"pat\",\"april\",\"june\",\"august\",\"grace\",\"hope\",\"joy\",\"faith\",\"rose\",\"lily\",\"papa\",\"mama\",\"art\",\"dean\",\"jack\",\"frank\",\"summer\",\"autumn\"],\"person_nouns\":[\"husband\",\"wife\",\"kids\",\"children\",\"family\",\"friends\",\"boyfriend\",\"girlfriend\"],\"compound_heads\":[\"company\",\"companies\",\"firm\",\"organization\",\"organisation\",\"group\",\"account\",\"process\",\"node\",\"class\",\"element\",\"directory\",\"folder\",\"app\",\"empresa\",\"compañía\",\"compania\"],\"former_prefixes\":[\"ex-\",\"ex \"],\"former_words\":[\"former\",\"ex\",\"old\",\"previous\",\"used to\",\"broke up\",\"split\",\"left\",\"no longer\",\"anterior\",\"antiguo\",\"antigua\",\"ya no\",\"dejé\",\"deje\"],\"anchor_tail_words\":[\"the\",\"a\",\"for\",\"time\",\"again\",\"once\",\"la\",\"el\",\"por\",\"vez\",\"de\",\"period\",\"stretch\",\"stint\",\"spell\",\"job\",\"role\",\"work\"],\"prompt_examples\":{\"group\":\"I have two sisters\",\"none\":\"I don't have kids\",\"only\":\"my only brother\",\"count\":\"two sisters → 2\",\"start\":\"\\\"since 2022\\\", \\\"joined in March 2019\\\"\",\"denial\":\"Marta is not my sister\",\"pair\":\"\\\"Maria is my sister\\\", \\\"my sister Maria\\\"\",\"denial_role\":\"Sasha is not my manager\",\"deceased\":\"\\\"late\\\", \\\"passed away\\\"\"},\"time_prepositions\":[\"in\",\"since\",\"during\",\"back in\",\"until\",\"en\",\"desde\",\"durante\",\"hasta\",\"from\",\"between\",\"de\"],\"owner_words\":[\"our\",\"nuestra\",\"nuestro\",\"users\"],\"time_nouns\":[\"year\",\"years\",\"summer\",\"winter\",\"spring\",\"autumn\",\"fall\",\"month\",\"week\",\"time\",\"año\",\"verano\",\"mes\",\"semana\",\"invierno\"],\"third_person\":[\"he\",\"she\",\"they\",\"him\",\"her\",\"them\",\"his\",\"hers\",\"their\",\"él\",\"ella\",\"ellos\",\"ellas\"],\"first_person\":[\"I\",\"I'd\",\"I'm\",\"I've\",\"I'll\",\"I’d\",\"I’m\",\"I’ve\",\"I’ll\"],\"weekdays\":[\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\",\"sunday\",\"lunes\",\"martes\",\"miércoles\",\"miercoles\",\"jueves\",\"viernes\",\"sábado\",\"sabado\",\"domingo\"],\"months\":{\"1\":[\"january\",\"jan\",\"enero\",\"ene\"],\"2\":[\"february\",\"feb\",\"febrero\"],\"3\":[\"march\",\"mar\",\"marzo\"],\"4\":[\"april\",\"apr\",\"abril\",\"abr\"],\"5\":[\"may\",\"mayo\"],\"6\":[\"june\",\"jun\",\"junio\"],\"7\":[\"july\",\"jul\",\"julio\"],\"8\":[\"august\",\"aug\",\"agosto\",\"ago\"],\"9\":[\"september\",\"sept\",\"sep\",\"septiembre\",\"setiembre\",\"set\"],\"10\":[\"october\",\"oct\",\"octubre\"],\"11\":[\"november\",\"nov\",\"noviembre\"],\"12\":[\"december\",\"dec\",\"diciembre\",\"dic\"]},\"function_words\":[\"and\",\"or\",\"but\",\"with\",\"the\",\"a\",\"an\",\"to\",\"of\",\"for\",\"from\",\"in\",\"on\",\"at\",\"is\",\"was\",\"are\",\"not\",\"no\",\"y\",\"o\",\"con\",\"de\",\"del\",\"la\",\"el\",\"los\",\"las\",\"que\",\"es\",\"own\",\"my\",\"mi\",\"mis\",\"his\",\"her\",\"their\",\"our\",\"your\",\"this\",\"that\"],\"date_joiners\":[\"de\",\"of\"],\"legal_suffixes\":[\"inc\",\"ltd\",\"llc\",\"gmbh\",\"s.a\",\"sa\",\"s.l\",\"sl\",\"lda\",\"plc\",\"corp\",\"co\"],\"user_placeholder\":\"the user\",\"ordinal_suffixes\":[\"st\",\"nd\",\"rd\",\"th\"],\"day_prepositions\":[\"on\",\"el\"],\"return_cues\":[\"rejoined\",\"rejoin\",\"rejoining\",\"returned to\",\"return to\",\"went back to\",\"came back to\",\"volví a\",\"volvi a\",\"regresé a\",\"regrese a\",\"de vuelta en\",\"back together\",\"got back with\",\"getting back with\",\"back with\",\"i'm back at\",\"am back at\",\"returning to\",\"going back to\",\"coming back to\",\"volvimos\",\"hemos vuelto\",\"de vuelta con\",\"vuelvo a\",\"volviendo a\"],\"anchor_determiners\":[\"the\",\"an\",\"this\",\"that\",\"these\",\"those\",\"la\",\"el\",\"los\",\"las\",\"un\",\"una\",\"este\",\"esta\",\"ese\",\"esa\"],\"anchor_lead_words\":[\"i\",\"was\",\"were\",\"had\",\"have\",\"been\",\"being\",\"got\",\"get\",\"went\",\"go\",\"going\",\"started\",\"starting\",\"start\",\"moved\",\"moving\",\"came\",\"coming\",\"back\",\"to\",\"at\",\"in\",\"for\",\"with\",\"into\",\"over\",\"que\",\"yo\",\"estaba\",\"estuve\",\"fui\",\"ir\",\"en\",\"a\",\"con\",\"para\",\"me\",\"por\",\"began\",\"begin\",\"hired\",\"joining\",\"estar\",\"unirme\",\"irme\",\"de\"],\"start_events\":[\"join\",\"joins\",\"joining\",\"joined\",\"start\",\"starts\",\"started\",\"starting\",\"began\",\"begin\",\"hired\",\"came\",\"coming\",\"got\",\"went\",\"go\",\"going\",\"moved\",\"moving\",\"return\",\"returned\",\"returning\",\"rejoin\",\"rejoined\",\"rejoining\",\"entrar\",\"entré\",\"entre\",\"empecé\",\"empece\",\"empezar\",\"empezé\",\"unirme\",\"volver\",\"volví\",\"volvi\",\"ir\",\"regres*\"],\"end_events\":[\"leave\",\"leaves\",\"leaving\",\"left\",\"quit\",\"quitting\",\"fired\",\"laid\",\"dejar\",\"dejé\",\"deje\",\"salir\",\"salí\",\"sali\",\"irme\",\"renuncié\",\"renuncie\"],\"question_words\":[\"where\",\"what\",\"what's\",\"whats\",\"which\",\"who\",\"who's\",\"whom\",\"when\",\"how\",\"did\",\"do\",\"does\",\"was\",\"were\",\"is\",\"are\",\"am\",\"have\",\"had\",\"has\",\"would\",\"could\",\"can\",\"the\",\"a\",\"an\",\"name\",\"of\",\"tell\",\"remind\",\"dónde\",\"donde\",\"qué\",\"que\",\"cuál\",\"cual\",\"quién\",\"quien\",\"cómo\",\"como\",\"era\",\"fue\",\"es\",\"la\",\"el\",\"los\",\"las\",\"nombre\",\"de\",\"dime\",\"recuérdame\",\"doing\",\"right\",\"just\",\"haciendo\",\"justo\"],\"year_prepositions\":[\"in\",\"during\",\"back in\",\"en\",\"durante\"],\"range_prepositions\":[\"between\",\"from\",\"entre\",\"desde\",\"de\"],\"contractions\":{\"del\":\"de el\",\"al\":\"a el\"}},\"kinds\":{\"person\":{\"match\":\"first_name\",\"normalise\":[]},\"organization\":{\"match\":\"contains\",\"normalise\":[\"legal_suffix\"]},\"place\":{\"match\":\"exact\",\"normalise\":[]},\"thing\":{\"match\":\"exact\",\"normalise\":[]}},\"call_groups\":{\"people\":{\"intro\":\"record who it mentions and how they relate to the person, \\\"the user\\\"\",\"examples\":{\"label\":[\"sister\",\"mom\",\"boss\",\"abuela\",\"wife\",\"cousin\"],\"former\":[\"an ex\",\"broke up\",\"moved teams\",\"a former boss\"]}},\"work\":{\"intro\":\"record the user's OWN employment that the memory states: organizations the user works or worked for\",\"examples\":{\"label\":[\"the user's own word for the job, if any\"],\"former\":[\"left the job\",\"no longer works there\"]}}},\"uses\":{\"recorded\":{\"requires\":[],\"note\":\"extracted and stored, shown and correctable\"},\"linked\":{\"requires\":[\"recorded\"],\"note\":\"search admission and why lines\"},\"timeline\":{\"requires\":[\"linked\"],\"note\":\"before and after answers, and time cues as of a memory date\"},\"attributes\":{\"requires\":[\"linked\"],\"note\":\"the inference carried on an answer memories\"},\"bridges\":{\"requires\":[\"timeline\"],\"note\":\"memories added to a timeline answer\"}},\"predicates\":[{\"id\":\"partner\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"timeline\",\"attributes\",\"bridges\"],\"definition\":\"partner: the user's own romantic partner (wife, husband, girlfriend, boyfriend, spouse, fiance, fiancee, pareja, novia, novio), including dating, seeing someone, going out with someone, and former or resumed relationships. Exclude other people's partners; preserve explicit denials, dates, overlaps and separate episodes.\",\"exclusive\":true,\"succession\":true,\"slot\":null,\"gap_months\":12,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"partner\",\"wife\",\"husband\",\"girlfriend\",\"boyfriend\",\"fiancé\",\"fiancée\",\"fiance\",\"fiancee\",\"esposa\",\"esposo\",\"novia\",\"novio\",\"spouse\",\"pareja\"]},{\"cls\":\"ex\",\"words\":[\"ex\"],\"status\":\"former\"}],\"query_cues\":[\"partner\",\"partners\",\"dating\",\"dated\",\"date\",\"seeing\",\"going out with\",\"go out with\",\"went out with\",\"girlfriend\",\"boyfriend\",\"wife\",\"husband\",\"spouse\",\"fiancé\",\"fiancée\",\"fiance\",\"fiancee\",\"pareja\",\"novia\",\"novio\",\"esposa\",\"esposo\",\"saliendo con\",\"salía con\",\"salia con\",\"salgo con\",\"salí con\",\"sali con\",\"salir con\",\"salíamos\",\"saliamos\"],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"partner\"}},{\"id\":\"parent\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"parent (mom, dad, stepparents)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"mother\",\"exclusive\":true,\"words\":[\"mom\",\"mum\",\"mother\",\"mamá\",\"mama\",\"madre\",\"stepmom\",\"stepmother\"]},{\"cls\":\"father\",\"exclusive\":true,\"words\":[\"dad\",\"father\",\"papá\",\"papa\",\"padre\",\"stepdad\",\"stepfather\"]},{\"cls\":null,\"generic\":true,\"words\":[\"parent\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"parents\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"parent\"}},{\"id\":\"child\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"child (son, daughter)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"daughter\",\"words\":[\"daughter\",\"hija\"]},{\"cls\":\"son\",\"words\":[\"son\",\"hijo\"]},{\"cls\":null,\"generic\":true,\"words\":[\"kid\",\"child\",\"baby\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"kids\",\"children\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"child\"}},{\"id\":\"sibling\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"sibling (sister, brother, half-siblings)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"sister\",\"words\":[\"sister\",\"hermana\"]},{\"cls\":\"brother\",\"words\":[\"brother\",\"hermano\"]},{\"cls\":null,\"generic\":true,\"words\":[\"sibling\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"siblings\"]},{\"cls\":\"half-sister\",\"words\":[\"half-sister\",\"medio hermana\"]},{\"cls\":\"half-brother\",\"words\":[\"half-brother\",\"medio hermano\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"sibling\"}},{\"id\":\"other_family\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"other_family (grandparents, aunts, uncles, cousins, in-laws…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"grandmother\",\"words\":[\"grandma\",\"grandmother\",\"abuela\",\"granny\"]},{\"cls\":\"grandfather\",\"words\":[\"grandpa\",\"grandfather\",\"abuelo\"]},{\"cls\":\"aunt\",\"words\":[\"aunt\",\"tía\",\"tia\"]},{\"cls\":\"uncle\",\"words\":[\"uncle\",\"tío\",\"tio\"]},{\"cls\":\"cousin\",\"words\":[\"cousin\",\"primo\",\"prima\"]},{\"cls\":\"niece\",\"words\":[\"niece\",\"sobrina\"]},{\"cls\":\"nephew\",\"words\":[\"nephew\",\"sobrino\"]},{\"cls\":\"mother-in-law\",\"words\":[\"mother-in-law\",\"suegra\"]},{\"cls\":\"father-in-law\",\"words\":[\"father-in-law\",\"suegro\"]},{\"cls\":\"sister-in-law\",\"words\":[\"sister-in-law\",\"cuñada\"]},{\"cls\":\"brother-in-law\",\"words\":[\"brother-in-law\",\"cuñado\"]},{\"cls\":\"stepsister\",\"words\":[\"stepsister\",\"step-sister\",\"hermanastra\"]},{\"cls\":\"stepbrother\",\"words\":[\"stepbrother\",\"step-brother\",\"hermanastro\"]},{\"cls\":\"stepson\",\"words\":[\"stepson\",\"hijastro\"]},{\"cls\":\"stepdaughter\",\"words\":[\"stepdaughter\",\"hijastra\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"relative\"}},{\"id\":\"friend\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"friend\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"friend\",\"amigo\",\"amiga\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"friend\"}},{\"id\":\"manager\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"manager (boss)\",\"exclusive\":false,\"succession\":true,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"boss\",\"manager\",\"jefe\",\"jefa\",\"supervisor\",\"supervisora\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"manager\"}},{\"id\":\"colleague\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"colleague\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"coworker\",\"co-worker\",\"colleague\",\"teammate\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"colleague\"}},{\"id\":\"care\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"care (doctor, dentist, therapist, vet, lawyer…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"dentist\",\"words\":[\"dentist\"]},{\"cls\":\"doctor\",\"words\":[\"doctor\",\"médico\",\"medico\"]},{\"cls\":\"therapist\",\"words\":[\"therapist\"]},{\"cls\":\"vet\",\"words\":[\"vet\"]},{\"cls\":\"lawyer\",\"words\":[\"lawyer\"]},{\"cls\":\"accountant\",\"words\":[\"accountant\"]},{\"cls\":\"coach\",\"words\":[\"coach\"]},{\"cls\":\"pediatrician\",\"words\":[\"pediatrician\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"carer\"}},{\"id\":\"other\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"other (neighbour, landlord…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"neighbor\",\"words\":[\"neighbor\",\"neighbour\",\"vecino\",\"vecina\"]},{\"cls\":\"landlord\",\"words\":[\"landlord\"]},{\"cls\":\"client contact\",\"words\":[\"client contact\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"person\"}},{\"id\":\"works_at\",\"object_kind\":\"organization\",\"call_group\":\"work\",\"uses\":[\"recorded\",\"linked\",\"timeline\",\"attributes\",\"bridges\"],\"definition\":\"works_at: an organization the user works or worked for as an employee, or the user's own company or self-employment (name it \\\"Self-employed\\\" when freelancing without a company name). Not other people's jobs, not clients, not organizations the user only mentions or buys from\",\"placeholders\":{\"Self-employed\":[\"self-employed\",\"self employed\",\"sole trader\",\"freelance\",\"freelancing\",\"freelancer\",\"autónomo\",\"autonomo\"]},\"exclusive\":false,\"succession\":true,\"slot\":\"kind\",\"gap_months\":2,\"qualifiers\":{\"title\":{\"multi\":false,\"describe\":\"the user's role or title\"},\"kind\":{\"multi\":false,\"values\":[\"employee\",\"self_employed\"],\"describe\":\"employee, or self_employed for freelance or sole trader\"}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"job\",\"employer\",\"trabajo\"]}],\"query_cues\":[\"job\",\"jobs\",\"work\",\"worked\",\"working\",\"employer\",\"company\",\"employed\",\"role\",\"trabajo\",\"trabajaba\",\"trabajé\",\"trabaje\",\"empresa\",\"join\",\"joining\",\"joined\",\"leave\",\"leaving\",\"left\",\"entrar\",\"entré\",\"entre\",\"dejar\",\"dejé\",\"deje\",\"salir\",\"salí\",\"sali\",\"empecé\",\"empece\",\"empezar\",\"empezé\"],\"phrases\":{\"attribute\":\"where you worked\",\"note_noun\":\"job\"},\"qualifier_cues\":[\"title\",\"job title\",\"position\",\"promoted\",\"promotion\",\"cargo\",\"puesto\",\"ascenso\",\"ascendido\",\"ascendida\",\"me ascendieron\"]},{\"id\":\"client\",\"object_kind\":\"organization\",\"call_group\":\"work\",\"uses\":[\"recorded\"],\"definition\":\"client: an organization the user did work FOR while freelancing or self-employed; never an employer\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{},\"lexicon\":[],\"query_cues\":[],\"phrases\":{\"attribute\":\"your client\",\"note_noun\":\"client\"}}]}",
+  "registry_json": "{\"version\":\"canary-13a2\",\"note\":\"ADR-0032 decision 2, memory processing §11.2: what each kind of fact means and how it's used. FunesCore's Facts/ reads this; no Swift code names a predicate or carries its words.\",\"language\":{\"placeholder_links\":[\"with\",\"through\",\"as\",\"under\",\"via\",\"con\",\"como\",\"mediante\",\"a través de\",\"bajo\"],\"never_words\":[\"never\",\"nunca\",\"jamás\",\"jamas\"],\"owners\":[\"my\",\"mi\",\"mis\",\"the user's\"],\"status_cues\":{\"former\":[\"old\",\"former\",\"previous\",\"anterior\",\"antiguo\",\"antigua\"],\"current\":[\"new\",\"current\",\"actual\",\"nuevo\",\"nueva\"]},\"modifiers\":[\"only\",\"other\",\"old\",\"new\",\"late\",\"former\",\"current\",\"younger\",\"older\",\"little\",\"big\",\"best\",\"elder\",\"eldest\",\"youngest\",\"engineering\",\"product\",\"step\",\"previous\",\"first\"],\"only_words\":[\"only\"],\"date_cue_words\":[\"previous\",\"anterior\"],\"operators\":{\"before\":[\"before\",\"antes de\",\"prior to\",\"preceded\",\"anterior a\",\"previo a\",\"previa a\"],\"after\":[\"after\",\"después de\",\"despues de\",\"following\",\"followed\",\"tras\"],\"previous\":[\"previous\",\"anterior\",\"last\",\"former\",\"previously\",\"anteriormente\"],\"current\":[\"current\",\"now\",\"actual\",\"currently\",\"actualmente\",\"ahora\",\"still\",\"ongoing\",\"sigo\",\"sigue\",\"todavía\",\"todavia\",\"activo\",\"activa\"]},\"operator_adverbs\":[\"immediately\",\"right\",\"straight\",\"just\",\"inmediatamente\",\"justo\"],\"wh_words\":[\"where\",\"what\",\"which\",\"who\",\"whom\",\"donde\",\"que\",\"cual\",\"cuales\",\"quien\",\"quienes\"],\"episode_first\":[\"first\",\"primera\",\"primer\",\"initial\"],\"episode_last\":[\"return\",\"returned\",\"rejoin\",\"rejoined\",\"again\",\"volver\",\"volvi\",\"regres*\"],\"episode_ordinals\":{\"second\":2,\"segunda\":2,\"segundo\":2,\"third\":3,\"tercera\":3,\"tercer\":3,\"tercero\":3,\"fourth\":4,\"cuarta\":4,\"cuarto\":4},\"pair_before\":[\"is\",\"was\",\"es\",\"era\"],\"pair_after\":[\"is\",\"es\"],\"not_names\":[\"i\",\"the\",\"my\",\"yo\",\"el\",\"la\",\"mi\"],\"pair_adverbs\":[\"also\",\"still\",\"now\",\"también\",\"ahora\"],\"stop_names\":[\"will\",\"may\",\"rosa\",\"sol\",\"mark\",\"bill\",\"pat\",\"april\",\"june\",\"august\",\"grace\",\"hope\",\"joy\",\"faith\",\"rose\",\"lily\",\"papa\",\"mama\",\"art\",\"dean\",\"jack\",\"frank\",\"summer\",\"autumn\"],\"person_nouns\":[\"husband\",\"wife\",\"kids\",\"children\",\"family\",\"friends\",\"boyfriend\",\"girlfriend\"],\"compound_heads\":[\"company\",\"companies\",\"firm\",\"organization\",\"organisation\",\"group\",\"account\",\"process\",\"node\",\"class\",\"element\",\"directory\",\"folder\",\"app\",\"empresa\",\"compañía\",\"compania\"],\"former_prefixes\":[\"ex-\",\"ex \"],\"former_words\":[\"former\",\"ex\",\"old\",\"previous\",\"used to\",\"broke up\",\"split\",\"left\",\"no longer\",\"anterior\",\"antiguo\",\"antigua\",\"ya no\",\"dejé\",\"deje\"],\"anchor_tail_words\":[\"the\",\"a\",\"for\",\"time\",\"again\",\"once\",\"la\",\"el\",\"por\",\"vez\",\"de\",\"period\",\"stretch\",\"stint\",\"spell\",\"job\",\"role\",\"work\"],\"prompt_examples\":{\"group\":\"I have two sisters\",\"none\":\"I don't have kids\",\"only\":\"my only brother\",\"count\":\"two sisters → 2\",\"start\":\"\\\"since 2022\\\", \\\"joined in March 2019\\\"\",\"denial\":\"Marta is not my sister\",\"pair\":\"\\\"Maria is my sister\\\", \\\"my sister Maria\\\"\",\"denial_role\":\"Sasha is not my manager\",\"deceased\":\"\\\"late\\\", \\\"passed away\\\"\"},\"time_prepositions\":[\"in\",\"since\",\"during\",\"back in\",\"until\",\"en\",\"desde\",\"durante\",\"hasta\",\"from\",\"between\",\"de\"],\"owner_words\":[\"our\",\"nuestra\",\"nuestro\",\"users\"],\"time_nouns\":[\"year\",\"years\",\"summer\",\"winter\",\"spring\",\"autumn\",\"fall\",\"month\",\"week\",\"time\",\"año\",\"verano\",\"mes\",\"semana\",\"invierno\"],\"third_person\":[\"he\",\"she\",\"they\",\"him\",\"her\",\"them\",\"his\",\"hers\",\"their\",\"él\",\"ella\",\"ellos\",\"ellas\"],\"first_person\":[\"I\",\"I'd\",\"I'm\",\"I've\",\"I'll\",\"I’d\",\"I’m\",\"I’ve\",\"I’ll\"],\"weekdays\":[\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\",\"sunday\",\"lunes\",\"martes\",\"miércoles\",\"miercoles\",\"jueves\",\"viernes\",\"sábado\",\"sabado\",\"domingo\"],\"months\":{\"1\":[\"january\",\"jan\",\"enero\",\"ene\"],\"2\":[\"february\",\"feb\",\"febrero\"],\"3\":[\"march\",\"mar\",\"marzo\"],\"4\":[\"april\",\"apr\",\"abril\",\"abr\"],\"5\":[\"may\",\"mayo\"],\"6\":[\"june\",\"jun\",\"junio\"],\"7\":[\"july\",\"jul\",\"julio\"],\"8\":[\"august\",\"aug\",\"agosto\",\"ago\"],\"9\":[\"september\",\"sept\",\"sep\",\"septiembre\",\"setiembre\",\"set\"],\"10\":[\"october\",\"oct\",\"octubre\"],\"11\":[\"november\",\"nov\",\"noviembre\"],\"12\":[\"december\",\"dec\",\"diciembre\",\"dic\"]},\"function_words\":[\"and\",\"or\",\"but\",\"with\",\"the\",\"a\",\"an\",\"to\",\"of\",\"for\",\"from\",\"in\",\"on\",\"at\",\"is\",\"was\",\"are\",\"not\",\"no\",\"y\",\"o\",\"con\",\"de\",\"del\",\"la\",\"el\",\"los\",\"las\",\"que\",\"es\",\"own\",\"my\",\"mi\",\"mis\",\"his\",\"her\",\"their\",\"our\",\"your\",\"this\",\"that\"],\"date_joiners\":[\"de\",\"of\"],\"legal_suffixes\":[\"inc\",\"ltd\",\"llc\",\"gmbh\",\"s.a\",\"sa\",\"s.l\",\"sl\",\"lda\",\"plc\",\"corp\",\"co\"],\"user_placeholder\":\"the user\",\"ordinal_suffixes\":[\"st\",\"nd\",\"rd\",\"th\"],\"day_prepositions\":[\"on\",\"el\"],\"return_cues\":[\"rejoined\",\"rejoin\",\"rejoining\",\"returned to\",\"return to\",\"went back to\",\"came back to\",\"volví a\",\"volvi a\",\"regresé a\",\"regrese a\",\"de vuelta en\",\"back together\",\"got back with\",\"getting back with\",\"back with\",\"i'm back at\",\"am back at\",\"returning to\",\"going back to\",\"coming back to\",\"volvimos\",\"hemos vuelto\",\"de vuelta con\",\"vuelvo a\",\"volviendo a\"],\"anchor_determiners\":[\"the\",\"an\",\"this\",\"that\",\"these\",\"those\",\"la\",\"el\",\"los\",\"las\",\"un\",\"una\",\"este\",\"esta\",\"ese\",\"esa\"],\"anchor_lead_words\":[\"i\",\"was\",\"were\",\"had\",\"have\",\"been\",\"being\",\"got\",\"get\",\"went\",\"go\",\"going\",\"started\",\"starting\",\"start\",\"moved\",\"moving\",\"came\",\"coming\",\"back\",\"to\",\"at\",\"in\",\"for\",\"with\",\"into\",\"over\",\"que\",\"yo\",\"estaba\",\"estuve\",\"fui\",\"ir\",\"en\",\"a\",\"con\",\"para\",\"por\",\"began\",\"begin\",\"hired\",\"joining\",\"estar\",\"unirme\",\"irme\",\"de\",\"vez\",\"veces\",\"time\",\"launch\",\"launched\",\"launching\",\"open\",\"opened\",\"opening\",\"set\",\"setting\",\"up\",\"create\",\"created\",\"creating\",\"establish\",\"established\",\"incorporarme\",\"incorporé\",\"incorpore\",\"incorporarse\",\"abrir\",\"abrí\",\"abri\",\"fundar\",\"fundé\",\"funde\",\"montar\",\"monté\",\"monte\",\"lanzar\",\"lancé\",\"lance\",\"crear\",\"creé\",\"cree\",\"my\",\"mi\"],\"start_events\":[\"join\",\"joins\",\"joining\",\"joined\",\"start\",\"starts\",\"started\",\"starting\",\"began\",\"begin\",\"hired\",\"came\",\"coming\",\"got\",\"went\",\"go\",\"going\",\"moved\",\"moving\",\"return\",\"returned\",\"returning\",\"rejoin\",\"rejoined\",\"rejoining\",\"entrar\",\"entré\",\"entre\",\"empecé\",\"empece\",\"empezar\",\"empezé\",\"unirme\",\"volver\",\"volví\",\"volvi\",\"ir\",\"regres*\",\"launch\",\"launched\",\"launching\",\"open\",\"opened\",\"opening\",\"founded\",\"founding\",\"create\",\"created\",\"creating\",\"establish\",\"established\",\"incorporarme\",\"incorporé\",\"incorpore\",\"incorporarse\",\"abrir\",\"abrí\",\"abri\",\"fundar\",\"fundé\",\"funde\",\"montar\",\"monté\",\"monte\",\"lanzar\",\"lancé\",\"lance\",\"crear\",\"creé\",\"cree\"],\"end_events\":[\"leave\",\"leaves\",\"leaving\",\"left\",\"quit\",\"quitting\",\"fired\",\"laid\",\"dejar\",\"dejé\",\"deje\",\"salir\",\"salí\",\"sali\",\"irme\",\"renuncié\",\"renuncie\",\"ended\",\"ending\",\"finished\",\"finishing\",\"terminó\",\"termino\",\"acabó\",\"acabo\",\"closed\",\"cerré\",\"cerre\",\"done\",\"over\"],\"question_words\":[\"where\",\"what\",\"what's\",\"whats\",\"which\",\"who\",\"who's\",\"whom\",\"when\",\"how\",\"did\",\"do\",\"does\",\"was\",\"were\",\"is\",\"are\",\"am\",\"have\",\"had\",\"has\",\"would\",\"could\",\"can\",\"the\",\"a\",\"an\",\"name\",\"of\",\"tell\",\"remind\",\"dónde\",\"donde\",\"qué\",\"que\",\"cuál\",\"cual\",\"quién\",\"quien\",\"cómo\",\"como\",\"era\",\"fue\",\"es\",\"la\",\"el\",\"los\",\"las\",\"nombre\",\"de\",\"dime\",\"recuérdame\",\"doing\",\"right\",\"just\",\"haciendo\",\"justo\"],\"year_prepositions\":[\"in\",\"during\",\"back in\",\"en\",\"durante\"],\"range_prepositions\":[\"between\",\"from\",\"entre\",\"desde\",\"de\"],\"contractions\":{\"del\":\"de el\",\"al\":\"a el\"},\"operator_modifiers\":[\"next\",\"last\",\"previous\",\"prior\",\"most recent\",\"siguiente\",\"último\",\"ultimo\",\"anterior\",\"próximo\",\"proximo\"],\"subject_words\":[\"what\",\"what's\",\"whats\",\"which\",\"where\",\"who\",\"whom\",\"did\",\"do\",\"does\",\"was\",\"were\",\"is\",\"am\",\"are\",\"have\",\"had\",\"has\",\"been\",\"be\",\"i\",\"i'm\",\"i'd\",\"i've\",\"my\",\"mine\",\"myself\",\"the\",\"an\",\"of\",\"at\",\"for\",\"qué\",\"que\",\"cuál\",\"cual\",\"dónde\",\"donde\",\"quién\",\"quien\",\"cómo\",\"como\",\"era\",\"fue\",\"es\",\"estaba\",\"estuve\",\"estoy\",\"he\",\"había\",\"habia\",\"tenía\",\"tenia\",\"tuve\",\"tengo\",\"mi\",\"mis\",\"yo\",\"el\",\"la\",\"los\",\"las\",\"se\",\"vino\",\"fui\",\"iba\",\"fue\",\"empecé\",\"empece\",\"mantengo\",\"seguí\",\"segui\",\"seguía\",\"seguia\",\"whose\",\"en\",\"in\"],\"cue_bound_words\":[\"came\",\"come\",\"went\",\"go\",\"run\",\"running\",\"hold\",\"held\",\"holding\",\"down\",\"take\",\"took\",\"behind\",\"under\",\"set\",\"up\",\"move\",\"moved\",\"con\",\"mismo\",\"llevando\",\"funciona\",\"mantengo\",\"nombre\"],\"subject_frames\":[\"employed me\",\"employs me\",\"hired me\",\"paid me\",\"pays me\",\"me contrató\",\"me contrato\",\"me contrataron\",\"me empleaba\",\"me empleó\",\"me empleo\",\"me emplea\",\"me tenía\",\"me tenia\",\"me tiene\",\"me tuvo\",\"me pagaba\",\"me paga\",\"employ me\",\"take me on\",\"took me on\",\"taken me on\",\"me acogió\",\"me fichó\",\"is called\",\"was called\",\"se llama\",\"se llamaba\",\"what do i call\",\"end up\",\"ended up\",\"where did i go\",\"where did i end up\",\"came before\",\"came after\",\"come after\",\"came next\",\"was i at\",\"the first to employ me\",\"where i worked\",\"went to work\",\"fui a trabajar\",\"work for\",\"worked for\",\"working for\",\"trabajo para\",\"trabajaba para\",\"trabajé para\",\"trabaje para\",\"was i with\",\"i was with\",\"start working\",\"started working\",\"empecé a trabajar\",\"me sigue empleando\",\"sigue empleándome\",\"para que empresa\",\"para qué empresa\",\"para que compania\",\"para qué compañía\",\"para cual empresa\",\"para cuál empresa\"],\"passive_operators\":{\"before\":[\"was preceded by\",\"were preceded by\",\"fue precedido por\",\"fue precedida por\",\"vino después de\"],\"after\":[\"was followed by\",\"were followed by\",\"fue seguido por\",\"fue seguida por\"]},\"event_operators\":[\"once\",\"having\",\"upon\",\"al\"],\"date_lead_words\":[\"the\",\"end\",\"start\",\"beginning\",\"early\",\"late\",\"mid\",\"of\",\"el\",\"la\",\"finales\",\"principios\",\"mediados\",\"fin\",\"final\",\"comienzos\",\"de\",\"a\",\"at\"],\"anchor_cue_words\":[\"where\",\"donde\",\"was\",\"were\",\"did\",\"i\",\"yo\",\"estaba\",\"estuve\",\"work\",\"worked\",\"working\",\"trabaje\",\"trabajaba\",\"trabajé\",\"fui\",\"go\",\"went\",\"end\",\"up\",\"next\"],\"negation_words\":[\"not\",\"no\",\"never\",\"nunca\",\"jamás\",\"jamas\",\"without\",\"sin\",\"except\",\"excepto\",\"but\",\"pero\",\"competing\",\"compitiendo\",\"against\",\"contra\",\"instead\",\"rather\",\"than\",\"after\",\"until\",\"till\",\"stopped\",\"stop\",\"used\",\"en vez de\",\"en lugar de\",\"dejé de\",\"deje de\",\"solía\",\"solia\",\"hasta\",\"despues\",\"después\",\"tras\",\"former\",\"ex\"],\"ask_frames\":{\"which\":[\"what\",\"what's\",\"whats\",\"which\",\"que\",\"qué\",\"cual\",\"cuál\",\"cuales\",\"cuáles\"],\"where\":[\"where\",\"donde\",\"dónde\",\"adonde\",\"adónde\"],\"where_verbs\":[\"work\",\"worked\",\"working\",\"employed\",\"was i\",\"were i\",\"did i go\",\"i go\",\"end up\",\"ended up\",\"am i\",\"trabajaba\",\"trabajé\",\"trabaje\",\"trabajando\",\"sigo\",\"start working\",\"started working\",\"empecé\",\"empece\",\"empezé\",\"tenía\",\"tenia\",\"have a job\",\"had a job\",\"held a job\",\"hold a job\",\"had my job\",\"tenía mi empleo\",\"tenia mi empleo\"],\"who_frames\":[\"who employed me\",\"who employs me\",\"who hired me\",\"who did i work for\",\"who do i work for\",\"who was i working for\",\"who am i working for\",\"who was my employer\",\"who is my employer\",\"who's my employer\",\"quien me empleaba\",\"quién me empleaba\",\"quien me emplea\",\"quién me emplea\",\"quien me contrato\",\"quién me contrató\",\"para quién trabajé\",\"para quien trabaje\",\"para quién trabajaba\",\"para quien trabajaba\",\"para quién trabajo\",\"para quien trabajo\"],\"name_frames\":[\"what do i call\",\"what's the name\",\"what is the name\",\"como se llama\",\"cómo se llama\",\"con que nombre\",\"con qué nombre\",\"name of\"]},\"lead_refused_first\":[\"work\",\"trabajo\",\"office\",\"oficina\"],\"never_lead_words\":[\"i\",\"yo\",\"have\",\"has\",\"had\",\"actually\",\"really\",\"honestly\",\"literally\",\"y\",\"and\",\"correction\",\"corrección\",\"correccion\",\"note\",\"nota\",\"en realidad\"],\"never_between_words\":[\"have\",\"has\",\"had\",\"been\",\"ever\",\"at\",\"for\",\"in\",\"en\",\"para\",\"a\",\"the\",\"el\",\"la\",\"an\"],\"event_words\":[\"take\",\"took\",\"taken\",\"set\",\"move\",\"moved\",\"come\",\"came\",\"fui\",\"went\",\"go\",\"got\",\"get\",\"found\",\"up\",\"quit\",\"done\",\"finish\",\"finished\"],\"ask_between\":[\"was\",\"is\",\"were\",\"are\",\"s\",\"fue\",\"era\",\"es\",\"my\",\"the\",\"a\",\"an\",\"mi\",\"el\",\"la\",\"un\",\"una\",\"mis\",\"previous\",\"last\",\"current\",\"next\",\"prior\",\"anterior\",\"actual\",\"ultimo\",\"último\",\"siguiente\",\"first\",\"own\",\"propio\",\"day\",\"full-time\"],\"fold_lead_words\":[\"i\",\"i'm\",\"im\",\"yo\",\"am\",\"still\",\"now\",\"currently\",\"sigo\",\"soy\",\"estoy\",\"trabajo\",\"ahora\",\"todavia\",\"todavía\",\"actualmente\",\"working\",\"work\",\"trabajando\",\"keep\",\"continue\",\"continuo\",\"continúo\",\"y\",\"and\",\"also\",\"también\",\"tambien\"],\"verb_nouns\":[\"trabajo\"]},\"kinds\":{\"person\":{\"match\":\"first_name\",\"normalise\":[]},\"organization\":{\"match\":\"contains\",\"normalise\":[\"legal_suffix\"]},\"place\":{\"match\":\"exact\",\"normalise\":[]},\"thing\":{\"match\":\"exact\",\"normalise\":[]}},\"call_groups\":{\"people\":{\"intro\":\"record who it mentions and how they relate to the person, \\\"the user\\\"\",\"examples\":{\"label\":[\"sister\",\"mom\",\"boss\",\"abuela\",\"wife\",\"cousin\"],\"former\":[\"an ex\",\"broke up\",\"moved teams\",\"a former boss\"]}},\"work\":{\"intro\":\"record the user's OWN employment that the memory states: organizations the user works or worked for\",\"examples\":{\"label\":[\"the user's own word for the job, if any\"],\"former\":[\"left the job\",\"no longer works there\"]}}},\"uses\":{\"recorded\":{\"requires\":[],\"note\":\"extracted and stored, shown and correctable\"},\"linked\":{\"requires\":[\"recorded\"],\"note\":\"search admission and why lines\"},\"timeline\":{\"requires\":[\"linked\"],\"note\":\"before and after answers, and time cues as of a memory date\"},\"attributes\":{\"requires\":[\"linked\"],\"note\":\"the inference carried on an answer memories\"},\"bridges\":{\"requires\":[\"timeline\"],\"note\":\"memories added to a timeline answer\"}},\"predicates\":[{\"id\":\"partner\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"timeline\",\"attributes\"],\"definition\":\"partner: the user's own romantic partner (wife, husband, girlfriend, boyfriend, spouse, fiance, fiancee, pareja, novia, novio), including former partners and distinct episodes after getting back together. Record only what the memory states, preserving date precision, denials and explicit ordering; never treat another person's partner as the user's partner.\",\"exclusive\":true,\"succession\":true,\"slot\":null,\"gap_months\":12,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"partner\",\"wife\",\"husband\",\"girlfriend\",\"boyfriend\",\"fiancé\",\"fiancée\",\"fiance\",\"fiancee\",\"esposa\",\"esposo\",\"novia\",\"novio\",\"spouse\",\"pareja\"]},{\"cls\":\"ex\",\"words\":[\"ex\"],\"status\":\"former\"}],\"query_cues\":[\"partner\",\"partners\",\"dating\",\"dated\",\"seeing\",\"going out with\",\"go out with\",\"went out with\",\"girlfriend\",\"boyfriend\",\"wife\",\"husband\",\"spouse\",\"fiancé\",\"fiancée\",\"fiance\",\"fiancee\",\"relationship\",\"relationships\",\"romantic partner\",\"pareja\",\"parejas\",\"novia\",\"novio\",\"esposa\",\"esposo\",\"salir con\",\"saliendo con\",\"salía\",\"salia\",\"salgo\",\"salí\",\"sali\",\"salía con\",\"salia con\",\"salgo con\",\"salí con\",\"sali con\",\"noviazgo\",\"relación\",\"relacion\"],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"partner\"},\"query_nouns\":[\"partner\",\"partners\",\"girlfriend\",\"boyfriend\",\"wife\",\"husband\",\"spouse\",\"fiancé\",\"fiancée\",\"fiance\",\"fiancee\",\"relationship\",\"relationships\",\"pareja\",\"parejas\",\"novia\",\"novio\",\"esposa\",\"esposo\",\"noviazgo\",\"relación\",\"relacion\"]},{\"id\":\"parent\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"parent (mom, dad, stepparents)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"mother\",\"exclusive\":true,\"words\":[\"mom\",\"mum\",\"mother\",\"mamá\",\"mama\",\"madre\",\"stepmom\",\"stepmother\"]},{\"cls\":\"father\",\"exclusive\":true,\"words\":[\"dad\",\"father\",\"papá\",\"papa\",\"padre\",\"stepdad\",\"stepfather\"]},{\"cls\":null,\"generic\":true,\"words\":[\"parent\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"parents\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"parent\"}},{\"id\":\"child\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"child (son, daughter)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"daughter\",\"words\":[\"daughter\",\"hija\"]},{\"cls\":\"son\",\"words\":[\"son\",\"hijo\"]},{\"cls\":null,\"generic\":true,\"words\":[\"kid\",\"child\",\"baby\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"kids\",\"children\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"child\"}},{\"id\":\"sibling\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"sibling (sister, brother, half-siblings)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"sister\",\"words\":[\"sister\",\"hermana\"]},{\"cls\":\"brother\",\"words\":[\"brother\",\"hermano\"]},{\"cls\":null,\"generic\":true,\"words\":[\"sibling\"]},{\"cls\":null,\"generic\":true,\"plural\":true,\"words\":[\"siblings\"]},{\"cls\":\"half-sister\",\"words\":[\"half-sister\",\"medio hermana\"]},{\"cls\":\"half-brother\",\"words\":[\"half-brother\",\"medio hermano\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"sibling\"}},{\"id\":\"other_family\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"other_family (grandparents, aunts, uncles, cousins, in-laws…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"grandmother\",\"words\":[\"grandma\",\"grandmother\",\"abuela\",\"granny\"]},{\"cls\":\"grandfather\",\"words\":[\"grandpa\",\"grandfather\",\"abuelo\"]},{\"cls\":\"aunt\",\"words\":[\"aunt\",\"tía\",\"tia\"]},{\"cls\":\"uncle\",\"words\":[\"uncle\",\"tío\",\"tio\"]},{\"cls\":\"cousin\",\"words\":[\"cousin\",\"primo\",\"prima\"]},{\"cls\":\"niece\",\"words\":[\"niece\",\"sobrina\"]},{\"cls\":\"nephew\",\"words\":[\"nephew\",\"sobrino\"]},{\"cls\":\"mother-in-law\",\"words\":[\"mother-in-law\",\"suegra\"]},{\"cls\":\"father-in-law\",\"words\":[\"father-in-law\",\"suegro\"]},{\"cls\":\"sister-in-law\",\"words\":[\"sister-in-law\",\"cuñada\"]},{\"cls\":\"brother-in-law\",\"words\":[\"brother-in-law\",\"cuñado\"]},{\"cls\":\"stepsister\",\"words\":[\"stepsister\",\"step-sister\",\"hermanastra\"]},{\"cls\":\"stepbrother\",\"words\":[\"stepbrother\",\"step-brother\",\"hermanastro\"]},{\"cls\":\"stepson\",\"words\":[\"stepson\",\"hijastro\"]},{\"cls\":\"stepdaughter\",\"words\":[\"stepdaughter\",\"hijastra\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"relative\"}},{\"id\":\"friend\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"friend\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"friend\",\"amigo\",\"amiga\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"friend\"}},{\"id\":\"manager\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"manager (boss)\",\"exclusive\":false,\"succession\":true,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"boss\",\"manager\",\"jefe\",\"jefa\",\"supervisor\",\"supervisora\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"manager\"}},{\"id\":\"colleague\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"colleague\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"coworker\",\"co-worker\",\"colleague\",\"teammate\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"colleague\"}},{\"id\":\"care\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"care (doctor, dentist, therapist, vet, lawyer…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"dentist\",\"words\":[\"dentist\"]},{\"cls\":\"doctor\",\"words\":[\"doctor\",\"médico\",\"medico\"]},{\"cls\":\"therapist\",\"words\":[\"therapist\"]},{\"cls\":\"vet\",\"words\":[\"vet\"]},{\"cls\":\"lawyer\",\"words\":[\"lawyer\"]},{\"cls\":\"accountant\",\"words\":[\"accountant\"]},{\"cls\":\"coach\",\"words\":[\"coach\"]},{\"cls\":\"pediatrician\",\"words\":[\"pediatrician\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"carer\"}},{\"id\":\"other\",\"object_kind\":\"person\",\"call_group\":\"people\",\"uses\":[\"recorded\",\"linked\",\"attributes\"],\"definition\":\"other (neighbour, landlord…)\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{\"label\":{\"multi\":false}},\"lexicon\":[{\"cls\":\"neighbor\",\"words\":[\"neighbor\",\"neighbour\",\"vecino\",\"vecina\"]},{\"cls\":\"landlord\",\"words\":[\"landlord\"]},{\"cls\":\"client contact\",\"words\":[\"client contact\"]}],\"query_cues\":[],\"phrases\":{\"attribute\":\"your {label}\",\"note_noun\":\"person\"}},{\"id\":\"works_at\",\"object_kind\":\"organization\",\"call_group\":\"work\",\"uses\":[\"recorded\",\"linked\",\"timeline\",\"attributes\",\"bridges\"],\"definition\":\"works_at: an organization the user works or worked for as an employee, or the user's own company or self-employment (name it \\\"Self-employed\\\" when freelancing without a company name). Not other people's jobs, not clients, not organizations the user only mentions or buys from\",\"placeholders\":{\"Self-employed\":[\"self-employed\",\"self employed\",\"sole trader\",\"freelance\",\"freelancing\",\"freelancer\",\"autónomo\",\"autonomo\"]},\"exclusive\":false,\"succession\":true,\"slot\":\"kind\",\"gap_months\":2,\"qualifiers\":{\"title\":{\"multi\":false,\"describe\":\"the user's role or title\"},\"kind\":{\"multi\":false,\"values\":[\"employee\",\"self_employed\"],\"describe\":\"employee, or self_employed for freelance or sole trader\"}},\"lexicon\":[{\"cls\":null,\"generic\":true,\"words\":[\"job\",\"employer\",\"trabajo\"]}],\"query_cues\":[\"job\",\"jobs\",\"work\",\"worked\",\"working\",\"employer\",\"company\",\"employed\",\"trabajo\",\"trabajaba\",\"trabajé\",\"trabaje\",\"empresa\",\"join\",\"joining\",\"joined\",\"leave\",\"leaving\",\"left\",\"entrar\",\"entré\",\"entre\",\"dejar\",\"dejé\",\"deje\",\"salir\",\"salí\",\"sali\",\"empecé\",\"empece\",\"empezar\",\"empezé\",\"employment\",\"firm\",\"workplace\",\"empleo\",\"empleaba\",\"empleó\",\"trabajando\",\"trabajar\",\"negocio\",\"plantilla\",\"nómina\",\"nomina\",\"organization\",\"organisation\",\"organización\",\"organizacion\",\"empleador\",\"empleadora\",\"compañía\",\"compania\",\"operation\",\"venture\",\"empleando\"],\"query_nouns\":[\"job\",\"jobs\",\"employer\",\"employers\",\"company\",\"firm\",\"workplace\",\"organization\",\"organisation\",\"employment\",\"empleo\",\"empresa\",\"compañía\",\"compania\",\"empleador\",\"empleadora\",\"organización\",\"organizacion\",\"negocio\",\"operation\",\"venture\"],\"slot_cues\":{\"employee\":[\"day job\",\"day-job\",\"on payroll\",\"salaried\",\"salary job\",\"employee job\",\"as an employee\",\"full-time\",\"staff job\",\"en plantilla\",\"empleo de día\",\"empleo de dia\",\"trabajo de día\",\"trabajo de dia\",\"nómina\",\"nomina\",\"asalariado\",\"asalariada\",\"como empleado\",\"como empleada\",\"por cuenta ajena\",\"employed me\",\"employs me\",\"me empleaba\",\"me empleó\",\"me tenía en plantilla\",\"employee of\",\"empleado de\",\"empleada de\",\"empleador\",\"empleadora\",\"payroll employer\",\"payroll job\",\"whose payroll\",\"employer\",\"employers\",\"an employee of\",\"employed\"],\"self_employed\":[\"self-employed\",\"my business\",\"my own business\",\"my side business\",\"side business\",\"my own company\",\"sole trader\",\"mi negocio\",\"negocio propio\",\"mi propio negocio\",\"negocio paralelo\",\"por cuenta propia\",\"autónomo\",\"autónoma\",\"autonomo\",\"autonoma\",\"on the side\",\"side gig\",\"side hustle\",\"own business\",\"business of my own\",\"freelance business\",\"freelance operation\",\"freelance company\",\"my freelance\",\"freelancing business\",\"as a freelancer\",\"negocio freelance\"]},\"phrases\":{\"attribute\":\"where you worked\",\"note_noun\":\"job\"},\"qualifier_cues\":[\"title\",\"job title\",\"position\",\"promoted\",\"promotion\",\"cargo\",\"puesto\",\"ascenso\",\"ascendido\",\"ascendida\",\"me ascendieron\",\"role\",\"rol\"]},{\"id\":\"client\",\"object_kind\":\"organization\",\"call_group\":\"work\",\"uses\":[\"recorded\"],\"definition\":\"client: an organization the user did work FOR while freelancing or self-employed; never an employer\",\"exclusive\":false,\"succession\":false,\"slot\":null,\"gap_months\":null,\"qualifiers\":{},\"lexicon\":[],\"query_cues\":[],\"phrases\":{\"attribute\":\"your client\",\"note_noun\":\"client\"}}]}",
   "registry_changes": [
-    "Set version to canary-13a2. Only partner was edited; all other predicates, shared language, and use-dependency rules are unchanged.",
-    "Added timeline and bridges to partner. Retained recorded, linked, and attributes, satisfying the declared dependencies.",
-    "Expanded the partner definition to cover the user's own dating relationships, former relationships and resumed episodes, while excluding other people's partners and preserving denials and explicit temporal evidence.",
-    "Set gap_months to 12: gaps longer than one year require a gap explanation rather than a named before/after answer.",
-    "Expanded English and Spanish query cues, including date, dated, dating, seeing, go out with, going out with, went out with, novia, novio and salir-related forms.",
-    "Retained succession=true and slot=null: one shared succession track, independent of girlfriend/boyfriend/spouse labels. Retained exclusive=true and the existing generic role lexicon and former-status ex entry. Explicit overlaps must remain ambiguous rather than be overwritten by inferred succession.",
-    "The specification requires qualification records before declared uses become active. This registry declares the capability; these blind fixtures do not establish qualification or prove that the frozen implementation passes."
+    "Set version to canary-13a2. All other changes are confined to the partner predicate; other predicates, shared language, call groups, kinds and use rules are unchanged.",
+    "Added timeline to partner.uses, retaining recorded, linked and attributes. Its declared prerequisites are present. Bridges is optional and remains undeclared.",
+    "Retained exclusive=true, succession=true and slot=null: partner labels share one succession track. Succession remains a trusted-text inference, not permission to overwrite stated ends or resolve overlapping evidence.",
+    "Set gap_months=12: a gap longer than one year must be reported rather than silently answered as an adjacent relationship.",
+    "Expanded the partner definition to specify the user's own romantic relationships, former partners, separate return episodes, date precision, denials and explicit ordering.",
+    "Expanded English and Spanish query cues, including dating, dated, seeing, going out with, novia and salir con forms. Added query_nouns using the existing works_at field convention.",
+    "Retained the role lexicon, the ex entry's former status, label qualifier and answer phrases. No undocumented statement-template structure was invented.",
+    "Activation limitation: registry-spec.md requires a qualification record before a declared use is on. The supplied files do not define that record's representation. This registry declares timeline support; runtime qualification and frozen-code success remain unverified. The stories are blind expected results, not reported test passes."
   ],
-  "user_name": "Alex Rivera",
-  "user_aliases": ["Alex"],
+  "user_name": "Alex Morgan",
+  "user_aliases": ["Alex", "the user"],
   "stories": [
     {
       "id": "c01",
-      "title": "Three successive partners at different date precision",
+      "title": "Three successive partners at mixed date precision",
       "traps": ["successive", "precision"],
       "people": [
-        {"id":"c01a","names":["Maya"],"group_type":null,"group_label":null},
-        {"id":"c01b","names":["Theo"],"group_type":null,"group_label":null},
-        {"id":"c01c","names":["Jordan"],"group_type":null,"group_label":null}
+        {"id": "mara", "names": ["Mara"], "group_type": null, "group_label": null},
+        {"id": "jordan", "names": ["Jordan"], "group_type": null, "group_label": null},
+        {"id": "casey", "names": ["Casey"], "group_type": null, "group_label": null}
       ],
       "memories": [
         {
-          "id":"c01m1",
-          "text":"Maya was my girlfriend from 2016 until December 2018.",
-          "written":"2018-12-30","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Maya","person":"c01a","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c01a","resolvable":true}],
-          "facts":[{"person":"c01a","type":"partner","label":"girlfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2016","end":"December 2018","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c01-m1",
+          "text": "Mara was my girlfriend from 2016 until January 2019.",
+          "written": "2019-02-10",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Mara", "person": "mara", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "mara", "resolvable": true}],
+          "facts": [{"person": "mara", "type": "partner", "label": "girlfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2016", "end": "January 2019", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c01m2",
-          "text":"My next relationship was with Theo: my boyfriend from March 2019 until November 2020.",
-          "written":"2020-12-20","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Theo","person":"c01b","of":[]}],
-          "roles":[{"surface":"my boyfriend","person":"c01b","resolvable":true}],
-          "facts":[{"person":"c01b","type":"partner","label":"boyfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"March 2019","end":"November 2020","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c01-m2",
+          "text": "Jordan is my new partner; we started dating in March 2019, after Mara.",
+          "written": "2019-04-12",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Jordan", "person": "jordan", "of": []}, {"surface": "Mara", "person": "mara", "of": []}],
+          "roles": [{"surface": "my new partner", "person": "jordan", "resolvable": true}],
+          "facts": [{"person": "jordan", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "March 2019", "end": null, "time": null, "preceded_by": "Mara", "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c01m3",
-          "text":"I started dating my partner Jordan in February 2021.",
-          "written":"2021-06-04","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Jordan","person":"c01c","of":[]}],
-          "roles":[{"surface":"my partner","person":"c01c","resolvable":true}],
-          "facts":[{"person":"c01c","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"February 2021","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c01-m3",
+          "text": "My relationship with Jordan ended in December 2020.",
+          "written": "2020-12-30",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Jordan", "person": "jordan", "of": []}],
+          "roles": [],
+          "facts": [{"person": "jordan", "type": "partner", "label": null, "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": "December 2020", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c01m4",
-          "text":"Jordan is still my partner; we booked a cabin.",
-          "written":"2026-10-01","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Jordan","person":"c01c","of":[]}],
-          "roles":[{"surface":"my partner","person":"c01c","resolvable":true}],
-          "facts":[{"person":"c01c","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c01-m4",
+          "text": "Casey is my boyfriend; we started dating in 2021, immediately after Jordan.",
+          "written": "2021-08-14",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Casey", "person": "casey", "of": []}, {"surface": "Jordan", "person": "jordan", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "casey", "resolvable": true}],
+          "facts": [{"person": "casey", "type": "partner", "label": "boyfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2021", "end": null, "time": null, "preceded_by": "Jordan", "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c01-m5",
+          "text": "I booked a weekend away with my partner Casey.",
+          "written": "2026-10-01",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Casey", "person": "casey", "of": []}],
+          "roles": [{"surface": "my partner", "person": "casey", "resolvable": true}],
+          "facts": [{"person": "casey", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         }
       ],
-      "orders":[["c01m4","c01m2","c01m1","c01m3"]],
-      "corrections":[],
-      "timeline":[
-        {"person":"c01a","start":"2016","end":"2018-12","memories":["c01m1"]},
-        {"person":"c01b","start":"2019-03","end":"2020-11","memories":["c01m2"]},
-        {"person":"c01c","start":"2021-02","end":"","memories":["c01m3","c01m4"]}
+      "orders": [["c01-m3", "c01-m1", "c01-m5", "c01-m2", "c01-m4"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "mara", "start": "2016", "end": "2019-01", "memories": ["c01-m1"]},
+        {"person": "jordan", "start": "2019-03", "end": "2020-12", "memories": ["c01-m2", "c01-m3"]},
+        {"person": "casey", "start": "2021", "end": "", "memories": ["c01-m4", "c01-m5"]}
       ],
-      "queries":[
-        {"id":"c01q1","kind":"before","query":"Who was I dating before Jordan?","answer_person":"c01b"},
-        {"id":"c01q2","kind":"after","query":"Who did I go out with after Maya?","answer_person":"c01b"},
-        {"id":"c01q3","kind":"year","query":"Who was my girlfriend in 2017?","answer_person":"c01a"},
-        {"id":"c01q4","kind":"current","query":"Who's my partner now?","answer_person":"c01c"},
-        {"id":"c01q5","kind":"negative","query":"Did I buy the dating book before Jordan bought it?","answer_person":""}
+      "queries": [
+        {"id": "c01-q1", "kind": "before", "query": "Who was I dating before Jordan?", "answer_person": "mara"},
+        {"id": "c01-q2", "kind": "after", "query": "Who did I go out with after Jordan?", "answer_person": "casey"},
+        {"id": "c01-q3", "kind": "year", "query": "Who was my girlfriend in 2017?", "answer_person": "mara"},
+        {"id": "c01-q4", "kind": "current", "query": "Who am I seeing now?", "answer_person": "casey"},
+        {"id": "c01-q5", "kind": "negative", "query": "Which train did I catch after Jordan called?", "answer_person": ""}
       ]
     },
     {
-      "id":"c02",
-      "title":"An undated breakup and a later dated recollection",
-      "traps":["undated_breakup","ex","successive"],
-      "people":[
-        {"id":"c02a","names":["Ellis"],"group_type":null,"group_label":null},
-        {"id":"c02b","names":["Casey"],"group_type":null,"group_label":null}
+      "id": "c02",
+      "title": "An undated breakup gets a date only in a later memory",
+      "traps": ["undated_breakup", "ex", "successive"],
+      "people": [
+        {"id": "nico", "names": ["Nico"], "group_type": null, "group_label": null},
+        {"id": "elena", "names": ["Elena"], "group_type": null, "group_label": null}
       ],
-      "memories":[
+      "memories": [
         {
-          "id":"c02m1",
-          "text":"Ellis is my boyfriend; we started dating in 2017.",
-          "written":"2018-04-08","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ellis","person":"c02a","of":[]}],
-          "roles":[{"surface":"my boyfriend","person":"c02a","resolvable":true}],
-          "facts":[{"person":"c02a","type":"partner","label":"boyfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2017","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c02-m1",
+          "text": "Nico is my boyfriend; we started dating in 2015.",
+          "written": "2015-06-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Nico", "person": "nico", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "nico", "resolvable": true}],
+          "facts": [{"person": "nico", "type": "partner", "label": "boyfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2015", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c02m2",
-          "text":"Ellis and I broke up. I am putting the photos away.",
-          "written":"2019-12-18","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ellis","person":"c02a","of":[]}],
-          "roles":[],
-          "facts":[{"person":"c02a","type":"partner","label":null,"status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c02-m2",
+          "text": "Nico and I broke up.",
+          "written": "2020-02-03",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Nico", "person": "nico", "of": []}],
+          "roles": [],
+          "facts": [{"person": "nico", "type": "partner", "label": null, "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c02m3",
-          "text":"I started seeing my partner Casey in February 2020.",
-          "written":"2020-03-10","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Casey","person":"c02b","of":[]}],
-          "roles":[{"surface":"my partner","person":"c02b","resolvable":true}],
-          "facts":[{"person":"c02b","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"February 2020","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c02-m3",
+          "text": "I found the scarf my ex left here.",
+          "written": "2020-03-11",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [{"surface": "my ex", "person": "nico", "resolvable": true}],
+          "facts": [{"person": "nico", "type": "partner", "label": "ex", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c02m4",
-          "text":"Ellis is my ex. Looking back, our breakup was in November 2019.",
-          "written":"2021-08-22","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ellis","person":"c02a","of":[]}],
-          "roles":[{"surface":"my ex","person":"c02a","resolvable":true}],
-          "facts":[{"person":"c02a","type":"partner","label":"ex","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":"November 2019","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c02-m4",
+          "text": "To date that breakup: my relationship with Nico ended in September 2018.",
+          "written": "2020-04-09",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Nico", "person": "nico", "of": []}],
+          "roles": [],
+          "facts": [{"person": "nico", "type": "partner", "label": null, "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": "September 2018", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c02-m5",
+          "text": "Elena is my girlfriend. We have been together since October 2018.",
+          "written": "2021-01-18",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Elena", "person": "elena", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "elena", "resolvable": true}],
+          "facts": [{"person": "elena", "type": "partner", "label": "girlfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "October 2018", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         }
       ],
-      "orders":[["c02m3","c02m4","c02m2","c02m1"]],
-      "corrections":[],
-      "timeline":[
-        {"person":"c02a","start":"2017","end":"2019-11","memories":["c02m1","c02m2","c02m4"]},
-        {"person":"c02b","start":"2020-02","end":"","memories":["c02m3"]}
+      "orders": [["c02-m5", "c02-m3", "c02-m2", "c02-m4", "c02-m1"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "nico", "start": "2015", "end": "2018-09", "memories": ["c02-m1", "c02-m2", "c02-m3", "c02-m4"]},
+        {"person": "elena", "start": "2018-10", "end": "", "memories": ["c02-m5"]}
       ],
-      "queries":[
-        {"id":"c02q1","kind":"before","query":"Who was my partner before Casey?","answer_person":"c02a"},
-        {"id":"c02q2","kind":"year","query":"Who was I seeing in 2018?","answer_person":"c02a"},
-        {"id":"c02q3","kind":"current","query":"Who am I dating currently?","answer_person":"c02b"},
-        {"id":"c02q4","kind":"previous","query":"Who was my previous boyfriend?","answer_person":"c02a"},
-        {"id":"c02q5","kind":"negative","query":"Was the dating documentary released after Ellis graduated?","answer_person":""}
+      "queries": [
+        {"id": "c02-q1", "kind": "before", "query": "Remind me who I was going out with before Elena?", "answer_person": "nico"},
+        {"id": "c02-q2", "kind": "year", "query": "Who was my partner back in 2017?", "answer_person": "nico"},
+        {"id": "c02-q3", "kind": "current", "query": "¿Quién es mi pareja actual?", "answer_person": "elena"},
+        {"id": "c02-q4", "kind": "negative", "query": "Did I wash the scarf before Nico collected it?", "answer_person": ""}
       ]
     },
     {
-      "id":"c03",
-      "title":"Returning to the same person",
-      "traps":["second_episode","ex","successive"],
-      "people":[
-        {"id":"c03a","names":["Ari"],"group_type":null,"group_label":null},
-        {"id":"c03b","names":["Devon"],"group_type":null,"group_label":null}
+      "id": "c03",
+      "title": "Returning to Daria creates a second episode",
+      "traps": ["second_episode", "ex", "successive"],
+      "people": [
+        {"id": "daria", "names": ["Daria"], "group_type": null, "group_label": null},
+        {"id": "ben", "names": ["Ben"], "group_type": null, "group_label": null}
       ],
-      "memories":[
+      "memories": [
         {
-          "id":"c03m1",
-          "text":"Ari was my partner from March 2013 until September 2015.",
-          "written":"2015-10-02","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ari","person":"c03a","of":[]}],
-          "roles":[{"surface":"my partner","person":"c03a","resolvable":true}],
-          "facts":[{"person":"c03a","type":"partner","label":"partner","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"March 2013","end":"September 2015","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c03-m1",
+          "text": "Daria was my girlfriend from 2012 until January 2015.",
+          "written": "2015-01-28",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Daria", "person": "daria", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "daria", "resolvable": true}],
+          "facts": [{"person": "daria", "type": "partner", "label": "girlfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2012", "end": "January 2015", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c03m2",
-          "text":"Devon was my boyfriend from January 2016 until September 2018.",
-          "written":"2018-10-03","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Devon","person":"c03b","of":[]}],
-          "roles":[{"surface":"my boyfriend","person":"c03b","resolvable":true}],
-          "facts":[{"person":"c03b","type":"partner","label":"boyfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"January 2016","end":"September 2018","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c03-m2",
+          "text": "Ben was my boyfriend from February 2015 until January 2017.",
+          "written": "2017-01-20",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Ben", "person": "ben", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "ben", "resolvable": true}],
+          "facts": [{"person": "ben", "type": "partner", "label": "boyfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "February 2015", "end": "January 2017", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c03m3",
-          "text":"Ari and I got back together in January 2019.",
-          "written":"2019-02-07","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ari","person":"c03a","of":[]}],
-          "roles":[],
-          "facts":[{"person":"c03a","type":"partner","label":null,"status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"January 2019","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c03-m3",
+          "text": "A postcard arrived from my ex Daria.",
+          "written": "2017-01-25",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Daria", "person": "daria", "of": []}],
+          "roles": [{"surface": "my ex", "person": "daria", "resolvable": true}],
+          "facts": [{"person": "daria", "type": "partner", "label": "ex", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c03m4",
-          "text":"I returned a cookbook to my ex Devon.",
-          "written":"2020-07-09","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Devon","person":"c03b","of":[]}],
-          "roles":[{"surface":"my ex","person":"c03b","resolvable":true}],
-          "facts":[{"person":"c03b","type":"partner","label":"ex","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c03m5",
-          "text":"Ari is still my partner.",
-          "written":"2026-10-10","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Ari","person":"c03a","of":[]}],
-          "roles":[{"surface":"my partner","person":"c03a","resolvable":true}],
-          "facts":[{"person":"c03a","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c03-m4",
+          "text": "Daria and I got back together in February 2017. Daria is still my girlfriend.",
+          "written": "2026-09-15",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Daria", "person": "daria", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "daria", "resolvable": true}],
+          "facts": [{"person": "daria", "type": "partner", "label": "girlfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "February 2017", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         }
       ],
-      "orders":[["c03m3","c03m5","c03m2","c03m4","c03m1"]],
-      "corrections":[],
-      "timeline":[
-        {"person":"c03a","start":"2013-03","end":"2015-09","memories":["c03m1"]},
-        {"person":"c03b","start":"2016-01","end":"2018-09","memories":["c03m2","c03m4"]},
-        {"person":"c03a","start":"2019-01","end":"","memories":["c03m3","c03m5"]}
+      "orders": [["c03-m4", "c03-m2", "c03-m3", "c03-m1"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "daria", "start": "2012", "end": "2015-01", "memories": ["c03-m1", "c03-m3"]},
+        {"person": "ben", "start": "2015-02", "end": "2017-01", "memories": ["c03-m2"]},
+        {"person": "daria", "start": "2017-02", "end": "", "memories": ["c03-m4"]}
       ],
-      "queries":[
-        {"id":"c03q1","kind":"before","query":"Who was I dating before Ari?","answer_person":""},
-        {"id":"c03q2","kind":"after","query":"Who was my partner after my first relationship with Ari?","answer_person":"c03b"},
-        {"id":"c03q3","kind":"year","query":"Who was I going out with in 2014?","answer_person":"c03a"},
-        {"id":"c03q4","kind":"current","query":"Who is my current partner?","answer_person":"c03a"},
-        {"id":"c03q5","kind":"negative","query":"Did Ari return the dating guide after I returned the cookbook?","answer_person":""}
+      "queries": [
+        {"id": "c03-q1", "kind": "before", "query": "Who was my partner before Daria?", "answer_person": ""},
+        {"id": "c03-q2", "kind": "after", "query": "Who did I date after my first relationship with Daria?", "answer_person": "ben"},
+        {"id": "c03-q3", "kind": "before", "query": "Who was I seeing before my second relationship with Daria?", "answer_person": "ben"},
+        {"id": "c03-q4", "kind": "current", "query": "Who's my girlfriend now?", "answer_person": "daria"},
+        {"id": "c03-q5", "kind": "negative", "query": "What was on the postcard that arrived before Daria visited?", "answer_person": ""}
       ]
     },
     {
-      "id":"c04",
-      "title":"Explicit overlapping relationships",
-      "traps":["concurrent"],
-      "people":[
-        {"id":"c04a","names":["Quinn"],"group_type":null,"group_label":null},
-        {"id":"c04b","names":["Reese"],"group_type":null,"group_label":null},
-        {"id":"c04c","names":["Sasha"],"group_type":null,"group_label":null}
+      "id": "c04",
+      "title": "A year-only breakup cannot be ordered against a March start",
+      "traps": ["precision", "concurrent", "ex"],
+      "people": [
+        {"id": "ari", "names": ["Ari"], "group_type": null, "group_label": null},
+        {"id": "blair", "names": ["Blair"], "group_type": null, "group_label": null},
+        {"id": "cameron", "names": ["Cameron"], "group_type": null, "group_label": null}
       ],
-      "memories":[
+      "memories": [
         {
-          "id":"c04m1",
-          "text":"Quinn was my partner from January 2018 until June 2022.",
-          "written":"2024-01-10","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Quinn","person":"c04a","of":[]}],
-          "roles":[{"surface":"my partner","person":"c04a","resolvable":true}],
-          "facts":[{"person":"c04a","type":"partner","label":"partner","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"January 2018","end":"June 2022","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c04-m1",
+          "text": "Ari was my partner from 2018 until 2019; I do not remember the breakup month.",
+          "written": "2020-02-01",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Ari", "person": "ari", "of": []}],
+          "roles": [{"surface": "my partner", "person": "ari", "resolvable": true}],
+          "facts": [{"person": "ari", "type": "partner", "label": "partner", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2018", "end": "2019", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c04m2",
-          "text":"Reese was my partner from March 2019 until August 2023.",
-          "written":"2024-01-11","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Reese","person":"c04b","of":[]}],
-          "roles":[{"surface":"my partner","person":"c04b","resolvable":true}],
-          "facts":[{"person":"c04b","type":"partner","label":"partner","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"March 2019","end":"August 2023","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c04-m2",
+          "text": "Blair was my partner from March 2019 until January 2020. I cannot tell whether the two relationships overlapped.",
+          "written": "2020-02-02",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Blair", "person": "blair", "of": []}],
+          "roles": [{"surface": "my partner", "person": "blair", "resolvable": true}],
+          "facts": [{"person": "blair", "type": "partner", "label": "partner", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "March 2019", "end": "January 2020", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c04m3",
-          "text":"Sasha is my partner; we started dating in May 2021.",
-          "written":"2024-01-12","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Sasha","person":"c04c","of":[]}],
-          "roles":[{"surface":"my partner","person":"c04c","resolvable":true}],
-          "facts":[{"person":"c04c","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"May 2021","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c04-m3",
+          "text": "Cameron is my partner; we started dating in February 2020.",
+          "written": "2020-03-08",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Cameron", "person": "cameron", "of": []}],
+          "roles": [{"surface": "my partner", "person": "cameron", "resolvable": true}],
+          "facts": [{"person": "cameron", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "February 2020", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c04m4",
-          "text":"I dated Quinn and Reese concurrently in 2020; those two relationships are both over.",
-          "written":"2024-01-13","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Quinn","person":"c04a","of":[]},{"surface":"Reese","person":"c04b","of":[]}],
-          "roles":[],
-          "facts":[
-            {"person":"c04a","type":"partner","label":null,"status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":"2020","preceded_by":null,"followed_by":null},
-            {"person":"c04b","type":"partner","label":null,"status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":"2020","preceded_by":null,"followed_by":null}
+          "id": "c04-m4",
+          "text": "I found a letter from my ex, but I cannot tell which former partner wrote it.",
+          "written": "2024-07-03",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [{"surface": "my ex", "person": "ari", "resolvable": false}],
+          "facts": [{"person": null, "type": "partner", "label": "ex", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": ["ari", "blair"]
+        }
+      ],
+      "orders": [["c04-m2", "c04-m4", "c04-m3", "c04-m1"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "ari", "start": "2018", "end": "2019", "memories": ["c04-m1"]},
+        {"person": "blair", "start": "2019-03", "end": "2020-01", "memories": ["c04-m2"]},
+        {"person": "cameron", "start": "2020-02", "end": "", "memories": ["c04-m3"]}
+      ],
+      "queries": [
+        {"id": "c04-q1", "kind": "before", "query": "Who was I dating immediately before Blair?", "answer_person": ""},
+        {"id": "c04-q2", "kind": "after", "query": "Which partner came after Blair?", "answer_person": "cameron"},
+        {"id": "c04-q3", "kind": "year", "query": "Who was I going out with in 2019?", "answer_person": ""},
+        {"id": "c04-q4", "kind": "current", "query": "Who is my current partner?", "answer_person": "cameron"},
+        {"id": "c04-q5", "kind": "negative", "query": "Did Blair post the letter before Ari moved house?", "answer_person": ""}
+      ]
+    },
+    {
+      "id": "c05",
+      "title": "A long single period in Spanish and mixed-language notes",
+      "traps": ["gap", "spanish", "successive"],
+      "people": [
+        {"id": "luz", "names": ["Luz"], "group_type": null, "group_label": null},
+        {"id": "pilar", "names": ["Pilar"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "c05-m1",
+          "text": "Luz fue mi novia desde 2012 hasta enero de 2014.",
+          "written": "2014-02-10",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Luz", "person": "luz", "of": []}],
+          "roles": [{"surface": "mi novia", "person": "luz", "resolvable": true}],
+          "facts": [{"person": "luz", "type": "partner", "label": "novia", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2012", "end": "enero de 2014", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c05-m2",
+          "text": "Estuve sin pareja desde febrero de 2014 hasta diciembre de 2021.",
+          "written": "2022-01-04",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [],
+          "roles": [],
+          "facts": [{"person": null, "type": "partner", "label": "pareja", "status": "former", "polarity": "negative", "deceased": false, "only": false, "count": null, "start": "febrero de 2014", "end": "diciembre de 2021", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c05-m3",
+          "text": "Pilar es mi novia. We started dating in January 2022.",
+          "written": "2022-03-17",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Pilar", "person": "pilar", "of": []}],
+          "roles": [{"surface": "mi novia", "person": "pilar", "resolvable": true}],
+          "facts": [{"person": "pilar", "type": "partner", "label": "novia", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "January 2022", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c05-m4",
+          "text": "Hoy fui al cine con mi pareja Pilar; seguimos juntas.",
+          "written": "2026-10-09",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Pilar", "person": "pilar", "of": []}],
+          "roles": [{"surface": "mi pareja", "person": "pilar", "resolvable": true}],
+          "facts": [{"person": "pilar", "type": "partner", "label": "pareja", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        }
+      ],
+      "orders": [["c05-m4", "c05-m2", "c05-m1", "c05-m3"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "luz", "start": "2012", "end": "2014-01", "memories": ["c05-m1"]},
+        {"person": "pilar", "start": "2022-01", "end": "", "memories": ["c05-m3", "c05-m4"]}
+      ],
+      "queries": [
+        {"id": "c05-q1", "kind": "before", "query": "¿Con quién salía antes de Pilar?", "answer_person": ""},
+        {"id": "c05-q2", "kind": "year", "query": "¿Quién era mi pareja en 2018?", "answer_person": ""},
+        {"id": "c05-q3", "kind": "year", "query": "¿Con quién salía en 2013?", "answer_person": "luz"},
+        {"id": "c05-q4", "kind": "current", "query": "¿Quién es mi novia ahora?", "answer_person": "pilar"},
+        {"id": "c05-q5", "kind": "negative", "query": "Did I book the cinema tickets before Pilar arrived?", "answer_person": ""}
+      ]
+    },
+    {
+      "id": "c06",
+      "title": "An agent's invented succession cannot displace the user's account",
+      "traps": ["agent_note", "denial", "successive"],
+      "people": [
+        {"id": "dev", "names": ["Dev"], "group_type": null, "group_label": null},
+        {"id": "rowan", "names": ["Rowan"], "group_type": null, "group_label": null},
+        {"id": "toby", "names": ["Toby"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "c06-m1",
+          "text": "Dev was my boyfriend from January 2016 until March 2020.",
+          "written": "2020-03-31",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [{"surface": "Dev", "person": "dev", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "dev", "resolvable": true}],
+          "facts": [{"person": "dev", "type": "partner", "label": "boyfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "January 2016", "end": "March 2020", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c06-m2",
+          "text": "Rowan is my partner. We started dating in April 2020.",
+          "written": "2021-04-12",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Rowan", "person": "rowan", "of": []}],
+          "roles": [{"surface": "my partner", "person": "rowan", "resolvable": true}],
+          "facts": [{"person": "rowan", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "April 2020", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c06-m3",
+          "text": "Summary: Toby is the user's partner, starting in 2022. The user's relationship with Rowan ended in 2022.",
+          "written": "2023-08-01",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [{"surface": "Toby", "person": "toby", "of": []}, {"surface": "Rowan", "person": "rowan", "of": []}],
+          "roles": [{"surface": "the user's partner", "person": "toby", "resolvable": true}],
+          "facts": [
+            {"person": "toby", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2022", "end": null, "time": null, "preceded_by": null, "followed_by": null},
+            {"person": "rowan", "type": "partner", "label": null, "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": "2022", "time": null, "preceded_by": null, "followed_by": null}
           ],
-          "not_linked":[]
-        }
-      ],
-      "orders":[["c04m3","c04m4","c04m2","c04m1"]],
-      "corrections":[],
-      "timeline":[
-        {"person":"c04a","start":"2018-01","end":"2022-06","memories":["c04m1","c04m4"]},
-        {"person":"c04b","start":"2019-03","end":"2023-08","memories":["c04m2","c04m4"]},
-        {"person":"c04c","start":"2021-05","end":"","memories":["c04m3"]}
-      ],
-      "queries":[
-        {"id":"c04q1","kind":"before","query":"Who was I seeing immediately before Sasha?","answer_person":""},
-        {"id":"c04q2","kind":"year","query":"Who was my partner in 2018?","answer_person":"c04a"},
-        {"id":"c04q3","kind":"after","query":"Who did I date after Quinn?","answer_person":""},
-        {"id":"c04q4","kind":"current","query":"Who am I going out with now?","answer_person":"c04c"},
-        {"id":"c04q5","kind":"negative","query":"Did Sasha send the article about dating after the meeting?","answer_person":""}
-      ]
-    },
-    {
-      "id":"c05",
-      "title":"Several years single",
-      "traps":["gap"],
-      "people":[
-        {"id":"c05a","names":["Leah"],"group_type":null,"group_label":null},
-        {"id":"c05b","names":["Noor"],"group_type":null,"group_label":null}
-      ],
-      "memories":[
-        {
-          "id":"c05m1",
-          "text":"Leah was my girlfriend from 2012 until June 2014.",
-          "written":"2014-07-20","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Leah","person":"c05a","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c05a","resolvable":true}],
-          "facts":[{"person":"c05a","type":"partner","label":"girlfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2012","end":"June 2014","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "not_linked": []
         },
         {
-          "id":"c05m2",
-          "text":"I had no partner from 2015 through 2019; I was single throughout those years.",
-          "written":"2019-12-31","source":"capture","sensitivity":"sensitive",
-          "names":[],"roles":[],
-          "facts":[{"person":null,"type":"partner","label":"partner","status":"former","polarity":"negative","deceased":false,"only":false,"count":0,"start":null,"end":null,"time":"2015 through 2019","preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c05m3",
-          "text":"Noor is my girlfriend; we started dating in September 2020.",
-          "written":"2020-10-05","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Noor","person":"c05b","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c05b","resolvable":true}],
-          "facts":[{"person":"c05b","type":"partner","label":"girlfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"September 2020","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c05m4",
-          "text":"I went hiking with my partner Noor.",
-          "written":"2026-10-11","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Noor","person":"c05b","of":[]}],
-          "roles":[{"surface":"my partner","person":"c05b","resolvable":true}],
-          "facts":[{"person":"c05b","type":"partner","label":"partner","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        }
-      ],
-      "orders":[],
-      "corrections":[],
-      "timeline":[
-        {"person":"c05a","start":"2012","end":"2014-06","memories":["c05m1"]},
-        {"person":"c05b","start":"2020-09","end":"","memories":["c05m3","c05m4"]}
-      ],
-      "queries":[
-        {"id":"c05q1","kind":"before","query":"Who was my partner right before Noor?","answer_person":""},
-        {"id":"c05q2","kind":"year","query":"Who was I dating in 2017?","answer_person":""},
-        {"id":"c05q3","kind":"current","query":"Who's my current girlfriend?","answer_person":"c05b"},
-        {"id":"c05q4","kind":"after","query":"Who was I dating immediately after Leah?","answer_person":""},
-        {"id":"c05q5","kind":"negative","query":"Did I finish the book about dating before Leah finished it?","answer_person":""}
-      ]
-    },
-    {
-      "id":"c06",
-      "title":"Spanish history with a mixed-language present",
-      "traps":["spanish","precision","successive"],
-      "people":[
-        {"id":"c06a","names":["Lucía"],"group_type":null,"group_label":null},
-        {"id":"c06b","names":["Camila"],"group_type":null,"group_label":null},
-        {"id":"c06c","names":["Mateo"],"group_type":null,"group_label":null}
-      ],
-      "memories":[
-        {
-          "id":"c06m1",
-          "text":"Lucía fue mi novia desde 2015 hasta diciembre de 2018.",
-          "written":"2019-01-06","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Lucía","person":"c06a","of":[]}],
-          "roles":[{"surface":"mi novia","person":"c06a","resolvable":true}],
-          "facts":[{"person":"c06a","type":"partner","label":"novia","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2015","end":"diciembre de 2018","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c06m2",
-          "text":"Camila fue mi novia desde marzo de 2019 hasta mayo de 2021. Mi relación con Camila vino después de Lucía.",
-          "written":"2021-06-12","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Camila","person":"c06b","of":[]},{"surface":"Lucía","person":"c06a","of":[]}],
-          "roles":[{"surface":"mi novia","person":"c06b","resolvable":true}],
-          "facts":[{"person":"c06b","type":"partner","label":"novia","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"marzo de 2019","end":"mayo de 2021","time":null,"preceded_by":"Lucía","followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c06m3",
-          "text":"Mateo es mi novio. Empezamos a salir en septiembre de 2021.",
-          "written":"2021-10-09","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Mateo","person":"c06c","of":[]}],
-          "roles":[{"surface":"mi novio","person":"c06c","resolvable":true}],
-          "facts":[{"person":"c06c","type":"partner","label":"novio","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"septiembre de 2021","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c06m4",
-          "text":"I booked the train with mi pareja Mateo; seguimos juntos.",
-          "written":"2026-10-12","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Mateo","person":"c06c","of":[]}],
-          "roles":[{"surface":"mi pareja","person":"c06c","resolvable":true}],
-          "facts":[{"person":"c06c","type":"partner","label":"pareja","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        }
-      ],
-      "orders":[["c06m4","c06m2","c06m1","c06m3"]],
-      "corrections":[],
-      "timeline":[
-        {"person":"c06a","start":"2015","end":"2018-12","memories":["c06m1"]},
-        {"person":"c06b","start":"2019-03","end":"2021-05","memories":["c06m2"]},
-        {"person":"c06c","start":"2021-09","end":"","memories":["c06m3","c06m4"]}
-      ],
-      "queries":[
-        {"id":"c06q1","kind":"before","query":"¿Quién era mi pareja antes de Mateo?","answer_person":"c06b"},
-        {"id":"c06q2","kind":"after","query":"¿Quién fue mi novia después de Lucía?","answer_person":"c06b"},
-        {"id":"c06q3","kind":"year","query":"¿Quién era mi pareja en 2016?","answer_person":"c06a"},
-        {"id":"c06q4","kind":"current","query":"¿Quién es mi pareja ahora?","answer_person":"c06c"},
-        {"id":"c06q5","kind":"negative","query":"¿Compré el libro sobre mi pareja ideal antes de que Mateo comprara el suyo?","answer_person":""}
-      ]
-    },
-    {
-      "id":"c07",
-      "title":"Other people's partners and an unreliable agent summary",
-      "traps":["others_partners","denial","agent_note"],
-      "people":[
-        {"id":"c07a","names":["Morgan"],"group_type":null,"group_label":null},
-        {"id":"c07b","names":["Tessa"],"group_type":null,"group_label":null},
-        {"id":"c07c","names":["Owen"],"group_type":null,"group_label":null},
-        {"id":"c07d","names":["Sam"],"group_type":null,"group_label":null},
-        {"id":"c07e","names":["Blair"],"group_type":null,"group_label":null}
-      ],
-      "memories":[
-        {
-          "id":"c07m1",
-          "text":"Morgan is my girlfriend. We started dating in 2020.",
-          "written":"2020-06-01","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Morgan","person":"c07a","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c07a","resolvable":true}],
-          "facts":[{"person":"c07a","type":"partner","label":"girlfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2020","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c07m2",
-          "text":"I met my sister Tessa and her boyfriend Owen for lunch.",
-          "written":"2022-04-02","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Tessa","person":"c07b","of":[]},{"surface":"Owen","person":"c07c","of":[]}],
-          "roles":[{"surface":"my sister","person":"c07b","resolvable":true}],
-          "facts":[{"person":"c07b","type":"sibling","label":"sister","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c07m3",
-          "text":"I saw my friend Sam and his girlfriend Blair at the cinema.",
-          "written":"2023-05-03","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Sam","person":"c07d","of":[]},{"surface":"Blair","person":"c07e","of":[]}],
-          "roles":[{"surface":"my friend","person":"c07d","resolvable":true}],
-          "facts":[{"person":"c07d","type":"friend","label":"friend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c07m4",
-          "text":"Sam is not my boyfriend.",
-          "written":"2024-06-04","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Sam","person":"c07d","of":[]}],
-          "roles":[],
-          "facts":[{"person":"c07d","type":"partner","label":"boyfriend","status":"current","polarity":"negative","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c07m5",
-          "text":"The user ended their relationship with Morgan in 2021 and started dating Blair in 2022.",
-          "written":"2025-07-05","source":"agent","sensitivity":"internal",
-          "names":[{"surface":"Morgan","person":"c07a","of":[]},{"surface":"Blair","person":"c07e","of":[]}],
-          "roles":[],
-          "facts":[
-            {"person":"c07a","type":"partner","label":null,"status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":"2021","time":null,"preceded_by":null,"followed_by":null},
-            {"person":"c07e","type":"partner","label":null,"status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2022","end":null,"time":null,"preceded_by":null,"followed_by":null}
+          "id": "c06-m4",
+          "text": "Rowan is still my partner; we have been together continuously since April 2020. Toby is my colleague, not a romantic partner.",
+          "written": "2025-04-15",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Rowan", "person": "rowan", "of": []}, {"surface": "Toby", "person": "toby", "of": []}],
+          "roles": [{"surface": "my partner", "person": "rowan", "resolvable": true}, {"surface": "my colleague", "person": "toby", "resolvable": true}],
+          "facts": [
+            {"person": "rowan", "type": "partner", "label": "partner", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "April 2020", "end": null, "time": null, "preceded_by": null, "followed_by": null},
+            {"person": "toby", "type": "colleague", "label": "colleague", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null},
+            {"person": "toby", "type": "partner", "label": "romantic partner", "status": "current", "polarity": "negative", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}
           ],
-          "not_linked":[]
-        },
-        {
-          "id":"c07m6",
-          "text":"Morgan is still my girlfriend. We have been together continuously since 2020, without any breakup.",
-          "written":"2026-10-13","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Morgan","person":"c07a","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c07a","resolvable":true}],
-          "facts":[{"person":"c07a","type":"partner","label":"girlfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2020","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "not_linked": []
         }
       ],
-      "orders":[["c07m6","c07m1","c07m4","c07m2","c07m3","c07m5"]],
-      "corrections":[],
-      "timeline":[{"person":"c07a","start":"2020","end":"","memories":["c07m1","c07m6"]}],
-      "queries":[
-        {"id":"c07q1","kind":"current","query":"Who's my girlfriend now?","answer_person":"c07a"},
-        {"id":"c07q2","kind":"year","query":"Who was I dating in 2023?","answer_person":"c07a"},
-        {"id":"c07q3","kind":"before","query":"Who was my partner before Morgan?","answer_person":""},
-        {"id":"c07q4","kind":"negative","query":"Did Morgan meet my sister's boyfriend before lunch?","answer_person":""}
+      "orders": [["c06-m4", "c06-m1", "c06-m2", "c06-m3"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "dev", "start": "2016-01", "end": "2020-03", "memories": ["c06-m1"]},
+        {"person": "rowan", "start": "2020-04", "end": "", "memories": ["c06-m2", "c06-m4"]}
+      ],
+      "queries": [
+        {"id": "c06-q1", "kind": "after", "query": "Who did I start dating after Dev?", "answer_person": "rowan"},
+        {"id": "c06-q2", "kind": "current", "query": "Who am I currently in a relationship with?", "answer_person": "rowan"},
+        {"id": "c06-q3", "kind": "year", "query": "Who was my partner during 2023?", "answer_person": "rowan"},
+        {"id": "c06-q4", "kind": "before", "query": "Who was my boyfriend before Rowan?", "answer_person": "dev"},
+        {"id": "c06-q5", "kind": "negative", "query": "Did Rowan finish the report before Dev?", "answer_person": ""}
       ]
     },
     {
-      "id":"c08",
-      "title":"Private evidence and three user corrections",
-      "traps":["restricted","correction","ex","precision"],
-      "people":[
-        {"id":"c08a","names":["Nico"],"group_type":null,"group_label":null},
-        {"id":"c08b","names":["Rafi"],"group_type":null,"group_label":null},
-        {"id":"c08c","names":["Eden"],"group_type":null,"group_label":null}
+      "id": "c07",
+      "title": "Other people's partners and an explicit denial",
+      "traps": ["others_partners", "denial", "successive"],
+      "people": [
+        {"id": "finn", "names": ["Finn"], "group_type": null, "group_label": null},
+        {"id": "inez", "names": ["Inez"], "group_type": null, "group_label": null},
+        {"id": "ada", "names": ["Ada"], "group_type": null, "group_label": null},
+        {"id": "sam", "names": ["Sam"], "group_type": null, "group_label": null},
+        {"id": "mira", "names": ["Mira"], "group_type": null, "group_label": null},
+        {"id": "zoe", "names": ["Zoe"], "group_type": null, "group_label": null}
       ],
-      "memories":[
+      "memories": [
         {
-          "id":"c08m1",
-          "text":"Nico was my boyfriend from 2014 until September 2016.",
-          "written":"2017-01-02","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Nico","person":"c08a","of":[]}],
-          "roles":[{"surface":"my boyfriend","person":"c08a","resolvable":true}],
-          "facts":[{"person":"c08a","type":"partner","label":"boyfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2014","end":"September 2016","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c07-m1",
+          "text": "Finn was my boyfriend from January 2017 until May 2020.",
+          "written": "2020-06-01",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Finn", "person": "finn", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "finn", "resolvable": true}],
+          "facts": [{"person": "finn", "type": "partner", "label": "boyfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "January 2017", "end": "May 2020", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c08m2",
-          "text":"I took my boyfriend to the observatory.",
-          "written":"2018-05-19","source":"capture","sensitivity":"sensitive",
-          "names":[],
-          "roles":[{"surface":"my boyfriend","person":"c08b","resolvable":true}],
-          "facts":[{"person":"c08b","type":"partner","label":"boyfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c07-m2",
+          "text": "Inez is my girlfriend; we started dating in June 2020.",
+          "written": "2020-07-02",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Inez", "person": "inez", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "inez", "resolvable": true}],
+          "facts": [{"person": "inez", "type": "partner", "label": "girlfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "June 2020", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c08m3",
-          "text":"Rafi was my boyfriend from February 2017 until 2019; he was the person in my observatory note.",
-          "written":"2019-11-07","source":"capture","sensitivity":"restricted",
-          "names":[{"surface":"Rafi","person":"c08b","of":[]}],
-          "roles":[{"surface":"my boyfriend","person":"c08b","resolvable":true}],
-          "facts":[{"person":"c08b","type":"partner","label":"boyfriend","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":"February 2017","end":"2019","time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c07-m3",
+          "text": "Ada is my sister; Sam is her boyfriend.",
+          "written": "2021-05-14",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Ada", "person": "ada", "of": []}, {"surface": "Sam", "person": "sam", "of": []}],
+          "roles": [{"surface": "my sister", "person": "ada", "resolvable": true}],
+          "facts": [{"person": "ada", "type": "sibling", "label": "sister", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c08m4",
-          "text":"Eden is my girlfriend. We started dating in 2021.",
-          "written":"2021-04-10","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Eden","person":"c08c","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c08c","resolvable":true}],
-          "facts":[{"person":"c08c","type":"partner","label":"girlfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":"2021","end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c07-m4",
+          "text": "Mira is my friend. Zoe is Mira's girlfriend.",
+          "written": "2022-06-10",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Mira", "person": "mira", "of": []}, {"surface": "Zoe", "person": "zoe", "of": []}],
+          "roles": [{"surface": "my friend", "person": "mira", "resolvable": true}],
+          "facts": [{"person": "mira", "type": "friend", "label": "friend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         },
         {
-          "id":"c08m5",
-          "text":"I returned a scarf to my ex Rafi.",
-          "written":"2023-02-14","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Rafi","person":"c08b","of":[]}],
-          "roles":[{"surface":"my ex","person":"c08b","resolvable":true}],
-          "facts":[{"person":"c08b","type":"partner","label":"ex","status":"former","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
-        },
-        {
-          "id":"c08m6",
-          "text":"Eden is still my girlfriend.",
-          "written":"2026-10-14","source":"capture","sensitivity":"sensitive",
-          "names":[{"surface":"Eden","person":"c08c","of":[]}],
-          "roles":[{"surface":"my girlfriend","person":"c08c","resolvable":true}],
-          "facts":[{"person":"c08c","type":"partner","label":"girlfriend","status":"current","polarity":"positive","deceased":false,"only":false,"count":null,"start":null,"end":null,"time":null,"preceded_by":null,"followed_by":null}],
-          "not_linked":[]
+          "id": "c07-m5",
+          "text": "Sam is not my boyfriend.",
+          "written": "2023-01-09",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Sam", "person": "sam", "of": []}],
+          "roles": [],
+          "facts": [{"person": "sam", "type": "partner", "label": "boyfriend", "status": "current", "polarity": "negative", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
         }
       ],
-      "orders":[],
-      "corrections":[
-        {"after":"c08m2","op":"reject","person":"c08a","memory":"c08m2","surface":"my boyfriend","value":null},
-        {"after":"c08m3","op":"end","person":"c08b","memory":null,"surface":null,"value":"2019-08"},
-        {"after":"c08m4","op":"start","person":"c08c","memory":null,"surface":null,"value":"2020-12"}
+      "orders": [["c07-m5", "c07-m3", "c07-m2", "c07-m4", "c07-m1"]],
+      "corrections": [],
+      "timeline": [
+        {"person": "finn", "start": "2017-01", "end": "2020-05", "memories": ["c07-m1"]},
+        {"person": "inez", "start": "2020-06", "end": "", "memories": ["c07-m2"]}
       ],
-      "timeline":[
-        {"person":"c08a","start":"2014","end":"2016-09","memories":["c08m1"]},
-        {"person":"c08b","start":"2017-02","end":"2019-08","memories":["c08m2","c08m3","c08m5"]},
-        {"person":"c08c","start":"2020-12","end":"","memories":["c08m4","c08m6"]}
+      "queries": [
+        {"id": "c07-q1", "kind": "previous", "query": "Who was my previous partner?", "answer_person": "finn"},
+        {"id": "c07-q2", "kind": "year", "query": "Who was I dating in 2022?", "answer_person": "inez"},
+        {"id": "c07-q3", "kind": "before", "query": "Do my notes say who I dated before Finn?", "answer_person": ""},
+        {"id": "c07-q4", "kind": "negative", "query": "Did Finn email Ada before Inez did?", "answer_person": ""}
+      ]
+    },
+    {
+      "id": "c08",
+      "title": "Private evidence and three kinds of user correction",
+      "traps": ["restricted", "correction", "ex", "precision", "successive"],
+      "people": [
+        {"id": "owen", "names": ["Owen"], "group_type": null, "group_label": null},
+        {"id": "rhea", "names": ["Rhea"], "group_type": null, "group_label": null},
+        {"id": "quinn", "names": ["Quinn"], "group_type": null, "group_label": null}
       ],
-      "queries":[
-        {"id":"c08q1","kind":"year","query":"Who was I going out with in 2018?","answer_person":"c08b"},
-        {"id":"c08q2","kind":"current","query":"Who's my partner now?","answer_person":"c08c"},
-        {"id":"c08q3","kind":"before","query":"Who was my boyfriend before Rafi?","answer_person":"c08a"},
-        {"id":"c08q4","kind":"year","query":"Who was I dating in December 2020?","answer_person":"c08c"},
-        {"id":"c08q5","kind":"year","query":"Who was I dating in October 2019?","answer_person":""},
-        {"id":"c08q6","kind":"negative","query":"Did Eden visit the dating exhibition after the observatory trip?","answer_person":""}
+      "memories": [
+        {
+          "id": "c08-m1",
+          "text": "Owen was my boyfriend from 2015 until 2018.",
+          "written": "2020-01-05",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Owen", "person": "owen", "of": []}],
+          "roles": [{"surface": "my boyfriend", "person": "owen", "resolvable": true}],
+          "facts": [{"person": "owen", "type": "partner", "label": "boyfriend", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "2015", "end": "2018", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c08-m2",
+          "text": "Quinn is my girlfriend; we started dating in February 2019.",
+          "written": "2020-02-02",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Quinn", "person": "quinn", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "quinn", "resolvable": true}],
+          "facts": [{"person": "quinn", "type": "partner", "label": "girlfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "February 2019", "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c08-m3",
+          "text": "I put my ex on the emergency-contact form.",
+          "written": "2021-03-12",
+          "source": "capture",
+          "sensitivity": "sensitive",
+          "names": [],
+          "roles": [{"surface": "my ex", "person": "rhea", "resolvable": true}],
+          "facts": [{"person": "rhea", "type": "partner", "label": "ex", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c08-m4",
+          "text": "Rhea was my partner from February 2018 until January 2019. Rhea is the ex I meant on the emergency-contact form. I kept that relationship private.",
+          "written": "2022-04-07",
+          "source": "capture",
+          "sensitivity": "restricted",
+          "names": [{"surface": "Rhea", "person": "rhea", "of": []}],
+          "roles": [{"surface": "my partner", "person": "rhea", "resolvable": true}],
+          "facts": [{"person": "rhea", "type": "partner", "label": "partner", "status": "former", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": "February 2018", "end": "January 2019", "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        },
+        {
+          "id": "c08-m5",
+          "text": "Quinn is still my girlfriend.",
+          "written": "2026-10-31",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Quinn", "person": "quinn", "of": []}],
+          "roles": [{"surface": "my girlfriend", "person": "quinn", "resolvable": true}],
+          "facts": [{"person": "quinn", "type": "partner", "label": "girlfriend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null, "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null}],
+          "not_linked": []
+        }
+      ],
+      "orders": [["c08-m1", "c08-m3", "c08-m4", "c08-m2", "c08-m5"]],
+      "corrections": [
+        {"after": "c08-m1", "op": "start", "person": "owen", "memory": null, "surface": null, "value": "2014-11"},
+        {"after": "c08-m3", "op": "reject", "person": "owen", "memory": "c08-m3", "surface": "my ex", "value": null},
+        {"after": "c08-m4", "op": "end", "person": "owen", "memory": null, "surface": null, "value": "2018-01"}
+      ],
+      "timeline": [
+        {"person": "owen", "start": "2014-11", "end": "2018-01", "memories": ["c08-m1"]},
+        {"person": "rhea", "start": "2018-02", "end": "2019-01", "memories": ["c08-m3", "c08-m4"]},
+        {"person": "quinn", "start": "2019-02", "end": "", "memories": ["c08-m2", "c08-m5"]}
+      ],
+      "queries": [
+        {"id": "c08-q1", "kind": "before", "query": "Who was I seeing before Quinn?", "answer_person": "rhea"},
+        {"id": "c08-q2", "kind": "year", "query": "Who was my boyfriend in 2016?", "answer_person": "owen"},
+        {"id": "c08-q3", "kind": "after", "query": "¿Con quién salía después de Owen?", "answer_person": "rhea"},
+        {"id": "c08-q4", "kind": "current", "query": "Who is my girlfriend now?", "answer_person": "quinn"},
+        {"id": "c08-q5", "kind": "negative", "query": "What did Quinn write on the form before Owen signed it?", "answer_person": ""}
       ]
     }
   ]

@@ -1,0 +1,63 @@
+{
+  "above_limit_in_payload" : 0,
+  "calls" : 178,
+  "commit" : "0b3e3adecbf92de78dab57c80d963aebd7880248",
+  "date" : "2026-11-19T19:43:58Z",
+  "engine" : {
+    "adapter" : "claude-code\/1;effort=low",
+    "batching" : "one-memory;pipeline=1",
+    "model" : "claude-code\/claude-haiku-5-5"
+  },
+  "fixture_sha256" : "f06e0ace5de08dfe88743b1f1e1e59260dfd37edfab9c34519a301b0ea69f7ef",
+  "groups" : [
+    "people",
+    "work"
+  ],
+  "label" : "swift-claude-claude-haiku-5-5-gates-r2",
+  "limit" : "internal",
+  "lines_sha256" : "1f6350876a45e45170102be6b88fe50bb4ffd6c5fb7e62f7a385b9301725175d",
+  "mode" : "live",
+  "models_reported" : [
+    "claude-haiku-5-5"
+  ],
+  "not_applied" : 0,
+  "options" : {
+    "limit" : "internal",
+    "live" : "claude:claude-haiku-5-5",
+    "set" : "mixed",
+    "tag" : "gates-r2"
+  },
+  "plays" : 16,
+  "plays_expected" : 16,
+  "plays_list" : [
+    "x01#0",
+    "x01#1",
+    "x02#0",
+    "x02#1",
+    "x03#0",
+    "x03#1",
+    "x04#0",
+    "x05#0",
+    "x05#1",
+    "x06#0",
+    "x07#0",
+    "x07#1",
+    "x08#0",
+    "x09#0",
+    "x09#1",
+    "x10#0"
+  ],
+  "prompt_versions" : {
+    "people" : "a3a15bf93aa2",
+    "work" : "1ce3eb9fc51a"
+  },
+  "reasks" : 0,
+  "registry_file" : "bundled",
+  "registry_version" : "v1-4f14a1e53524",
+  "responses" : 178,
+  "responses_without_model" : 0,
+  "run_id" : "6667f121-aca8-4f04-8f9b-405ab5eda104",
+  "set" : "mixed",
+  "unmapped" : 0,
+  "unsettled" : 0
+}

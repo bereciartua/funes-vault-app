@@ -1,0 +1,430 @@
+{
+"haiku|r01|q5|A": {
+"verdict": "correct",
+"why": "Memory m7 says the sister saved the soup recipe from the Cedar Metrics office lunch, which matches the answer."
+},
+"haiku|r01|q5|B": {
+"verdict": "correct",
+"why": "Memory m7, dated 2021-07-19, says the user's sister saved the soup recipe from the Cedar Metrics office lunch, which supports the answer."
+},
+"haiku|r01|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 directly backs the answer: the user bought a Desk Dock day pass on 2021-04-13 to get a quiet place to finish work."
+},
+"haiku|r01|q6|B": {
+"verdict": "correct",
+"why": "m6 backs up the answer: the user bought a Desk Dock day pass for a quiet place to finish work."
+},
+"haiku|r02|q5|A": {
+"verdict": "correct",
+"why": "Memory m7 directly says the partner wants the old office chair for the sewing room."
+},
+"haiku|r02|q5|B": {
+"verdict": "correct",
+"why": "Memory m7 directly supports this: the partner wanted the chair for the sewing room."
+},
+"haiku|r02|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says directly that Sky Finch sold the user the work conference flight."
+},
+"haiku|r02|q6|B": {
+"verdict": "correct",
+"why": "m6 directly says Sky Finch sold the user the work conference flight, and that note is dated 5 February 2021."
+},
+"haiku|r03|q5|A": {
+"verdict": "correct",
+"why": "m2 says the user kept the Fern Press mug after leaving, and m5 and m11 back up the other claims."
+},
+"haiku|r03|q5|B": {
+"verdict": "wrong",
+"why": "Only m2 (the mug, by the books) answers this. The answer also lists unrelated items from d34 and d37 just because their dates fall after 2018. The memories don't tie those to leaving Fern Press."
+},
+"haiku|r04|q5|A": {
+"verdict": "correct",
+"why": "Memory m2 says this directly: the user kept the green notebook with the lunch recipes."
+},
+"haiku|r04|q5|B": {
+"verdict": "correct",
+"why": "Memory m2 directly supports it: the user kept the green notebook with the lunch recipes after leaving Maple Health."
+},
+"haiku|r04|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 backs up both claims: the user paid Ledger Nest to prepare the work tax return, and the invoice is in the blue folder."
+},
+"haiku|r04|q6|B": {
+"verdict": "correct",
+"why": "m6 backs up both claims: Ledger Nest prepared the return, and their invoice is in the blue folder."
+},
+"haiku|r05|q5|A": {
+"verdict": "correct",
+"why": "m2 backs the red toolbox, and dating it to the first exit (2016) fits the note's January 2017 date."
+},
+"haiku|r05|q5|B": {
+"verdict": "correct",
+"why": "m2 backs up the red toolbox. The note is dated 2017, which places it after the 2014–2016 stint at Sol Taller."
+},
+"haiku|r05|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says the seat on the Ala Azul flight was 12C, so the answer is supported."
+},
+"haiku|r05|q6|B": {
+"verdict": "correct",
+"why": "m6 backs this up: the seat was 12C, and the note is dated 2021-06-04."
+},
+"haiku|r06|q5|A": {
+"verdict": "correct",
+"why": "m2 says the user took up pottery after leaving Birch Systems, and the 2023 pottery wheel note in m7 backs up the claim that they kept it up."
+},
+"haiku|r06|q5|B": {
+"verdict": "correct",
+"why": "m2 backs up pottery directly, and the claims about the job dates (m1) and the pottery wheel note (m7) are also supported."
+},
+"haiku|r06|q6|A": {
+"verdict": "correct",
+"why": "The user's own imported diary (m12) says they never worked at Ash Compute, and that outweighs the AI agent's note (m8). The answer's claims match the memories."
+},
+"haiku|r07|q5|A": {
+"verdict": "correct",
+"why": "The memories back the answer. m8 says Museo Alba was a client from January to June 2019, m12 says Museo Alba hired the user through PB Studio in May 2019, and m5 says PB Studio is another name for Pixel Bend."
+},
+"haiku|r07|q5|B": {
+"verdict": "correct",
+"why": "The memories back Museo Alba: m8 gives it as a client from Jan to Jun 2019, m12 names May 2019 through PB Studio, and m5 says PB Studio is Pixel Bend."
+},
+"haiku|r07|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 backs up the answer: the user rented a desk at Mesa Clara."
+},
+"haiku|r07|q6|B": {
+"verdict": "correct",
+"why": "Memory m6 (written 2019-06-12) backs up both claims: the user rented a desk at Mesa Clara to finish design work and bought one-day access."
+},
+"haiku|r08|q5|A": {
+"verdict": "correct",
+"why": "Memory m3 (2018) says outright that the user's colleague Eli Brooks sent the slides before the Orbit Apps meeting."
+},
+"haiku|r08|q5|B": {
+"verdict": "correct",
+"why": "m3 says it directly: the user's colleague Eli Brooks sent the slides before the Orbit Apps meeting."
+},
+"haiku|r08|q6|A": {
+"verdict": "correct",
+"why": "m2 backs this up: the user kept the sketchbook, and it has the office brownie recipe."
+},
+"haiku|r08|q6|B": {
+"verdict": "correct",
+"why": "m2 backs this up: the user kept the sketchbook, and it has the office brownie recipe in it."
+},
+"haiku|r09|q5|A": {
+"verdict": "correct",
+"why": "Memory m2 directly supports it: the apron was stored in the hallway closet after leaving Mesa Textil."
+},
+"haiku|r09|q5|B": {
+"verdict": "correct",
+"why": "Memory m2 says the apron went in the hallway closet after the user left Mesa Textil, and the note is dated 2017-01-09."
+},
+"haiku|r09|q6|A": {
+"verdict": "correct",
+"why": "Memory m7 backs this up: the user's sister needs the house key before the work meeting. The note about its age is also accurate."
+},
+"haiku|r09|q6|B": {
+"verdict": "correct",
+"why": "m7, dated 2020-11-18, says the user's sister needs the house key before the work meeting."
+},
+"haiku|r09|q7|A": {
+"verdict": "correct",
+"why": "The memories back every claim: the user started as inspector in 2017 (m4), Rio Fibras and Rio Fiber are the same job (m5), and the job ended in 2019 (m10), so 2018 falls within it."
+},
+"haiku|r09|q7|B": {
+"verdict": "correct",
+"why": "m4 says the user started at Rio Fibras as inspector in 2017, and m10 says the job ended in 2019, so 2018 falls inside it. No memory records a change of role."
+},
+"haiku|r10|q5|A": {
+"verdict": "correct",
+"why": "m8 says Red Barn was the writing client from Feb to Nov 2020, and that range includes summer 2020."
+},
+"haiku|r10|q5|B": {
+"verdict": "correct",
+"why": "m8 says Red Barn was a client from Feb to Nov 2020, which covers summer 2020, and m5 backs up that Quiet Type was freelance work."
+},
+"haiku|r10|q6|A": {
+"verdict": "correct",
+"why": "Memory m11 backs this up: it says to pick up the repaired watch before the Silver Foods workshop."
+},
+"haiku|r10|q6|B": {
+"verdict": "correct",
+"why": "Memory m11 directly says to pick up the repaired watch before the Silver Foods workshop."
+},
+"haiku|r10|q7|A": {
+"verdict": "correct",
+"why": "m4 (promoted to lead analyst in March 2018) and m12 (user still works there, continuously, and never worked at Golden Foods) support lead analyst in 2019; m12 rules out the AI note m10."
+},
+"haiku|r10|q7|B": {
+"verdict": "wrong",
+"why": "Lead analyst is right (m4), but one claim says the user held that title continuously, while m12 only says they stayed employed continuously and m1 shows they started as analyst."
+},
+"haiku|r11|q5|A": {
+"verdict": "correct",
+"why": "La nota m2 del usuario, escrita en 2016, dice que conservó el termo después de salir de Alta Energia por primera vez, así que la respuesta está respaldada."
+},
+"haiku|r11|q5|B": {
+"verdict": "correct",
+"why": "m2 directly says the user kept the thermos (termo) after first leaving Alta Energia, and m1 backs up the 2014–2015 dates for that first period."
+},
+"haiku|r11|q6|A": {
+"verdict": "correct",
+"why": "Memory m11 directly supports buying batteries for the flashlight before the meeting."
+},
+"haiku|r11|q6|B": {
+"verdict": "correct",
+"why": "m11 backs this up directly: buy batteries for the flashlight before the Camino Solar meeting."
+},
+"haiku|r11|q7|A": {
+"verdict": "correct",
+"why": "m5 says the user went back to Alta Energia as an engineer for their second stint, from 2019 to 2021."
+},
+"haiku|r11|q7|B": {
+"verdict": "correct",
+"why": "m5 says directly that the user went back to Alta Energia as an engineer (ingeniero) for 2019–2021."
+},
+"haiku|r12|q5|A": {
+"verdict": "correct",
+"why": "m2 says the user kept the wall map with the coffee stain, and m1 says Harbor Maps is also called Harbor Cartography."
+},
+"haiku|r12|q5|B": {
+"verdict": "correct",
+"why": "m2 says the user kept the wall map with the coffee stain, and m1 confirms Harbor Maps is the same company as Harbor Cartography."
+},
+"haiku|r12|q6|A": {
+"verdict": "correct",
+"why": "m8 says Olive Trust was the user's Small Atlas mapping client from May to October 2018, and that covers summer 2018."
+},
+"haiku|r12|q6|B": {
+"verdict": "correct",
+"why": "The user's note m8 names Olive Trust as their Small Atlas mapping client from May to October 2018, which covers summer 2018, and m5 backs up the Small Atlas context."
+},
+"haiku|r12|q7|A": {
+"verdict": "correct",
+"why": "m4 backs up the analyst title and m12 backs up the 15 March 2019 start date. The answer handles the conflicting agent note correctly."
+},
+"haiku|r12|q7|B": {
+"verdict": "correct",
+"why": "m4 supports the analyst title, m12 supports the 15 March 2019 start, and the answer was right to set aside m10's conflicting claim."
+},
+"terra|r01|q5|A": {
+"verdict": "correct",
+"why": "Memory m7 says outright that the user's sister saved the soup recipe from the Cedar Metrics office lunch."
+},
+"terra|r01|q5|B": {
+"verdict": "correct",
+"why": "Memory m7 says outright that the user's sister saved the soup recipe from the Cedar Metrics office lunch."
+},
+"terra|r01|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 directly says the user bought a Desk Dock day pass to finish work."
+},
+"terra|r01|q6|B": {
+"verdict": "correct",
+"why": "m6 directly says the user bought a Desk Dock day pass to have a quiet place to finish work."
+},
+"terra|r02|q5|A": {
+"verdict": "correct",
+"why": "Memory m7 says the partner wanted the old office chair for the sewing room, which matches the answer."
+},
+"terra|r02|q5|B": {
+"verdict": "correct",
+"why": "Memory m7 says it directly: the partner wants the old office chair for the sewing room."
+},
+"terra|r02|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says Sky Finch sold the user the work conference flight."
+},
+"terra|r02|q6|B": {
+"verdict": "correct",
+"why": "m6 says outright that Sky Finch sold the work conference flight."
+},
+"terra|r03|q5|A": {
+"verdict": "correct",
+"why": "m2 says the user kept the Fern Press mug after leaving, and that it's next to the books. The answer says exactly that."
+},
+"terra|r03|q5|B": {
+"verdict": "correct",
+"why": "m2 directly backs it: the user kept the Fern Press mug after leaving, and it sits next to the books."
+},
+"terra|r04|q5|A": {
+"verdict": "correct",
+"why": "Memory m2 says this word for word: after leaving Maple Health the user kept the green notebook with the lunch recipes."
+},
+"terra|r04|q5|B": {
+"verdict": "correct",
+"why": "Memory m2 says this directly: after leaving Maple Health the user kept the green notebook with the lunch recipes."
+},
+"terra|r04|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says the user paid Ledger Nest to prepare their work tax return, so the answer is supported."
+},
+"terra|r04|q6|B": {
+"verdict": "correct",
+"why": "Memory m6 says outright that the user paid Ledger Nest to prepare their work tax return."
+},
+"terra|r05|q5|A": {
+"verdict": "correct",
+"why": "m2 says the user kept the red toolbox after leaving Sol Taller, which matches the answer. That memory is from 2017, so it refers to the first time they left (2016)."
+},
+"terra|r05|q5|B": {
+"verdict": "correct",
+"why": "Memory m2 says it directly: after leaving Sol Taller the user kept the red toolbox."
+},
+"terra|r05|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says the seat on the Ala Azul flight was 12C, which matches the answer."
+},
+"terra|r05|q6|B": {
+"verdict": "correct",
+"why": "m6 says the seat on the Ala Azul flight was 12C."
+},
+"terra|r06|q5|A": {
+"verdict": "correct",
+"why": "m2 says it directly: after leaving Birch Systems the user took up pottery."
+},
+"terra|r06|q5|B": {
+"verdict": "correct",
+"why": "m2 says the user took up pottery after leaving Birch Systems, which is exactly what the answer says."
+},
+"terra|r06|q6|A": {
+"verdict": "correct",
+"why": "The user's own imported diary (m12, the newest note) says outright that they never worked at Ash Compute, and that outweighs the older AI-agent note (m8) claiming otherwise."
+},
+"terra|r06|q6|B": {
+"verdict": "correct",
+"why": "The answer is supported. The user's own diary (m12) says they never worked at Ash Compute, and m4 backs this up by naming Oak Network as the next employer after Birch Systems. That outweighs the AI agent's note in m8 claiming a 2017 Ash Compute consultancy."
+},
+"terra|r07|q5|A": {
+"verdict": "correct",
+"why": "In m8, Museo Alba is a Pixel Bend client from January to June 2019, which includes May. m12 and m5 back this up, since PB Studio is the same business as Pixel Bend."
+},
+"terra|r07|q5|B": {
+"verdict": "correct",
+"why": "Both m8 (Museo Alba, Jan–Jun 2019, freelance design) and m12 (Museo Alba via PB Studio, May 2019) support the answer."
+},
+"terra|r07|q6|A": {
+"verdict": "correct",
+"why": "Memory m6 says the user rented a desk at Mesa Clara."
+},
+"terra|r07|q6|B": {
+"verdict": "correct",
+"why": "m6 says the user rented a desk at Mesa Clara."
+},
+"terra|r08|q5|A": {
+"verdict": "correct",
+"why": "Memory m3 says outright that Eli Brooks sent the slides before the Orbit Apps meeting."
+},
+"terra|r08|q5|B": {
+"verdict": "correct",
+"why": "Memory m3 says outright that Eli Brooks sent the slides before the Orbit Apps meeting."
+},
+"terra|r08|q6|A": {
+"verdict": "correct",
+"why": "Memory m2 backs this up: the user kept the sketchbook, which has the brownie recipe, after leaving Drift Games in 2016."
+},
+"terra|r08|q6|B": {
+"verdict": "correct",
+"why": "Memory m2 supports this directly: the user kept the sketchbook with the office brownie recipe after leaving Drift Games in 2016."
+},
+"terra|r09|q5|A": {
+"verdict": "correct",
+"why": "Memory m2 says outright that the apron went into the hallway closet after leaving Mesa Textil."
+},
+"terra|r09|q5|B": {
+"verdict": "correct",
+"why": "m2 says it directly: after leaving Mesa Textil, the user put the apron in the hallway closet."
+},
+"terra|r09|q6|A": {
+"verdict": "correct",
+"why": "Memory m7 says outright that the user's sister needs the house key before the work meeting."
+},
+"terra|r09|q6|B": {
+"verdict": "correct",
+"why": "m7 says the sister needs the house key before the work meeting, which matches the answer."
+},
+"terra|r09|q7|A": {
+"verdict": "correct",
+"why": "The user started as an inspector at Rio Fibras in 2017 and left in 2019 (m4, m10, m5), so they still held that job in 2018."
+},
+"terra|r09|q7|B": {
+"verdict": "correct",
+"why": "m4 shows the user started as inspector at Rio Fibras in 2017. m10 and m5 show the same job ran until 2019, so it covers 2018."
+},
+"terra|r10|q5|A": {
+"verdict": "correct",
+"why": "m8 says Red Barn was the user's writing client from Feb to Nov 2020, and that range covers summer 2020."
+},
+"terra|r10|q5|B": {
+"verdict": "correct",
+"why": "m8 says Red Barn was the user's Quiet Type writing client from February to November 2020, and summer 2020 falls inside that range."
+},
+"terra|r10|q6|A": {
+"verdict": "correct",
+"why": "Memory m11 says the user should pick up the repaired watch before the Silver Foods workshop, and the answer says exactly that."
+},
+"terra|r10|q6|B": {
+"verdict": "correct",
+"why": "Memory m11 says it directly: pick up the repaired watch before the Silver Foods workshop."
+},
+"terra|r10|q7|A": {
+"verdict": "correct",
+"why": "m4 says the user became lead analyst in March 2018 with no break, and m12 and m5 back up that they stayed at Silver Foods. m10, the AI agent's note, is contradicted by the user's own m12."
+},
+"terra|r10|q7|B": {
+"verdict": "correct",
+"why": "The user was promoted to lead analyst in March 2018 and has worked there continuously since (m4, m12), so their 2019 title was lead analyst. The user's own later note overrides the agent's claim in m10."
+},
+"terra|r11|q5|A": {
+"verdict": "correct",
+"why": "Memory m2 says outright that the user kept the thermos (termo) after leaving Alta Energia the first time."
+},
+"terra|r11|q5|B": {
+"verdict": "correct",
+"why": "m2 says directly that the user kept the thermos after leaving Alta Energia the first time."
+},
+"terra|r11|q6|A": {
+"verdict": "correct",
+"why": "Memory m11 says it directly: buy batteries for the flashlight before the Camino Solar meeting."
+},
+"terra|r11|q6|B": {
+"verdict": "correct",
+"why": "Memory m11 says it directly: buy batteries for the flashlight before the Camino Solar meeting."
+},
+"terra|r11|q7|A": {
+"verdict": "correct",
+"why": "m5 says the user went back to Alta Energia as an engineer for the second period (2019–2021)."
+},
+"terra|r11|q7|B": {
+"verdict": "correct",
+"why": "m5 says the user returned to Alta Energia as an engineer for the second period, 2019–2021."
+},
+"terra|r12|q5|A": {
+"verdict": "correct",
+"why": "m1 says Harbor Cartography is another name for Harbor Maps, and m2 says the user kept the wall map with the coffee stain after leaving."
+},
+"terra|r12|q5|B": {
+"verdict": "correct",
+"why": "m1 shows Harbor Cartography is another name for Harbor Maps, and m2 says the user kept the wall map with the coffee stain after leaving."
+},
+"terra|r12|q6|A": {
+"verdict": "correct",
+"why": "m8 says Olive Trust was the user's mapping client from May to October 2018, and that covers summer 2018."
+},
+"terra|r12|q6|B": {
+"verdict": "correct",
+"why": "m8 says Olive Trust was the user's mapping client from May to October 2018, which covers summer 2018."
+},
+"terra|r12|q7|A": {
+"verdict": "correct",
+"why": "m4 says the user started at Ridge Data in March 2019 as an analyst. The other memories that disagree are about leaving the job, not the starting title."
+},
+"terra|r12|q7|B": {
+"verdict": "correct",
+"why": "In m4 the user says they started at Ridge Data in March 2019 as an analyst, so the answer is supported. m10 says the user left and that note is contradicted, but it doesn't touch the starting title."
+}
+}

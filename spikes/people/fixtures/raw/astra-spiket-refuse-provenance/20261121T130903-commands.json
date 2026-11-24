@@ -1,0 +1,8 @@
+[
+ "/bin/zsh -lc 'cat questions.json'",
+ "/bin/zsh -lc 'cat questions.json'",
+ "/bin/zsh -lc \"python -c 'import json; q=json.load(open(\\\"questions.json\\\")); print(\\\"\\\\n\\\".join(f\\\"{i+1}. {s}\\\" for i,s in enumerate(q)))'\"",
+ "/bin/zsh -lc \"python -c 'import json; q=json.load(open(\\\"questions.json\\\")); print(\\\"\\\\n\\\".join(f\\\"{i+1}. {s}\\\" for i,s in enumerate(q)))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; q=json.load(open(\\\"questions.json\\\")); print(\\\"\\\\n\\\".join(f\\\"{i+1}. {s}\\\" for i,s in enumerate(q)))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; q=json.load(open(\\\"questions.json\\\")); print(\\\"\\\\n\\\".join(f\\\"{i+1}. {s}\\\" for i,s in enumerate(q)))'\""
+]

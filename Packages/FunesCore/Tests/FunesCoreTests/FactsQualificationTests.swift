@@ -220,7 +220,8 @@ import Testing
         for p in persons { q.off.insert(opusPeople.key(p, FactsUse.recorded.rawValue)) }
         got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
         #expect(got[people]?.modelID == "claude-haiku-5-5")
-        // What ships (13a.2's Gates step): Haiku qualified for both groups, Opus for neither, so both fall back to Haiku.
+        // What ships (13e.2's records step, on 13e.1's code): Haiku qualified for both groups, Opus for neither, so both
+        // fall back to Haiku.
         got = FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
         #expect(got[people]?.modelID == "claude-haiku-5-5" && got[work]?.modelID == "claude-haiku-5-5")
     }
@@ -407,34 +408,23 @@ import Testing
         #expect(FactsGateEvidence.problems(record(persons, [.attributes], group: people, basis: "candidates"), registry: reg).first?
             .hasPrefix("no 13d gate") == true)
         #expect(FactsGateEvidence.gate(for: record(persons, [.recorded, .linked], group: people), registry: reg)?.id == "persons")
-        #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg) == nil)   // measured only
+        // 13e.1: the timeline is a record of its own, `timeline` only.
+        #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg)?.id == "timeline")
     }
 
-    @Test func whatShipsIsHaikusPersonPoolAndClient() {
-        // 13a.2's Gates step: the person pool {recorded, linked} and client {recorded}, both Haiku. Works at missed its
-        // linked gate; the timeline and bridges stay unqualified (the author's decision). 13d's answer gates: the person
-        // pool's attributes, unscoped and sole_known, for answers by Claude Haiku 5.5 through Claude Code and by
-        // GPT-5.6-Terra through Codex, each on Haiku's facts key.
-        #expect(FactsQualification.bundled.records.count == 6)
+    @Test func whatShipsIsHaikusPersonPoolClientAndWorksAt() {
+        // 13e.2's records step (Phase B on 13e.1's code, ceb9d97): the person pool {recorded, linked}, client {recorded}
+        // and works at {recorded, linked}, all Haiku. The timeline and bridges stay unqualified (13e.2's gate decides the
+        // timeline; bridges are retired). 13d's attributes records lapsed with the registry until 13e.2's answer gates.
+        #expect(FactsQualification.bundled.records.count == 3)
         let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(Set(on.predicates(.linked)) == Set(persons))
-        #expect(Set(on.predicates(.recorded)) == Set(persons + ["client"]))
-        #expect([FactsUse.timeline, .bridges].allSatisfy { on.predicates($0).isEmpty })
-        let haikuAnswers = FactsQualification.AnswerKey(model: "claude-code/claude-haiku-5-5", promptVersion: SearchAnswerer.promptVersion)
-        for model in [haikuAnswers.model, "codex/gpt-5.6-terra"] {
+        #expect(Set(on.predicates(.linked)) == Set(persons + ["works_at"]))
+        #expect(Set(on.predicates(.recorded)) == Set(persons + ["client", "works_at"]))
+        #expect([FactsUse.timeline, .bridges, .attributes].allSatisfy { on.predicates($0).isEmpty })
+        for model in ["claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra"] {
             let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
                                                          answer: .init(model: model, promptVersion: SearchAnswerer.promptVersion))
-            #expect(Set(answer.predicates(.attributes)) == Set(persons), "\(model)")
-            #expect(persons.allSatisfy { answer.isOn($0, .attributes, basis: LinkBasis.soleKnown.rawValue) }, "\(model)")
-        }
-        // Another answer model, an alias, or another answer prompt: no attributes.
-        for key in [FactsQualification.AnswerKey(model: "codex/gpt-6-luna", promptVersion: SearchAnswerer.promptVersion),
-                    FactsQualification.AnswerKey(model: "claude-code/haiku", promptVersion: SearchAnswerer.promptVersion),
-                    FactsQualification.AnswerKey(model: haikuAnswers.model, promptVersion: "a13d-0")] {
-            let other = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
-                                                        answer: key)
-            #expect(other.predicates(.attributes).isEmpty, "\(key)")
-            #expect(Set(other.predicates(.linked)) == Set(persons))
+            #expect(answer.predicates(.attributes).isEmpty, "\(model)")
         }
         // Another engine gets nothing.
         let opus = FactsQualification.bundled.uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)

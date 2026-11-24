@@ -52,15 +52,15 @@ enum FactsHarness {
         }
         struct Story: Decodable {
             let id: String
-            let memories: [Memory]
-            let orders: [[String]]?
-            let queries: [Query]?
+            var memories: [Memory]
+            var orders: [[String]]?
+            var queries: [Query]?
             let timeline: [TimelineEntry]?
             let people: [String: Person]?
             let corrections: [Correction]?
         }
         let user: User
-        let stories: [Story]
+        var stories: [Story]
     }
 
     static var repo: URL {
@@ -465,7 +465,7 @@ enum FactsHarness {
             }
         }
         if let replay {
-            for r in replay {
+            for r in replay where mems[r.memory] != nil {     // (trusted_only: an agent's memory left out)
                 let id = try add(r.memory)
                 fixtureIDs.withLock { $0 = fixtureID }
                 rp?.expect(r)
@@ -590,7 +590,15 @@ enum FactsHarness {
         let decidable = !(q.answer_org ?? "").isEmpty
         guard let it else { return decidable ? "miss" : "told_no_intent" }
         let ans = g.answer(it, query: q.query)
-        let want = decidable ? Set(g.entityMatches(it.predicate, q.answer_org!)) : []
+        // The truth's entity by name, independent of the system's own merges: a stated rename's answer is right only if
+        // every name of its group is the truth's organization (by the kind's loose rule), so a wrong merge stays wrong.
+        var want: Set<String> = decidable ? Set(g.entityMatches(it.predicate, q.answer_org!)) : []
+        if decidable, !want.isEmpty {
+            let loose = Set(g.byName(q.answer_org!, kind: g.registry.kindOf(it.predicate)).map(\.id)).union(want)
+            for grp in g.statedGroups(it.predicate) where !grp.isDisjoint(with: want) && grp.isSubset(of: loose) {
+                want.insert(g.timelineEntity(it.predicate, grp.first!))
+            }
+        }
         var got: String?
         if ans.entities.count > 1 {
             got = Set(ans.entities) == want && want.count == 1 ? want.first : "several"
@@ -764,6 +772,8 @@ extension FactsHarness {
                 },
                 "things": things.map { [$0.0, $0.1] },
                 "episodes": episodes(),
+                // Stated renames read as one entity on the timeline (13e.1): an episode's entity stands for its group.
+                "timeline_groups": g.registry.timelinePredicates.flatMap { g.statedGroups($0) }.map { $0.sorted().map { p($0) } },
                 "succession": succession(),
                 "user_aliases": user,
                 "memories": Dictionary(uniqueKeysWithValues: order.compactMap { id -> (String, Any)? in

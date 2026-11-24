@@ -287,8 +287,9 @@ import Testing
     }
 
     @Test func a3_aCurrentFromUntrustedEvidenceIsAtMostInferred() throws {
+        // Told since 13e.1: an answer resting only on untrusted text is never given.
         let s = stateWith([fact(d, "Acme", "2015", status: .current).untrusted(at: "2020-01-01")])
-        #expect(try #require(s.ask("What is my current job?")).basis == .inferred)
+        #expect(try #require(s.ask("What is my current job?")).isAmbiguous)
     }
 
     @Test func a3_aPreviousLinkOnAnUntrustedEpisodeIsUntrusted() {

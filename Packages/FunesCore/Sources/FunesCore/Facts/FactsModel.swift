@@ -100,6 +100,9 @@ public struct LearnedFact: Sendable, Equatable {
     public var only: Bool
     public var negated: Bool
     public var assertions: [FactAssertion]
+    /// Negated by a trusted never-denial ("I never worked at Orlin Labs"): an untrusted statement after it is kept as
+    /// evidence but doesn't start a new incarnation (§11.9: untrusted evidence never changes a trusted decision).
+    public var neverDenied = false
 
     public var trusted: Bool { assertions.contains { $0.trusted } }
 }
@@ -233,6 +236,9 @@ public struct FactsGraph: Sendable {
     }
     /// The entity each fact of the last `apply` landed on (by its index), so the store records aliases against it.
     public var landed: [Int: String] = [:]
+    /// Facts the last apply's never-denials reach (13e.1), negated already or not: each gets that memory's denial row,
+    /// so a second denial still holds when the first is deleted.
+    public var neverTargets: Set<Int> = []
     /// Pairs the user said aren't the same entity (Not the Same): never matched to each other, never suggested.
     public var notSame: Set<Set<String>> = []
     /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.
@@ -459,6 +465,7 @@ public struct FactsGraph: Sendable {
         memories[mem.id] = mem
         let mid = mem.id, trusted = mem.trusted
         landed = [:]
+        neverTargets = []
         var here: [String: String] = [:], regroup: [String: String] = [:]
         for p in people {
             let f = FactsText.fold(p.name)
@@ -506,7 +513,7 @@ public struct FactsGraph: Sendable {
             if kind == "person" {
                 pid = r.entity == "name" ? here[FactsText.fold(r.name)] : (regroup[r.entity] ?? r.entity)
             } else {
-                pid = entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
+                pid = foldedPlaceholder(r, mem: mem, others: newFacts) ?? entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
             }
             guard let pid, let ent = entities[pid] else { continue }
             landed[ri] = pid
@@ -525,7 +532,24 @@ public struct FactsGraph: Sendable {
             if !r.positive, status == .current, !existing.isEmpty {
                 status = .former         // "not back together", "no longer": it isn't current now, not that it never was
             } else if !r.positive {
-                for i in existing where trusted || !facts[i].trusted { facts[i].negated = true }
+                let never = trusted && isNeverDenial(r, text: mem.text, names: Array(entities[pid]?.aliases ?? []))
+                for i in existing where trusted || !facts[i].trusted {
+                    facts[i].negated = true
+                    if never { facts[i].neverDenied = true; neverTargets.insert(i) }
+                }
+                if never {
+                    denyNamesakes(of: pid, name: r.name, predicate: pred, kind: kind)
+                    // Nothing of its own to negate: kept as a negated fact, so the denial is stored and holds against an
+                    // agent's claim read later.
+                    if existing.isEmpty, let last = facts.lastIndex(where: { $0.entity == pid && $0.predicate == pred }), facts[last].negated {
+                        facts[last].neverDenied = true
+                        neverTargets.insert(last)
+                    } else if existing.isEmpty {
+                        facts.append(LearnedFact(entity: pid, predicate: pred, label: nil, cls: nil, only: false, negated: true,
+                                                 assertions: [], neverDenied: true))
+                        neverTargets.insert(facts.count - 1)
+                    }
+                }
                 continue
             }
             let p = registry.predicate(pred)
@@ -540,6 +564,12 @@ public struct FactsGraph: Sendable {
             a.deceased = r.deceased
             a.span = r.span
             a.alsoCalled = r.alsoCalled
+            // After a trusted never-denial an untrusted statement is kept as evidence, and the fact stays denied.
+            if !trusted, existing.isEmpty,
+               let last = facts.lastIndex(where: { $0.entity == pid && $0.predicate == pred }), facts[last].negated, facts[last].neverDenied {
+                facts[last].assertions.append(a)
+                continue
+            }
             if let i = existing.first {
                 facts[i].only = facts[i].only || (r.only && trusted)
                 facts[i].assertions.append(a)
@@ -580,6 +610,132 @@ public struct FactsGraph: Sendable {
             }
         }
         if trusted { reopenSharedNames(except: mid) }
+    }
+
+    /// A placeholder ("Self-employed") that a trusted memory ties, in the clause it's in and with a linking word, to a
+    /// business already known: "sigo trabajando por cuenta propia con Nudo Estudio". That business, when it's a trusted
+    /// holder of the predicate with the placeholder's slot value, holds now (its latest trusted episode isn't ended), and
+    /// this memory neither ends nor denies it; else nil, and the placeholder is its own entity as before.
+    func foldedPlaceholder(_ r: ExtractedFact, mem: FactsMemory, others: [ExtractedFact]) -> String? {
+        guard mem.trusted, r.positive, r.status != .former, r.end == nil, placeholder(r.predicate, r.name) != nil,
+              let p = registry.predicate(r.predicate), let slot = p.slot, let value = r.qualifiers[slot] else { return nil }
+        let links = (registry.language.placeholderLinks ?? []).map { FactsText.escape(FactsText.fold($0)).replacingOccurrences(of: " ", with: "\\s+") }
+        guard !links.isEmpty else { return nil }
+        let kind = registry.kindOf(r.predicate)
+        // The quote's clause (up to punctuation), as written.
+        let ns = mem.text as NSString
+        let at = r.span ?? ns.range(of: r.quote)
+        guard at.location != NSNotFound else { return nil }
+        // From the quote's start to its first stop: never another subject's clause before it, never past punctuation.
+        let stops = CharacterSet(charactersIn: ".!?;,\n")
+        let lo = at.location
+        var hi = at.location
+        while hi < ns.length, let u = UnicodeScalar(ns.character(at: hi)), !stops.contains(u) { hi += 1 }
+        let clause = FactsText.fold(ns.substring(with: NSRange(location: lo, length: hi - lo)))
+        // "Sigo por cuenta propia pero ya no con Nudo Estudio": a negation or contrast in the clause, no fold.
+        if (registry.language.negationWords ?? []).contains(where: { FactsText.has(clause, FactsText.fold($0)) }) { return nil }
+        var hits: [String] = []
+        for f in facts where f.predicate == r.predicate && !f.negated && f.trusted {
+            guard let e = entities[f.entity], e.name != nil, placeholder(r.predicate, e.name!) == nil, !hits.contains(e.id),
+                  f.assertions.contains(where: { $0.trusted && $0.qualifiers[slot] == value }) else { continue }
+            // The linking word right after a self-employment phrase ("por cuenta propia con Nudo Estudio", "freelancing
+            // through Copper Finch"), never a link elsewhere in the clause ("…and have a meeting with Nudo Estudio").
+            let selfWords = ((p.slotCues ?? [:])[value] ?? []) + [placeholder(r.predicate, r.name) ?? ""] + ((p.placeholders ?? [:]).values.flatMap { $0 })
+            let own = selfWords.filter { !$0.isEmpty }.map { FactsText.escape(FactsText.fold($0)).replacingOccurrences(of: " ", with: "\\s+") }
+            let named = !own.isEmpty && e.trustedAliases.contains { a in
+                let n = FactsText.escape(FactsText.fold(a))
+                let fillers = (registry.language.owners + registry.language.anchorDeterminers).map { FactsText.escape(FactsText.fold($0)) }
+                let re = "(?<!\\w)(?:" + own.joined(separator: "|") + ")\\s+(?:" + links.joined(separator: "|") + ")\\s+(?:(?:"
+                    + fillers.joined(separator: "|") + ")\\s+)?" + n + "(?!\\w)"
+                guard let m = FactsText.first(FactsText.regex(re), in: clause) else { return false }
+                // Only the user's present words around it: "I'm still freelancing with X (now)", never "My wife is…",
+                // "I quit freelancing with…", "…with X's clients".
+                let around = FactsText.matches(FactsText.regex("[\\w'’-]+"), in: FactsText.substring(clause, 0, m.start)).map { $0.group(0)! }
+                    + FactsText.matches(FactsText.regex("[\\w'’-]+"), in: FactsText.substring(clause, m.end, FactsText.length(clause))).map { $0.group(0)! }
+                let ok = Set(((registry.language.foldLeadWords ?? []) + registry.language.firstPerson).map { FactsText.fold($0) })
+                return around.allSatisfy { ok.contains($0) }
+            }
+            guard named else { continue }
+            // It holds now: its latest trusted episode isn't ended, and this memory doesn't end or deny it.
+            let eps = factEpisodes(f).filter(\.trusted)
+            guard let last = eps.last, last.ongoing else { continue }
+            let mine = Set(e.aliases.map { FactsText.normName($0, kind: kind, registry: registry) })
+            if others.contains(where: { o in o.predicate == r.predicate && mine.contains(FactsText.normName(o.name, kind: kind, registry: registry))
+                && (!o.positive || o.status == .former || o.end != nil) }) { continue }
+            if notSame.contains(where: { $0.contains(e.id) && $0.contains { entities[$0]?.name.map { placeholder(r.predicate, $0) != nil } ?? false } }) {
+                continue
+            }
+            hits.append(e.id)
+        }
+        return hits.count == 1 ? hits[0] : nil
+    }
+
+    /// A denial that says it never held ("I never worked at Orlin Labs"), with no date of its own: not "no longer".
+    /// A never-denial (13e.1), fail closed, in the denied name's own clause (up to punctuation), one of two shapes:
+    /// "I (have) never worked at Orlin Labs" / "Nunca trabajé en Orlin Labs" (before the never-word only first-person
+    /// words, between it and the name only the predicate's cues and a few function words), or "Orlin Labs has never been
+    /// my employer" / "Ana Pérez has never been my manager" (the name opens the clause; after it only an auxiliary, the
+    /// never-word, owners, the predicate's nouns and those function words). Nothing else in the clause ("before 2020",
+    /// "as an employee", "full-time", "but I did", "my brother"), no date of its own, and not a "no longer".
+    func isNeverDenial(_ r: ExtractedFact, text: String, names: [String] = []) -> Bool {
+        guard !r.positive, r.status != .current, r.time == nil, r.start == nil, r.end == nil else { return false }
+        let lang = registry.language
+        let never = (lang.neverWords ?? []).map { $0.lowercased() }
+        guard !never.isEmpty else { return false }
+        let ns = text as NSString
+        let quoteAt = r.span ?? ns.range(of: r.quote)
+        guard quoteAt.location != NSNotFound else { return false }
+        // The denied name inside the quote (the fact's own name, else the entity's).
+        var at = NSRange(location: NSNotFound, length: 0)
+        for n in ([r.name] + names) where !n.isEmpty {
+            let hit = ns.range(of: n, options: [.caseInsensitive, .diacriticInsensitive], range: quoteAt)
+            if hit.location != NSNotFound { at = hit; break }
+        }
+        guard at.location != NSNotFound else { return false }
+        // The whole sentence (a comma doesn't end it: "Before 2020, I never worked at X" is qualified). Compared
+        // lowercased, not folded: "trabajó" (he) isn't "trabajé" (I).
+        let stops = CharacterSet(charactersIn: ".!?;\n")
+        var lo = at.location, hi = at.location + at.length
+        while lo > 0, let u = UnicodeScalar(ns.character(at: lo - 1)), !stops.contains(u) { lo -= 1 }
+        while hi < ns.length, let u = UnicodeScalar(ns.character(at: hi)), !stops.contains(u) { hi += 1 }
+        func words(_ a: Int, _ b: Int) -> [String] {
+            ns.substring(with: NSRange(location: a, length: max(0, b - a))).lowercased().split { !$0.isLetter && $0 != "'" && $0 != "’" }.map(String.init)
+        }
+        let before = words(lo, at.location), after = words(at.location + at.length, hi)
+        let fold = { (xs: [String]) in Set(xs.map { $0.lowercased() }) }
+        let lead = fold(lang.neverLeadWords ?? []).union(fold(lang.firstPerson))
+        let p = registry.predicate(r.predicate)
+        // The predicate's cues, but no event ("I never left Orlin Labs" says it held).
+        let events = fold(lang.startEvents + lang.endEvents + lang.episodeLast + (lang.eventWords ?? []))
+        let cues = fold((p?.queryCues ?? []) + (p?.queryNouns ?? []) + registry.lexicon.filter { $0.value.predicate == r.predicate }.map(\.key)).subtracting(events)
+        let between = fold(lang.neverBetweenWords ?? []).union(cues)
+        // "I never worked at X": first-person words, the never-word, then cues and function words; nothing after X.
+        if let k = before.firstIndex(where: never.contains), after.isEmpty {
+            return before[..<k].allSatisfy(lead.contains) && before[(k + 1)...].allSatisfy(between.contains)
+        }
+        // "X has never been my employer": X opens the clause.
+        if before.isEmpty, let k = after.firstIndex(where: never.contains) {
+            let aux = fold(lang.pairBefore + ["has", "have", "had", "ha", "han", "fue", "sido", "estado", "been"])
+            return after[..<k].allSatisfy(aux.contains) && after[(k + 1)...].allSatisfy { between.contains($0) || aux.contains($0) || fold(lang.owners).contains($0) }
+        }
+        return false
+    }
+
+    /// A trusted never-denial also negates the facts of that predicate held by entities only untrusted memories named,
+    /// under exactly the same normalised name (never a first name or a name inside another): an agent's claim the user
+    /// denies (§11.9). It adds them no alias, evidence or link.
+    mutating func denyNamesakes(of pid: String, name: String, predicate: String, kind: String) {
+        // A person's single name is shared too often ("Ana"): only a full name reaches another entity.
+        let forms = Set(([name] + Array(entities[pid]?.trustedAliases ?? [])).map { FactsText.normName($0, kind: kind, registry: registry) }
+            .filter { !$0.isEmpty && (kind != FactsPrompt.personKind || $0.contains(" ")) })
+        for e in orderedEntities where e.id != pid && e.kind == kind && e.trustedAliases.isEmpty && e.group == nil {
+            guard e.aliases.contains(where: { forms.contains(FactsText.normName($0, kind: kind, registry: registry)) }) else { continue }
+            for i in facts.indices where facts[i].entity == e.id && facts[i].predicate == predicate && !facts[i].trusted {
+                facts[i].negated = true
+                facts[i].neverDenied = true
+                neverTargets.insert(i)
+            }
+        }
     }
 
     /// A second trusted entity sharing a bare name makes earlier `named` mentions of it `ambiguous` (memory processing

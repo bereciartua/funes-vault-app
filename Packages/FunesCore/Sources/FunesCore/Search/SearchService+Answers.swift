@@ -127,7 +127,7 @@ extension SearchService {
     private func bridges(_ t: FactsQueryPlan.Timeline, index: FactsSearchIndex, ranked: [SearchHit], read: Set<UUID>,
                          filter: MemoryFilter, view: AnswerView, now: Date) async throws -> [AnswerFactsPlan.Bridge] {
         let g = index.graph
-        let answer = Set(t.answer)
+        let answer = t.answerGroup.isEmpty ? Set(t.answer) : t.answerGroup   // a stated rename's names too
         var stating: [String: (entity: String, factID: String?, written: String)] = [:]
         for f in g.facts where f.predicate == t.predicate && answer.contains(f.entity) && !f.negated {
             let fid = index.factIDs[FactStore.Loaded.key(f.predicate, f.entity)]

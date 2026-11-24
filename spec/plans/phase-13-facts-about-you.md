@@ -7,7 +7,7 @@
 **Duration:** about 11–13 weekends, plus two weeks of use (an estimate; a failed gate adds a round). **Depends on:** nothing unfinished. **Decision:** [ADR-0032](../architecture/decisions/0032-facts-about-you.md). **Evidence:** [Spikes H, H2, H3 and H3b](spike-results.md#spike-h-people-and-work-history); the harness, fixtures and results are in [`spikes/people/`](../../spikes/people/), and the H3b time model (`facts.py`, `registry.json`, `test_temporal.py`) is the reference for the Swift port. That is evidence for the design, not a qualification of the Swift code: every gate below runs again on Swift. **Specs** (amended in 13.1): every document in ADR-0032's Amends table.
 
 **Order:**
-- 13.0 → 13.1 → 13a.1 → 13a.2 → 13b → 13c and 13d (in either order) → 13d.2 → 13e → 13f.
+- 13.0 → 13.1 → 13a.1 → 13a.2 → 13b → 13c and 13d (in either order) → 13d.2 → 13e (with 13e.1 and 13e.2 during it) → 13f.
 - One PR per step, the spec first.
 - **Cloud runs on fixtures, and any run on the author's vault, need the author's go-ahead.** The vault runs only on private copies outside the repo; only counts and yes/no answers are recorded.
 
@@ -20,7 +20,7 @@
 | Recall of resolvable references | fixtures · the author's vault, two reads | ≥ 90% · ≤ 5% differ between reads | 13a.2 |
 | Recorded predicates (client) | a fixture with clients, employers and vendors | 0 clients as employers, 0 vendors as clients | 13a.2 |
 | Mixed predicates | a fresh fixture, people and jobs in the same memories | every gate above still met | 13a.2 |
-| Each *timeline* predicate (works at) | a fresh blind fixture by GPT-6-Astra · the author's reviewed timeline | every fact right, ≤ 1 wrong date; on decidable wordings: right entity ≥ 90% (right with a gap told counted apart); ambiguous on the others; 0 wrong answers, gap answers included; 0 negative triggers; 0 succession from untrusted text or across slots | 13a.2 |
+| Each *timeline* predicate (works at) | 13e.2's answer gate, per answer engine: a fresh blind set by GPT-6-Astra (24 stories, ≥ 50 decidable, ≥ 50 undecidable, ≥ 40 negative questions), about 300 fillers, the app's search, one recorded live read · the author's reviewed timeline | every answer judged blind against the plain arm; decidable right ≥ 85%, 0 unmarked wrong, ≤ 1 marked wrong; undecidable "not sure" ≥ 90%; negatives wrong ≤ the plain arm's + 1; 0 someone-else claims, 0 owed checks skipped, 0 unmarked inferred claims; Spike G's gates; p95 ≤ 15 s (ADR-0032 decision 9, amended 2026-11-21; it replaced 13a.2's grammar-measured row) | 13e.2 |
 | The time model | Spike H3's and H3b's 60 counterexamples, ported · an adversarial review of the Swift code by GPT-6-Astra and Fable 5.2 | all pass · a final round finds no wrong answer or link from the core model, and no confident misread from the language layer, which fails closed (narrowed in 13a.1; not met in round 18 and waived by the author, see 13a.1's Gates) | 13a.1 |
 | The registry canary | the partner timeline: entry and fixture written blind by GPT-6-Astra after the Swift code freeze, with negatives, concurrency, untrusted text, privacy and corrections, reported as distinct questions | no source file changed (checked mechanically); the deterministic part passes in CI; the model run meets the timeline gates (if it does, it may ship) | 13a.2 |
 | Search with links on | people and work fixtures, Spike G, the search benchmark; with bge-small and with the provider index | 0 targets worse, out of the top 3, or out of the top 10 | 13b |
@@ -639,6 +639,126 @@
 - [x] **Remove starts the backfill over** (20 November 2026, at the author's request: "If you remove all facts, that means they are starting from scratch again"; ADR-0032 amended; memory processing §11.3 "once, until a Remove"): Remove learned facts deletes `meta('facts_backfill')` with everything the model read (`FactsBackfill.reset`, ending an unfinished backfill with its marks), so the next turn-on with a model and memories opens the sheet with a fresh count and cost, and Read Existing Memories… is back; Remove's message says so. A state ended `removed` by an older version reads as none. A restore keeps the live vault's state or its absence, so a backup from before a Remove brings back neither its backfill, nor its marks, nor the reads it owed. Fixed on the way: a finished backfill's summary, notification and Show People & History never showed (they required no `ended`, which every finish sets).
   - **Tests:** `FactsBackfillTests` (Remove → turn on → a fresh estimate → exempt reads equal to it with the cap at 0, then `used`; Remove mid-backfill while paused; Not Now after a Remove reads only new memories; a `removed` state reads as none), `RestoreAccessTests` (a backup of a running or finished backfill restored after a Remove, its owed reads gone and a first read of new text kept; a backup from after a Remove restored once a new backfill started; a live `removed` state).
   - **Reviews:** GPT-6-Astra and Fable 5.2 on the diff. Taken: a restore after a Remove drops the backup's owed reads (both); the finished UI's dead `ended` check, an explicit store read on turn-on, test gaps and stale text (Fable). `FactsCapShareTests`' fixture is now a used backfill with nothing read.
+- [ ] **13e.1 The timeline round** (20 November 2026, during the two weeks; the author wants the timeline on for them). Goal: works at {recorded, linked} and works at {timeline} qualify on Claude Haiku 5.5. Bridges stay off this round (below).
+  - **Why works at *linked* missed** (the Gates run's evidence, `results-13a2/gates/`): 6 wrong units a read, all on work13.
+    - **5 are agent notes' claims** of jobs the story's truth doesn't have (w01 Orlin Labs, w04 Silver Shoal, w07 Bellwether Optics, w10 Nácar Digital; w04's in both reads), recorded as what they are: `untrusted` links. `qualify.py` counts every assertion. The table's measure is "full-basis links right", and an untrusted link isn't full basis (score.py counts person links that way).
+    - **Under it, a real defect:** in w01, w04 and w10 the user's own later note denies the claim ("Correction: I never worked at Orlin Labs", "I have never worked at Silver Shoal", "Nunca trabajé en Nácar Digital"). The denial is lost: a trusted memory never resolves to an entity only untrusted memories named (§11.4's alias trust), so the denial makes a new entity, and a negative with nothing to negate is dropped. The agent's job stays on the timeline (3 of the timeline's 5 wrong facts).
+    - **1 is a placeholder:** w05 m5, "sigo trabajando por cuenta propia con Nudo Estudio", read as "Self-employed" although earlier notes name Nudo Estudio as the user's business (both reads).
+  - **Why the timeline missed** (work13 right 14 and 15 of 51, mixed 13 + 2 with a gap of 28; 0 wrong answers):
+    - **Grammar refusals,** most of the misses: verbless questions ("Employer immediately before Ironglass Media?"), slot words ("day job", "payroll", "freelance business", "empleo de día", "en plantilla", "full-time"), words outside the lists ("came", "preceded", "vino", "empleaba", "next", "last … before", "still", "ongoing", "sigo"), no cue word ("Where did I go after Ember Circuit?"), an anchor with a date ("before rejoining North Kestrel in January 2021").
+    - **Told answers:** a day job beside self-employment ("in 2021", "current", "previous"); an import's "current" read as current on its import date, which makes the stint's stated end a conflict; renamed employers kept as two entities; the agent claims above.
+    - **Wrong dates** (9 and 7 on work13, 1 and 2 on mixed; gate ≤ 1): 4 and 2 are the scorer's (a rehire's episode matched to the first stint because one memory recalls both); 3–4 a client engagement's dates given to the business ("Through Copper Finch Studio I illustrated for client Elmseed Press from April 2020 to December 2020"); 1–2 the renamed pairs' succession end; 1 an agent note's untrusted-only episode.
+  - **Reviews of this plan** (GPT-6-Astra, Fable 5.2; both "request changes"): the diagnosis and the first two measurement fixes hold; the third is a gate change; several proposals gave concrete wrong answers; keeping the existing records wasn't justified. Everything below takes their findings.
+  - **Measurement** (`qualify.py`, `test_qualify.py`), fixed before the fresh sets exist:
+    - works at *linked* counts full-basis units only (trusted assertions); untrusted units reported apart. Clients and vendors as employers still count on every basis;
+    - a rehire's episode is assigned one to one, to the truth stint sharing its memories and overlapping its dates; two episodes can't take one stint, and an episode left unassigned is a wrong fact;
+    - **the author decides:** whether the timeline's "every fact right" and wrong dates judge untrusted-only facts and episodes apart (an amendment of the table). If so: Your Timeline marks them "(from text you didn't write)"; an answer resting on one still counts (and is told, below); an untrusted fact the fixture's own labels deny ("I never worked at X") stays a wrong fact; the counts go in the record's gate text. If not, any agent claim the user's notes never mention fails the gate, and the blind brief asks for such claims.
+  - **The pipeline:**
+    - **A never-denial reaches the claim:** a trusted negative with no time, start or end, that isn't a "no longer" ("I never worked at Orlin Labs", not "I no longer work at Orlin Labs"), negates the untrusted-only facts of that predicate held by an entity of exactly the same normalised name (never a first-name or containment match), and an untrusted claim read later doesn't start a new fact (§11.9). A trusted claim later does (a real hire). Derived when facts load (`FactStore`), mirrored in `FactsGraph.apply`, merge and facts.py's `load_state`; deleting the denial undoes it. Tests: both orders, an organization and a person, "no longer", a restricted denial (privacy differential).
+    - **The placeholder fold:** "Self-employed" from a trusted memory is the business it names in the same clause with a linking word ("por cuenta propia con Nudo Estudio", "freelancing through Copper Finch"), when that business is a trusted self-employed holder, not ended or negated in that memory, and the statement is positive and not former. Not the Same holds.
+    - **An import's "current"** holds as of its own stated time, else at no known date (built: an import's date isn't the text's, §11.5).
+    - **A stated rename is one entity on the timeline** (an ADR-0032 amendment): a trusted `also_called` whose name exactly matches one other trusted holder, with no Not the Same in the group, no trusted episode of the slot or order edge between the two, and no start or end stated between the names, reads both as one entity for episodes and answers, at `inferred`. Otherwise told, as today. Links and search are unchanged.
+    - **Answers resting on an untrusted-only episode are told** (the canary's c07q1: trusted memories above the limit, read code-only, and an agent's note answered "current" wrongly).
+    - **The work prompt** gains one line: dates of work done for a client through the business are the client's, not the business's start or end.
+  - **The grammar** (§11.7; still fails closed; every capability with negative minimal pairs):
+    - **slot words** ("day job", "payroll", "employer", "en plantilla", "empleo de día" → employee; "freelance business", "my business", "side business", "mi negocio", "por cuenta propia" → self-employed; "business"/"negocio" only with an owner) count only in the user's clause, never between the operator and the anchor ("before my freelance business Acme" describes the anchor). They filter candidates (never the anchor) only when every competing trusted episode has a known slot; otherwise told;
+    - **no cue word, an employer anchor:** allowed only when every clause of the question passes the subject check ("Before Caldera Tools, who fixed my laptop?" stays refused);
+    - **verbs with their frame:** "employed me", "hired me", "me contrató", "me tenía", "me empleaba"; never bare "hire", "pay" or "call" ("Which firm did I hire in 2021?" stays refused);
+    - **operator words:** "preceded", "precedió"; "still", "ongoing", "sigo", "sigue", "todavía" (current); "next", "last", "siguiente", "último" next to before / after;
+    - **verbless questions:** a clause of only owners, cue, slot and operator words takes an adverb without a wh-word; a yes/no question still doesn't;
+    - **an anchor's date:** a time preposition and a date after the anchor pick the anchor's episode whose stated boundary (start for join and return words, end for leave words) the date overlaps; none, several, or a clash with an episode cue: told;
+    - **a leading date clause** ("In 2021, ¿qué empresa me tenía en plantilla?"): the rest checked as the subject; "In 2021, where did I work before Acme?" refuses;
+    - the why line's operator words and a check that slot words name the registry's slot values.
+  - **Records: every record is re-gated.** The pipeline and episode changes reach person resolution too (date cues, `sole_known` holders), so `batching` goes to `pipeline=2` (§11.10) and the new words go in the registry, which moves its fingerprint. The person pool, client and the 13d attributes records are re-gated at the same commit. One PR, code and records, so main never ships with records voided.
+  - **Before the freeze:**
+    - a per-question expected-outcome table for work13, mixed and H2 on gold plays and the recorded mixed replay;
+    - a paraphrase set split by story: GPT-6-Astra rewrites questions of half the stories for tuning; Fable 5.2 writes the held-out half's wordings and adversarial negatives for each new capability; none of it in the authoring directory;
+    - the rule: below 95% on the tuned sets, or 90% on the held-out half, or any wrong answer, and I report before freezing.
+  - **Freeze and blind sets:** `test.sh` green, Astra and Fable diff reviews taken, merged with origin/main, `sh scripts/facts_freeze.sh write --force`. GPT-6-Astra writes a fresh work set and canary with the existing scripts (work13 and canary13 move to `fixtures/retired-13a2-r2/`); I read only counts and problem lists. Both canned plays must give 0 wrong answers.
+  - **Live runs** (the author's go-ahead, with the count), Claude Haiku 5.5 through Claude Code, `effort=low`, `limit=internal`:
+    - **A,** about 900 calls: the fresh work set and mixed (both groups), two reads each; the canary once (informative). Decides works at and the timeline. If it misses, stop: nothing merges, the author decides.
+    - **B,** about 2,700 calls, only after A passes: main, astra and persons (people), two reads; 13d's answer gates on Haiku and Terra. Then `qualify.py scores`, `records --write`, `answer-records`, `verify`.
+  - **Bridges** stay off: their record needs 13d's answer gates measured with a timeline record, a later step with its own go-ahead.
+  - **Specs:** ADR-0032 amendment (the stated rename; untrusted-only answers told; the gate decision), memory processing §11.4–§11.7, §11.9, §11.10, this plan, the CHANGELOG.
+  - **Expected:** both reviewers expect timeline coverage near the 90% line even on the tuned sets (Fable: about 88–92% on work13). The fresh blind set may miss.
+  - *Status (20 November 2026), built, before the freeze* (the author's decisions: the timeline's measures judge untrusted-only facts apart, "Yes, amend it"; the coverage target waived, "Waive the target"):
+    - **Built as planned,** with the reviews' conditions: the measurement fixes; the never-denial (stored with the denial, either order, gone with it; the never-word must share the denied name's sentence, which mixed's port check caught); the placeholder fold; an import's "current"; the stated rename (Your Timeline shows "Lattice Harbor / Lattice Harbor Labs"); answers resting on untrusted text told; the client-dates prompt line; `pipeline=2`; the grammar (memory processing §11.7's "Widened in 13e.1"), every word in the registry. Tests: `FactsTimelineRoundTests`, `FactsNeverDenialStoreTests`, the refusal tests' new expectations, `test_qualify.py`'s measures and waiver.
+    - **Every record voided:** `facts-qualification.json` is empty until the gate runs, so nothing ships (the tripwires assert it); the search and answer mechanism tests run on every declared use meanwhile.
+    - **Development data, 0 wrong answers and 0 negatives triggered on all of it** (after the diff review's tightening, below):
+
+      | Set | before | after |
+      |---|---|---|
+      | work13 (retired) on its labels | 16 of 51 | 45 of 51 |
+      | mixed, the recorded calls (old prompt) | 16 of 28 | 24 of 28 |
+      | Spike H2 | 2 of 22 | 2 of 22 |
+      | GPT-6-Astra's rewordings (tuned on) | | work 69 of 81, mixed 32 of 48 |
+      | Fable 5.2's held-out set: read once at 46/72 and 17/36, then tuned on | | work 43 of 72, mixed 32 of 36 |
+      | GPT-5.6-Terra's fresh set, read once at 39/72 and 18/36 (before the tightening) | | work 33 of 72 (46%), mixed 16 of 36 (44%) |
+
+      Fable's and Terra's adversarial negatives, and both diff reviews' probes (about 80 questions), are all quiet. Mixed's told answers on the recorded calls are mostly the client-dates conflict the new prompt line addresses.
+    - **The diff review, round 1** (GPT-6-Astra and Fable 5.2, both "request changes"): the widened grammar answered questions that weren't about where you worked ("Which firm is still handling my taxes?", "Who was my employee in 2019?", "What was my job when I left X?" answered with the next job), and yes/no questions; the slot filter let the anchor's other kind be a candidate; trust was checked per entity, not per answering episode; a cue that couldn't be met was overridden by a date; "no longer … never" made a never-denial; a second denial and a memory's second denial weren't stored; the fold crossed sentences and negations; rename ids differed between search, People and the timeline; duplicate episodes scored as fragments; the waiver had no floor. All taken: memory processing §11.7's "Widened in 13e.1" now checks every word of the question, requires a question that asks which, keeps lead and return-cue words out of the user's clause, and needs a noun of the predicate beside the cue-bound words. Their counterexamples are `FactsTimelineRoundReviewTests`.
+    - **Port fidelity passes:** 13 known differences no longer occur (removed), four new ones are the grammar failing closed (`intent`), and one timeline aggregate moved, to confirm by the author: mixed recorded −32.14 → −3.57. H2 stays at the accepted −22.73. The person replays' links are unchanged.
+    - **The diff review, round 2** (both "request changes"): event verbs in a year ("Which company did I join in 2019?" answered as held then), "who" and "what … at work" questions about other people or things, "previous … in 2020", date anchors without the per-episode trust check, qualified "never"s ("before 2020", "full-time", "my brother"), the fold across "and" or "instead of", a merge dropping the never tombstone, rename ids in search admission, and the waiver's version binding in Python. All taken: the question must ask for the organization (`ask_frames`), event words refuse a year, current or previous, a never-denial has two fixed shapes with nothing else in its clause, the fold needs the link right after a self-employment phrase, merges keep the tombstone and reach the merged entity's agent claims, search admits and spares a stated rename's other names, and both sides bind the waiver to the registry version (none named waives nothing) with a floor of at least 40%.
+    - **Not yet:** the Astra and Fable diff reviews, the freeze, the fresh blind sets, the live runs (the author's go-ahead), the records.
+  - *Status (21 November 2026), frozen and run; the timeline missed:*
+    - **Frozen** at ceb9d97 (pushed with 13e.2's records), with fresh blind sets by GPT-6-Astra.
+    - **The canary's c04-q1** is a known issue, by the author's decision. A stated possible overlap is answered by the same-year hand-over rule.
+    - **Phase A** (Claude Haiku 5.5, 737 calls, 0 failed):
+      - works at {recorded, linked}: 98.3% and 98.9%, passing;
+      - client: passing;
+      - the timeline: missing. 2 and 1 wrong answers (stated renames not marked by the live read), 5 and 4 wrong facts (also a Spanish never-denial that didn't reach the agent's claim), and decidable coverage 37.5% and 39.6%, under the 40% floor.
+    - **Stopped there,** as planned. Phase B ran later, as 13e.2's records step.
+    - **The author then decided to embrace LLMs more,** which led to Spike T and 13e.2. This step's time model and store are 13e.2's base; its grammar stays for plain search only; its timeline record is never written.
+- [ ] **13e.2 The model answers, the time model checks** (21 November 2026; ADR-0032's amendment of that date; evidence: Spike T, [spike results](spike-results.md#spike-t-answers-checked-by-the-time-model)). Goal: works at's *timeline* use on, on Claude Haiku 5.5 and GPT-5.6-Terra, with the person pool, client and works at {recorded, linked} re-qualified on 13e.1's base. About 3½ weekends and about 4,300 calls in two batches, each on the author's go-ahead.
+  - **The base:** 13e.1's code (ceb9d97), which Spike T measured.
+    - After Phase B, no registry entry, extraction prompt or pipeline revision changes. If one must, Phase A and Phase B both run again. The stint and operator cues 13e.2 needs are already in the registry.
+    - Rejected: re-scoring 13a.2's evidence on main (99.5% under the amended scorer, 97.0% under the old one). It would ship works at {linked} on a time model and store the spike didn't measure, and without the never-denial.
+  - **1. Spec** (this change): ADR-0032 and ADR-0028 amended, memory processing §10.3–§10.6 and §11.6–§11.11, the requirements (FR-F-03, FR-F-04), model providers, the companion protocol (`check` on claims, the `checked` capability), UX Mac and iPhone, this entry, and Spike T's files and raw records. Reviewed by GPT-6-Astra and Fable 5.2, twice.
+  - **2. Records on 13e.1's base** (about 1,700 calls):
+    - Phase B from a clean checkout of ceb9d97 (main, astra and persons, people group, two reads), so its manifests share Phase A's commit; the spike's harness edits land after it;
+    - then port fidelity, `qualify.py scores` with Phase A's reads, `records --write` and `verify`;
+    - expected records: the person pool {recorded, linked}, client {recorded} and works at {recorded, linked}. No timeline record;
+    - the records PR merges 13e.1's code with no timeline use;
+    - 13d's *attributes* records lapse with the registry, so person attributes are off on the author's vault from this PR until step 4;
+    - a miss stops here, and the author decides.
+    - *Status (21 November 2026), done* (the author: "Yes, run Phase B"):
+      - **Phase B** from a clean checkout of ceb9d97: main, astra and persons, people group, two reads, Claude Haiku 5.5 through Claude Code; 1,339 calls, 0 failed, every run complete and settled, the exact model id on every response.
+      - **Scores** with Phase A's reads: the person pool full basis 100% both reads (476 and 474), recall 95.4% and 94.6%; works at linked 98.3% and 98.9%; client 0 clients or vendors misfiled. The timeline: no record (decidable 14 and 15 of 48, 2 and 1 wrong answers), as planned.
+      - **Port fidelity** passes (0 unexplained). `records --write` wrote three records (the person pool {recorded, linked}, client {recorded}, works at {recorded, linked}) and their evidence in `spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/`; 13a.2's voided evidence moved to `results-13a2/gates-voided-13e1/`. `verify` passes.
+      - **The five tripwires** assert what ships (Haiku for both groups; Opus falls back to it; no attributes, timeline or bridges), and the freeze was rewritten with `--force` for those three test files only.
+  - **3. Code** (its own branch from the records PR; it changes no registry entry, extraction prompt or pipeline revision):
+    - **`TimelineCheck`:** a validated `Comparison` (subject, predicate, aliased entities, one answer per claim), the time model called directly, the trusted graph (§11.9's untrusted evidence left out, corrections and manual entries kept) and the full graph, the local cross-check for cloud answers, "not sure" for several stints without a cue, and a verdict with the basis, ids and reason.
+    - **"A check is owed":** `made`, or citing a memory that came in only through the rows, or naming a *timeline* entity with an operator or time cue in the search or claim. A missing or invalid comparison then gives "not sure"; other claims are marked as before.
+    - **The rows builder:** trusted episodes from the sendable projection, with provenance; trusted cited memories, ordered and capped; the secret scanner and send-time revalidation.
+    - **`SearchAnswerer`:** the rows, a comparison per claim, the prompt's rows and comparison rules (a new prompt version), code-worded checked lines.
+    - **After the call:** verdicts and marking, code's line in place of a checked claim's text, and Activity counts (`checked`, `agreed`, `markedTrusted`, `notSure`, `checkDropped`).
+    - **Elsewhere:**
+      - no rows for Apple on-device or local engines;
+      - automatic answers keep their share of the cap;
+      - the query plan's timeline choice is no longer used by answers, and bridges are retired;
+      - the iPhone gets the `checked` capability and `check`. A phone without it gets no rows. Held answers are still dropped when the facts revision changes.
+    - **Tests:**
+      - the check: agree, tie, possible overlap, ambiguous anchor, several stints, an untrusted-only answer, a dispute only untrusted text makes (agent, import, shared), disagree, missing and invalid comparisons, someone else's job, and title, coworker, how-long and list questions that owe no check;
+      - privacy: paired vaults differing only above the limit;
+      - marking from labelled cases;
+      - the direct time-model call against Spike T's canonical-text path on round 2's comparisons;
+      - a scripted-model fixture.
+    - **The Swift harness records live calls,** so every gate read replays.
+    - **Diff review:** GPT-6-Astra and Fable 5.2.
+  - **4. The *timeline* gate** (about 2,600 calls):
+    - **Freeze:** code, prompts, the scoring script, the denominators and the label rule.
+    - **GPT-6-Astra's set:** 24 stories; at least 50 decidable, 50 undecidable (at least 4 each of rehire, possible overlap, same-year hand-over, agent competitor, rename and exact day in a year) and 40 negative questions; about 300 fillers; labels for time-relative questions and for marking.
+    - **One recorded live Haiku read** through the Swift extractor.
+    - **Answers:** through the real `SearchAnswerer` and the app's search, Haiku and Terra, with rows and checks against the plain arm.
+    - **Judging:** every answer blind (Opus); a fresh Astra adjudicates disputed labels and a sample of successes.
+    - **13d's answer gates** on the new prompt.
+    - **Records:** works at {timeline} and the person *attributes*, per answer engine, keyed by the answer model and prompt version.
+  - **5. On during 13e:** the router uses the rows when the records exist; 13e's review checks 10 timeline answers on the author's vault.
+  - **Later:**
+    - extraction-side interpretations (`same_as`, `denies` from the model), for the live misses on renames;
+    - a stated possible overlap blocking the same-year hand-over;
+    - person rows (the partner timeline);
+    - agents getting rows, as a separate decision.
 - [ ] **Review a fixed sample after two weeks:** 30 links, 10 timeline answers, and every `sole_known` link on the author's vault, reviewed privately. Any wrong one turns that predicate's use, and everything downstream of it, off until fixed.
 - [ ] **Exit:** the sample passes, or the failing uses are off and a fix is planned. The default stays off (ADR-0032 decision 3); changing it would be an ADR amendment.
 

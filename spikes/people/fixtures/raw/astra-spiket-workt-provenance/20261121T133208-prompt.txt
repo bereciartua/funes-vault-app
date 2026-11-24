@@ -1,0 +1,36 @@
+You wrote the attached test set (stories.json in the working directory) for this brief:
+
+<brief>
+You are writing a frozen, blind test set for a feature of Funes Vault, a private personal-memory app on the Mac. Everything is invented.
+
+THE FEATURE (work history). The vault holds short memories about the user (choose an invented name; gender never stated; agents' notes may use the name or "the user"). Memories arrive over time: captures the user writes, notes an AI agent saved about the user (third person; Funes trusts them less: they must never end or reorder a job the user's own notes state), and old notes the user imports. A language model reads each memory and records the user's own jobs: the organization (an employer, or the user's own freelance business), the user's title, and start and end dates, "before X" and "after leaving X", exactly as the memory writes them; and the organizations the user did freelance work for (clients). Code then builds the user's timeline of jobs and answers the user's questions about it, typed into a search field. It must never guess: when the memories can't decide, it says so. Concurrent jobs (a day job and a side business) are separate tracks; one doesn't end the other.
+
+WRITE 10 to 12 stories (ids t01…t12), each 5 to 9 memories in arrival order, dated YYYY-MM-DD between 2014-01-01 and 2026-10-31, with 40 to 55 queries in all. Across the set cover, each SEVERAL times, and tag each story with what it covers (traps):
+- untrusted_end: an agent's note that claims the user left a job, or started a new one, that the user's own notes contradict or never mention;
+- concurrent_slots: two jobs at once (a day job and a freelance business), where a question about one must not be answered from the other;
+- rehire: leaving an employer and rejoining it later; promotion: a new title within one job; renamed: a company renamed or written two ways ("Acme" / "Acme Inc.", "also called");
+- freelance_clients: a freelance period with clients (clients are not employers); vendor: companies the user only buys from or uses (an airline, a coworking space, an accountant's firm), named in work contexts;
+- gap: a gap (study, a sabbatical, looking for work); undated_order: memories that only say "before X" or "after leaving X"; precision: dates at different precision ("2019", "March 2019", "15 March 2019");
+- import: an old note imported recently, about the past; spanish: Spanish or mixed Spanish-English memories and questions;
+- negative_wording: questions that use "before" / "after" or a company name without asking about the user's job.
+Some memories also mention people (a manager, colleagues, family) with their relation to the user, as people do. Mark one or two memories "restricted" (very private, e.g. a salary negotiation); the rest "low" or "internal".
+
+QUERIES, 4 to 6 per story, as the user would type them, worded naturally and variously, as different people would phrase them (paraphrases welcome): kinds before (the job before an organization), after (the job after one), year (where the user worked at a date), current, previous (the user's previous job), role_in_stint (a question about the user's title inside one job, not a timeline question), negative (as above), no_answer (a job question the story can't answer). answer_org: the organization a correct answer names (the timeline's org, exactly), or "" when the story can't decide it, or for negative, role_in_stint and no_answer. At least 20 queries must be decidable (answer_org not ""), and AT LEAST 30 must be UNDECIDABLE timeline questions (kinds before, after, year, current or previous, answer_org ""): the memories genuinely can't tell, for example two jobs that may overlap and the user says they can't remember, a hand-over within the same year or month where either order is possible, two jobs both described as current, an anchor that matches two stints of a rehire, an undated job that could sit anywhere, or only an agent's note says it. Make the undecidable ones look as answerable as the decidable ones; a careful human reader must agree the story can't decide them. Weight the traps to renamed, rehire, concurrent_slots, untrusted_end, precision, undated_order and spanish.
+
+FORMAT, per story:
+- people: every person (not the user): id, names (every way the story writes their name; empty if never named), and for a person never named, group_type and group_label (relation type and the word used); otherwise null.
+- memories: id (m1…), text, written, source, sensitivity, and:
+  - names: every name in the text that refers to a PERSON: surface (exactly as written, a substring of text), person (a people id; "user" for the user's own name; "?" when it can't be told which of several same-named people is meant, with their ids in "of"; otherwise "of" is empty). Company names are not person names.
+  - roles: every phrase where the user's own relation to a PERSON is referred to by role ("My manager", "mi jefa", "the user's colleague"): surface (exact, starting at the owner), person, resolvable (could a careful reader of the WHOLE story tell who it is?). Not job phrases like "my job".
+  - facts: the user's relations to people this memory states: person (id or null), type, label (the word used, or null), status, polarity, deceased, only, count.
+  - organizations: every organization named in the text: surface (as written), org (one canonical name per organization across the story), relation (employer, self_employed, client, vendor, or other: e.g. a relative's employer).
+  - jobs: the user's own jobs and client engagements THIS memory states, each with org (as written in this memory), kind, title (as written, or null), status (current, former, or unknown), polarity (negative for "I never worked at X"), and start, end, time, preceded_by, followed_by, also_called EXACTLY as the memory writes them (a substring of text: "March 2019", "2019", "Acme"), or null when the memory doesn't say. Never a date the memory doesn't write.
+  - not_linked: people this memory must NOT be linked to.
+- orders: zero or one other arrival order worth testing (all memory ids), only where the order must not change the answers.
+- timeline: the user's true jobs, client engagements, gaps (kind study for a study or break) and vendors (kind vendor, start/end ""): org (canonical), role, start and end as you intend them (YYYY, YYYY-MM or YYYY-MM-DD; end "" if current), kind, and the ids of the memories that state it.
+- queries: as above.
+
+Do not look for or use any other files in the workspace. Return JSON matching the schema.
+</brief>
+
+A script checked its structure and labels and found the problems listed in notes.md in the working directory. Fix exactly those: correct the labels, or reword a memory's text when that is the cleaner fix (keep surfaces exact substrings, and dates in jobs exactly as written). Keep every story and memory id, and everything the problems don't touch. Return the WHOLE corrected set as JSON matching the schema. Read only stories.json and notes.md.

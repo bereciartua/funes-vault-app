@@ -1,0 +1,1861 @@
+[
+{
+"question": "Where did I move after leaving Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 4497
+},
+{
+"question": "What did I get after leaving Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 4660
+},
+{
+"question": "What did I keep after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 4733
+},
+{
+"question": "What did I take after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3952
+},
+{
+"question": "Who was I with before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2641
+},
+{
+"question": "What did I run before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 2831
+},
+{
+"question": "Which firm is still handling my taxes?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 4008
+},
+{
+"question": "What work do I still have to finish today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3330
+},
+{
+"question": "Which business still owes me a refund?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2827
+},
+{
+"question": "Is my business still profitable?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2548
+},
+{
+"question": "What company did I call today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2476
+},
+{
+"question": "What work do I have today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3464
+},
+{
+"question": "¿Qué empresa era antes mi cliente?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2413
+},
+{
+"question": "Does my job still pay well?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2486
+},
+{
+"question": "Is the company still hiring?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2472
+},
+{
+"question": "In 2019, what did I set up at work?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2526
+},
+{
+"question": "Which company did I found in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 2837
+},
+{
+"question": "What's still on my work laptop?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2279
+},
+{
+"question": "What did I work on before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2248
+},
+{
+"question": "Who did I work with before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2769
+},
+{
+"question": "¿Con quién trabajaba antes de Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2788
+},
+{
+"question": "¿Qué empresa sigue debiéndome dinero?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2413
+},
+{
+"question": "Who came after me at Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3018
+},
+{
+"question": "Who was there before me at Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2848
+},
+{
+"question": "Who did I freelance for in 2018?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2018",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 3735
+},
+{
+"question": "Who was on my payroll in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2489
+},
+{
+"question": "Who was my employee in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2430
+},
+{
+"question": "Who did I have on payroll in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 3586
+},
+{
+"question": "Where did I work after my Copper Delta job started in 2016?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3638
+},
+{
+"question": "Where did I work before my Copper Delta job ended in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "\"\"",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3177
+},
+{
+"question": "¿A qué empleo precedió Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3105
+},
+{
+"question": "Which job was preceded by Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3556
+},
+{
+"question": "What was my last day at work?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3196
+},
+{
+"question": "Who is now my employer's CEO?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3330
+},
+{
+"question": "Once I left Copper Delta, where did I move?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2949
+},
+{
+"question": "Upon leaving Copper Delta, what did I get?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3250
+},
+{
+"question": "After Copper Delta, what did I get?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3650
+},
+{
+"question": "Who paid me after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3252
+},
+{
+"question": "Who took over my business after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 4274
+},
+{
+"question": "Which company took me to court in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2411
+},
+{
+"question": "Is work still stressful?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2771
+},
+{
+"question": "What job am I still waiting to hear back from?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2641
+},
+{
+"question": "Which employer still has my pension?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3673
+},
+{
+"question": "What freelance work is still unpaid?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3221
+},
+{
+"question": "Which company is active on my account today?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2970
+},
+{
+"question": "What am I working on today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2262
+},
+{
+"question": "What am I working on now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2015
+},
+{
+"question": "Who am I working with now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3326
+},
+{
+"question": "Which business did I open an account with in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3038
+},
+{
+"question": "Where did I go on my first day after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2484
+},
+{
+"question": "Where was my employer based before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 4318
+},
+{
+"question": "Which company was I at when I left Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3029
+},
+{
+"question": "Where did I work when I left Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2689
+},
+{
+"question": "¿Dónde trabajé cuando dejé Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2785
+},
+{
+"question": "What did I do when I quit Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3035
+},
+{
+"question": "Who was following me at Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3195
+},
+{
+"question": "Did I work at Brindle before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2489
+},
+{
+"question": "Which one came first, Brindle or Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 5508
+},
+{
+"question": "Employee of the month, 2018",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2774
+},
+{
+"question": "Who was employee of the month in 2018?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2917
+},
+{
+"question": "What business did I run from my place before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 3629
+},
+{
+"question": "What did I go by before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2625
+},
+{
+"question": "What do I do for work these days?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2826
+},
+{
+"question": "What did I previously call my business?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 5080
+},
+{
+"question": "Which company did I call before Alder Signal?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Alder Signal",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3353
+},
+{
+"question": "¿A quién llamaba mi empresa antes de Alder Signal?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3304
+},
+{
+"question": "Am I still employed?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2548
+},
+{
+"question": "¿Sigo trabajando?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3163
+},
+{
+"question": "How does my business operate now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 4622
+},
+{
+"question": "Did I work in 2017?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2017",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3898
+},
+{
+"question": "Which company did I join in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3815
+},
+{
+"question": "Which company did I leave in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2841
+},
+{
+"question": "Where did I start working in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "\"\"",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2597
+},
+{
+"question": "Which company did I return to in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2417
+},
+{
+"question": "¿Qué empresa dejé en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3228
+},
+{
+"question": "¿En qué empresa entré en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3374
+},
+{
+"question": "Which company did I join last?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3567
+},
+{
+"question": "What did I leave at work today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2628
+},
+{
+"question": "What did I do at work today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2885
+},
+{
+"question": "What job do I have to do today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2471
+},
+{
+"question": "What is new at my company today?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2635
+},
+{
+"question": "Who is at my company now?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2905
+},
+{
+"question": "Who is running my company now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 3094
+},
+{
+"question": "What is my company working on now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3083
+},
+{
+"question": "Which company is my employer working with now?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2665
+},
+{
+"question": "¿Qué me dejé en el trabajo hoy?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2719
+},
+{
+"question": "¿Qué trabajo tengo hoy?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3224
+},
+{
+"question": "Who left the company in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3176
+},
+{
+"question": "Who joined the company in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2802
+},
+{
+"question": "Who took my job in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2917
+},
+{
+"question": "Who was behind my company in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2971
+},
+{
+"question": "What did I work on at my job in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2992
+},
+{
+"question": "¿Quién se fue de la empresa en 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 3172
+},
+{
+"question": "¿Con quién trabajaba en la empresa en 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2858
+},
+{
+"question": "Who had my job before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3076
+},
+{
+"question": "Who held my role before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3437
+},
+{
+"question": "Who took my role after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3136
+},
+{
+"question": "Who was at the company with me before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3025
+},
+{
+"question": "Where did I go after work at Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2373
+},
+{
+"question": "Where is my company now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2443
+},
+{
+"question": "Who worked for my employer in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 3053
+},
+{
+"question": "¿Quién trabajaba para mi empresa en 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 2547
+},
+{
+"question": "Who was my employer's employer in 2019?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3341
+},
+{
+"question": "What was my previous employer in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "\"\"",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2900
+},
+{
+"question": "¿Cuál era mi empleador anterior en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3050
+},
+{
+"question": "¿De qué empresa me fui en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "\"\"",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 5130
+},
+{
+"question": "Whose company did I work for in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3565
+},
+{
+"question": "Where is my last job now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3344
+},
+{
+"question": "Which job did I take in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 4207
+},
+{
+"question": "What was the last job I took?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 3838
+},
+{
+"question": "What job did I take last?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3486
+},
+{
+"question": "Which company did I set up in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "\"\"",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "self_employed"
+},
+"ms": 3128
+},
+{
+"question": "Which company did I move from in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3218
+},
+{
+"question": "Which company did I come from in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3546
+},
+{
+"question": "¿A qué empresa fui en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2738
+},
+{
+"question": "Which company did I leave after Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2423
+},
+{
+"question": "¿Qué empresa dejé después de Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2799
+},
+{
+"question": "Which company did I join after 2018?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "after",
+"anchor_org": "",
+"anchor_date": "2018",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2338
+},
+{
+"question": "Which company did I leave before 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3435
+},
+{
+"question": "What do I do at my current job?",
+"ok": true,
+"content": {
+"about_user_work": false,
+"operator": "none",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3333
+},
+{
+"question": "What did I do at my last job?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "employee"
+},
+"ms": 2853
+},
+{
+"question": "What did I do at my job in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2273
+},
+{
+"question": "What did I do at my job before Copper Delta?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2264
+},
+{
+"question": "¿Qué fue de mi empresa anterior?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "employee"
+},
+"ms": 4073
+},
+{
+"question": "¿Qué tengo en el trabajo ahora?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3499
+},
+{
+"question": "¿En qué trabajo ahora?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3382
+},
+{
+"question": "What was my role in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2292
+},
+{
+"question": "What was my second job in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 3048
+},
+{
+"question": "Who did I work for at my last job?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3035
+},
+{
+"question": "Who did I work for at my company in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3053
+},
+{
+"question": "Where do I work from now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2826
+},
+{
+"question": "Where am I currently working from?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2558
+},
+{
+"question": "Where is my employer now?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2406
+},
+{
+"question": "Where was my job in 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2636
+},
+{
+"question": "¿Dónde estaba mi empresa en 2019?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "in",
+"anchor_org": "",
+"anchor_date": "2019",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3097
+},
+{
+"question": "¿Cómo era mi trabajo anterior?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "previous",
+"anchor_org": "\"\"",
+"anchor_date": "\"\"",
+"end_date": "\"\"",
+"kind": "any"
+},
+"ms": 3989
+},
+{
+"question": "¿Sigo en mi empresa?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2805
+},
+{
+"question": "Where did I work before Copper Delta moved?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 3510
+},
+{
+"question": "Where did I work before Copper Delta opened?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Copper Delta",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2298
+},
+{
+"question": "Which company is still working for me?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2883
+},
+{
+"question": "¿Qué empresa sigue trabajando para mí?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "current",
+"anchor_org": "",
+"anchor_date": "",
+"end_date": "",
+"kind": "any"
+},
+"ms": 2824
+},
+{
+"question": "What was my first day job before Alder Signal?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Alder Signal",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2896
+},
+{
+"question": "¿Cuál fue mi primer empleo de día antes de Alder Signal?",
+"ok": true,
+"content": {
+"about_user_work": true,
+"operator": "before",
+"anchor_org": "Alder Signal",
+"anchor_date": "",
+"end_date": "",
+"kind": "employee"
+},
+"ms": 2998
+}
+]

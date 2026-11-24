@@ -1,0 +1,3076 @@
+{
+ "user": {
+  "name": "Ari Vale",
+  "aliases": [
+   "Ari",
+   "Ari Vale"
+  ]
+ },
+ "author": "gpt-6-astra",
+ "stories": [
+  {
+   "id": "t01",
+   "title": "Two Cedar stints and an unsupported departure",
+   "traps": [
+    "rehire",
+    "renamed",
+    "promotion",
+    "precision",
+    "import",
+    "untrusted_end"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Robin"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "My first employment at Cedar Metrics, also called Cedar, ran from February 2016 through June 2018. I started as an analyst and became senior analyst in March 2017.",
+     "written": "2018-07-02",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Cedar",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "title": "analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "February 2016",
+       "end": "June 2018",
+       "also_called": "Cedar"
+      },
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "title": "senior analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "March 2017",
+       "end": "June 2018",
+       "also_called": "Cedar"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "I worked at Flint Works as a planning specialist from July 2018 through January 2020. That was my only job between my two Cedar Metrics stints.",
+     "written": "2020-02-01",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Flint Works",
+       "org": "Flint Works",
+       "relation": "employer"
+      },
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Flint Works",
+       "kind": "employee",
+       "title": "planning specialist",
+       "status": "former",
+       "polarity": "positive",
+       "start": "July 2018",
+       "end": "January 2020",
+       "preceded_by": "Cedar Metrics",
+       "followed_by": "Cedar Metrics"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "Old journal entry dated 3 February 2020: today I rejoined Cedar Metrics as a research lead.",
+     "written": "2025-08-12",
+     "source": "import",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "title": "research lead",
+       "status": "current",
+       "polarity": "positive",
+       "start": "3 February 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "I'm still continuously employed at Cedar Metrics as research lead since my return. My manager Robin approved next quarter's plan.",
+     "written": "2026-09-10",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Robin",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My manager",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "manager",
+       "label": "manager",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "title": "research lead",
+       "status": "current",
+       "polarity": "positive"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Ari Vale left Cedar Metrics in December 2025 and started at Gull Systems as director in January 2026.",
+     "written": "2026-10-05",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Ari Vale",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Gull Systems",
+       "org": "Gull Systems",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "December 2025",
+       "followed_by": "Gull Systems"
+      },
+      {
+       "org": "Gull Systems",
+       "kind": "employee",
+       "title": "director",
+       "status": "current",
+       "polarity": "positive",
+       "start": "January 2026",
+       "preceded_by": "Cedar Metrics"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m3",
+     "m1",
+     "m4",
+     "m2"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Cedar Metrics",
+     "role": "analyst; promoted to senior analyst",
+     "start": "2016-02",
+     "end": "2018-06",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Flint Works",
+     "role": "planning specialist",
+     "start": "2018-07",
+     "end": "2020-01",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Cedar Metrics",
+     "role": "research lead",
+     "start": "2020-02-03",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m3",
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "Where was I employed in April 2017?",
+     "answer_org": "Cedar Metrics"
+    },
+    {
+     "id": "q2",
+     "kind": "before",
+     "query": "What was my job immediately before returning to Cedar in 2020?",
+     "answer_org": "Flint Works"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "Where did I work before Cedar Metrics?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "Which employer came after Cedar?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "before",
+     "query": "Who employed me right before my first Cedar stint?",
+     "answer_org": ""
+    },
+    {
+     "id": "q6",
+     "kind": "role_in_stint",
+     "query": "What title did I get during my first Cedar stint?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t02",
+   "title": "A June handover beside a continuing studio",
+   "traps": [
+    "concurrent_slots",
+    "freelance_clients",
+    "vendor",
+    "precision",
+    "renamed",
+    "spanish",
+    "negative_wording"
+   ],
+   "people": {},
+   "memories": [
+    {
+     "id": "m1",
+     "text": "I was an operations analyst at Lumen Transit from April 2018 until June 2021.",
+     "written": "2021-07-02",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Lumen Transit",
+       "org": "Lumen Transit",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Lumen Transit",
+       "kind": "employee",
+       "title": "operations analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "April 2018",
+       "end": "June 2021"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "My day job at Orchard Labs started in June 2021. I remain there as a service designer.",
+     "written": "2026-08-01",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Orchard Labs",
+       "org": "Orchard Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Orchard Labs",
+       "kind": "employee",
+       "title": "service designer",
+       "status": "current",
+       "polarity": "positive",
+       "start": "June 2021"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "I founded my freelance business Moss Desk in 2019 and still run it as an illustrator alongside my day job. I renamed the same business Moss Studio in 2023; it was not a new job.",
+     "written": "2026-08-02",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Moss Desk",
+       "org": "Moss Studio",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Moss Studio",
+       "org": "Moss Studio",
+       "relation": "self_employed"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Moss Desk",
+       "kind": "self_employed",
+       "title": "illustrator",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2019",
+       "also_called": "Moss Studio"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Through Moss Studio I illustrated for my client Fern Books from February 2024 through May 2024. I bought workspace access from Harbor Rooms for that project.",
+     "written": "2026-08-03",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Moss Studio",
+       "org": "Moss Studio",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Fern Books",
+       "org": "Fern Books",
+       "relation": "client"
+      },
+      {
+       "surface": "Harbor Rooms",
+       "org": "Harbor Rooms",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Moss Studio",
+       "kind": "self_employed",
+       "status": "unknown",
+       "polarity": "positive"
+      },
+      {
+       "org": "Fern Books",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "start": "February 2024",
+       "end": "May 2024"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "No recuerdo los días de junio de 2021: Lumen Transit pudo terminar antes o después de empezar Orchard Labs. Pudo haber solapamiento o días sin empleo principal; no sé más fechas.",
+     "written": "2026-09-15",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Lumen Transit",
+       "org": "Lumen Transit",
+       "relation": "employer"
+      },
+      {
+       "surface": "Orchard Labs",
+       "org": "Orchard Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Lumen Transit",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "time": "junio de 2021"
+      },
+      {
+       "org": "Orchard Labs",
+       "kind": "employee",
+       "status": "unknown",
+       "polarity": "positive",
+       "time": "junio de 2021"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Lumen Transit",
+     "role": "operations analyst",
+     "start": "2018-04",
+     "end": "2021-06",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m5"
+     ]
+    },
+    {
+     "org": "Orchard Labs",
+     "role": "service designer",
+     "start": "2021-06",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m2",
+      "m5"
+     ]
+    },
+    {
+     "org": "Moss Studio",
+     "role": "illustrator",
+     "start": "2019",
+     "end": "",
+     "kind": "self_employed",
+     "memories": [
+      "m3",
+      "m4"
+     ]
+    },
+    {
+     "org": "Fern Books",
+     "role": "illustration client",
+     "start": "2024-02",
+     "end": "2024-05",
+     "kind": "client",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Harbor Rooms",
+     "role": "workspace vendor",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "What was my day-job employer in October 2019?",
+     "answer_org": "Lumen Transit"
+    },
+    {
+     "id": "q2",
+     "kind": "current",
+     "query": "¿Cómo se llama ahora mi negocio freelance?",
+     "answer_org": "Moss Studio"
+    },
+    {
+     "id": "q3",
+     "kind": "year",
+     "query": "Who was my main employer on June 15, 2021?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "current",
+     "query": "What's my current workplace?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "year",
+     "query": "¿Dónde tenía mi empleo principal el 1 de junio de 2021?",
+     "answer_org": ""
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "Does Harbor Rooms open before nine?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t03",
+   "title": "Una salida sin identificar",
+   "traps": [
+    "spanish",
+    "rehire",
+    "renamed",
+    "undated_order",
+    "import",
+    "untrusted_end",
+    "precision",
+    "negative_wording"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Inés"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Mi primer empleo en Solera Tools, también llamada Solera, fue de enero de 2014 a junio de 2016. Mi puesto era analista.",
+     "written": "2016-07-05",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Solera Tools",
+       "org": "Solera Tools",
+       "relation": "employer"
+      },
+      {
+       "surface": "Solera",
+       "org": "Solera Tools",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Solera Tools",
+       "kind": "employee",
+       "title": "analista",
+       "status": "former",
+       "polarity": "positive",
+       "start": "enero de 2014",
+       "end": "junio de 2016",
+       "also_called": "Solera"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "Trabajé en Bruma como especialista de datos del 1 de enero de 2017 al 31 de diciembre de 2018. Inés era mi compañera de trabajo allí.",
+     "written": "2019-01-04",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Inés",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "mi compañera de trabajo",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "colleague",
+       "label": "compañera de trabajo",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Bruma",
+       "org": "Bruma",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Bruma",
+       "kind": "employee",
+       "title": "especialista de datos",
+       "status": "former",
+       "polarity": "positive",
+       "start": "1 de enero de 2017",
+       "end": "31 de diciembre de 2018"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "Volví a Solera Tools en febrero de 2019 como responsable de calidad y salí en noviembre de 2022.",
+     "written": "2022-12-01",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Solera Tools",
+       "org": "Solera Tools",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Solera Tools",
+       "kind": "employee",
+       "title": "responsable de calidad",
+       "status": "former",
+       "polarity": "positive",
+       "start": "febrero de 2019",
+       "end": "noviembre de 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Sin fecha: trabajé brevemente como analista en Nacre Studio tras salir de Solera Tools; no sé cuál de las dos salidas. Sin solapamientos. Mi trabajo actual no consta.",
+     "written": "2026-04-11",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Nacre Studio",
+       "org": "Nacre Studio",
+       "relation": "employer"
+      },
+      {
+       "surface": "Solera Tools",
+       "org": "Solera Tools",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Nacre Studio",
+       "kind": "employee",
+       "title": "analista",
+       "status": "former",
+       "polarity": "positive",
+       "preceded_by": "Solera Tools"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Ari Vale empezó en Nacre Studio en enero de 2023 y sigue trabajando allí como analista.",
+     "written": "2026-05-20",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Ari Vale",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Nacre Studio",
+       "org": "Nacre Studio",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Nacre Studio",
+       "kind": "employee",
+       "title": "analista",
+       "status": "current",
+       "polarity": "positive",
+       "start": "enero de 2023"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m4",
+     "m2",
+     "m1",
+     "m3"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Solera Tools",
+     "role": "analista",
+     "start": "2014-01",
+     "end": "2016-06",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Nacre Studio",
+     "role": "analista",
+     "start": "2016-07",
+     "end": "2016-10",
+     "kind": "employee",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Bruma",
+     "role": "especialista de datos",
+     "start": "2017-01-01",
+     "end": "2018-12-31",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Solera Tools",
+     "role": "responsable de calidad",
+     "start": "2019-02",
+     "end": "2022-11",
+     "kind": "employee",
+     "memories": [
+      "m3"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "¿Dónde trabajaba en mayo de 2015?",
+     "answer_org": "Solera Tools"
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "Mi empresa en septiembre de 2017",
+     "answer_org": "Bruma"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "¿Qué empleo tuve justo antes de Solera?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "Where did I work after leaving Solera Tools?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "current",
+     "query": "¿Cuál es mi empresa actual?",
+     "answer_org": ""
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "¿Qué tipografía usaba Solera antes del cambio de logo?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t04",
+   "title": "Two short jobs somewhere in the same year",
+   "traps": [
+    "precision",
+    "gap",
+    "vendor",
+    "import",
+    "untrusted_end",
+    "undated_order",
+    "negative_wording"
+   ],
+   "people": {},
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Old CV: I held two short, non-overlapping jobs in 2019, as a coordinator at Ash Harbor and as a scheduler at Cobalt House. I no longer know their months or which came first.",
+     "written": "2025-02-10",
+     "source": "import",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Ash Harbor",
+       "org": "Ash Harbor",
+       "relation": "employer"
+      },
+      {
+       "surface": "Cobalt House",
+       "org": "Cobalt House",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Ash Harbor",
+       "kind": "employee",
+       "title": "coordinator",
+       "status": "former",
+       "polarity": "positive",
+       "time": "2019"
+      },
+      {
+       "org": "Cobalt House",
+       "kind": "employee",
+       "title": "scheduler",
+       "status": "former",
+       "polarity": "positive",
+       "time": "2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "I spent all of 2018 in full-time study without a job. The two short positions the following year were my first jobs.",
+     "written": "2025-02-11",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "I had no paid work from January 2020 through December 2021 while looking for work. I paid Ledger Grove for help with my old tax returns; they were my accountants.",
+     "written": "2025-02-12",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Ledger Grove",
+       "org": "Ledger Grove",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "I joined Vale Systems on 10 January 2022 as an operations planner and remain there. It's my only current job; my only other jobs were the two short positions recorded.",
+     "written": "2026-09-01",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Vale Systems",
+       "org": "Vale Systems",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Vale Systems",
+       "kind": "employee",
+       "title": "operations planner",
+       "status": "current",
+       "polarity": "positive",
+       "start": "10 January 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "The user left Ash Harbor in April 2019 and began Cobalt House in May 2019, making that the user's next job.",
+     "written": "2026-09-03",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Ash Harbor",
+       "org": "Ash Harbor",
+       "relation": "employer"
+      },
+      {
+       "surface": "Cobalt House",
+       "org": "Cobalt House",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Ash Harbor",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "April 2019",
+       "followed_by": "Cobalt House"
+      },
+      {
+       "org": "Cobalt House",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "start": "May 2019",
+       "preceded_by": "Ash Harbor"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m1",
+     "m4",
+     "m3",
+     "m2"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Full-time study",
+     "role": "study without employment",
+     "start": "2018-01",
+     "end": "2018-12",
+     "kind": "study",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Cobalt House",
+     "role": "scheduler",
+     "start": "2019-02",
+     "end": "2019-04",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Ash Harbor",
+     "role": "coordinator",
+     "start": "2019-08",
+     "end": "2019-10",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Job search",
+     "role": "no paid work",
+     "start": "2020-01",
+     "end": "2021-12",
+     "kind": "study",
+     "memories": [
+      "m3"
+     ]
+    },
+    {
+     "org": "Ledger Grove",
+     "role": "accounting vendor",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m3"
+     ]
+    },
+    {
+     "org": "Vale Systems",
+     "role": "operations planner",
+     "start": "2022-01-10",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "Where was I working in summer 2023?",
+     "answer_org": "Vale Systems"
+    },
+    {
+     "id": "q2",
+     "kind": "current",
+     "query": "Remind me of my current employer",
+     "answer_org": "Vale Systems"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "What job came immediately before Cobalt House?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "Which employer did I join after Ash Harbor?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "year",
+     "query": "Who employed me on June 15, 2019?",
+     "answer_org": ""
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "Did I pay Ledger Grove before filing my taxes?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t05",
+   "title": "A return to healthcare while the bureau stays open",
+   "traps": [
+    "concurrent_slots",
+    "rehire",
+    "freelance_clients",
+    "renamed",
+    "promotion",
+    "precision"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Casey"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "My first stint at Bracken Health ran from March 2015 through February 2018 as a service analyst.",
+     "written": "2018-03-01",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Bracken Health",
+       "org": "Bracken Health",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Bracken Health",
+       "kind": "employee",
+       "title": "service analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "March 2015",
+       "end": "February 2018"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "I worked at Morrow Clinic as a care systems analyst from March 2018 through August 2020, my only day job between the two Bracken Health stints.",
+     "written": "2020-09-02",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Morrow Clinic",
+       "org": "Morrow Clinic",
+       "relation": "employer"
+      },
+      {
+       "surface": "Bracken Health",
+       "org": "Bracken Health",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Morrow Clinic",
+       "kind": "employee",
+       "title": "care systems analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "March 2018",
+       "end": "August 2020",
+       "preceded_by": "Bracken Health",
+       "followed_by": "Bracken Health"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "I returned to Bracken Health on 7 September 2020 as a service analyst. In April 2022 I was promoted to service design lead without leaving.",
+     "written": "2022-05-03",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Bracken Health",
+       "org": "Bracken Health",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Bracken Health",
+       "kind": "employee",
+       "title": "service analyst",
+       "status": "current",
+       "polarity": "positive",
+       "start": "7 September 2020"
+      },
+      {
+       "org": "Bracken Health",
+       "kind": "employee",
+       "title": "service design lead",
+       "status": "current",
+       "polarity": "positive",
+       "start": "April 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "I've continuously run my side business Drift Desk since 2016 as a designer. It became Drift Bureau in 2021. Grebe Museum was my freelance client from May 2023 through July 2023.",
+     "written": "2026-08-20",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Desk",
+       "org": "Drift Bureau",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Drift Bureau",
+       "org": "Drift Bureau",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Grebe Museum",
+       "org": "Grebe Museum",
+       "relation": "client"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Drift Desk",
+       "kind": "self_employed",
+       "title": "designer",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2016",
+       "also_called": "Drift Bureau"
+      },
+      {
+       "org": "Grebe Museum",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "start": "May 2023",
+       "end": "July 2023"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "My manager Casey and I privately negotiated a salary of 127000 at Bracken Health, still my day job as service design lead. Drift Bureau remains active as my side business.",
+     "written": "2026-09-22",
+     "source": "capture",
+     "sensitivity": "restricted",
+     "names": [
+      {
+       "surface": "Casey",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My manager",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "manager",
+       "label": "manager",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Bracken Health",
+       "org": "Bracken Health",
+       "relation": "employer"
+      },
+      {
+       "surface": "Drift Bureau",
+       "org": "Drift Bureau",
+       "relation": "self_employed"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Bracken Health",
+       "kind": "employee",
+       "title": "service design lead",
+       "status": "current",
+       "polarity": "positive"
+      },
+      {
+       "org": "Drift Bureau",
+       "kind": "self_employed",
+       "status": "current",
+       "polarity": "positive"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Bracken Health",
+     "role": "service analyst",
+     "start": "2015-03",
+     "end": "2018-02",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Morrow Clinic",
+     "role": "care systems analyst",
+     "start": "2018-03",
+     "end": "2020-08",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Bracken Health",
+     "role": "service analyst; promoted to service design lead",
+     "start": "2020-09-07",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m3",
+      "m5"
+     ]
+    },
+    {
+     "org": "Drift Bureau",
+     "role": "designer",
+     "start": "2016",
+     "end": "",
+     "kind": "self_employed",
+     "memories": [
+      "m4",
+      "m5"
+     ]
+    },
+    {
+     "org": "Grebe Museum",
+     "role": "design client",
+     "start": "2023-05",
+     "end": "2023-07",
+     "kind": "client",
+     "memories": [
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "What was my main employer in 2019?",
+     "answer_org": "Morrow Clinic"
+    },
+    {
+     "id": "q2",
+     "kind": "current",
+     "query": "Where is my current day job?",
+     "answer_org": "Bracken Health"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "Which day job did I have before Bracken Health?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "Where did I go after leaving Bracken Health?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "current",
+     "query": "What organization do I currently work at?",
+     "answer_org": ""
+    },
+    {
+     "id": "q6",
+     "kind": "role_in_stint",
+     "query": "What did my title become after the promotion in my second Bracken stint?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t06",
+   "title": "Un empleo entre dos anclas",
+   "traps": [
+    "spanish",
+    "renamed",
+    "undated_order",
+    "precision",
+    "gap",
+    "import",
+    "vendor"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Dani"
+     ]
+    },
+    "p2": {
+     "names": [],
+     "group": [
+      "other_family",
+      "familia"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Trabajé como analista en Vela Norte de 2014 a 2016. En mis papeles también figura como Vela Norte SL; es la misma empresa.",
+     "written": "2016-12-30",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Vela Norte",
+       "org": "Vela Norte",
+       "relation": "employer"
+      },
+      {
+       "surface": "Vela Norte SL",
+       "org": "Vela Norte",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Vela Norte",
+       "kind": "employee",
+       "title": "analista",
+       "status": "former",
+       "polarity": "positive",
+       "start": "2014",
+       "end": "2016",
+       "also_called": "Vela Norte SL"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "Mi empleo en Quilla Analytics fue de marzo de 2017 a julio de 2019 como especialista en métricas.",
+     "written": "2019-08-02",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Quilla Analytics",
+       "org": "Quilla Analytics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Quilla Analytics",
+       "kind": "employee",
+       "title": "especialista en métricas",
+       "status": "former",
+       "polarity": "positive",
+       "start": "marzo de 2017",
+       "end": "julio de 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "Empecé en Rastro Labs el 15 de marzo de 2021 como responsable de operaciones y sigo allí. Mi compañero de trabajo Dani organizó la bienvenida.",
+     "written": "2026-06-18",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [
+      {
+       "surface": "Dani",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "Mi compañero de trabajo",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "colleague",
+       "label": "compañero de trabajo",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Rastro Labs",
+       "org": "Rastro Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Rastro Labs",
+       "kind": "employee",
+       "title": "responsable de operaciones",
+       "status": "current",
+       "polarity": "positive",
+       "start": "15 de marzo de 2021"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Breve empleo de analista en Piedra tras salir de Vela Norte y antes de Rastro Labs; no sé si antes o después de Quilla Analytics. Son mis únicos cuatro empleos; no se solaparon.",
+     "written": "2026-07-01",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Piedra",
+       "org": "Piedra",
+       "relation": "employer"
+      },
+      {
+       "surface": "Vela Norte",
+       "org": "Vela Norte",
+       "relation": "employer"
+      },
+      {
+       "surface": "Rastro Labs",
+       "org": "Rastro Labs",
+       "relation": "employer"
+      },
+      {
+       "surface": "Quilla Analytics",
+       "org": "Quilla Analytics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Piedra",
+       "kind": "employee",
+       "title": "analista",
+       "status": "former",
+       "polarity": "positive",
+       "preceded_by": "Vela Norte",
+       "followed_by": "Rastro Labs"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Durante todo 2020 estudié sin trabajar. Compré vuelos de Mar Abierto Air para visitar a mi familia durante esa pausa.",
+     "written": "2026-07-02",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [
+      {
+       "surface": "mi familia",
+       "person": "p2",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p2",
+       "type": "other_family",
+       "label": "familia",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Mar Abierto Air",
+       "org": "Mar Abierto Air",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Vela Norte",
+     "role": "analista",
+     "start": "2014",
+     "end": "2016",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Piedra",
+     "role": "analista",
+     "start": "2016-10",
+     "end": "2016-12",
+     "kind": "employee",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Quilla Analytics",
+     "role": "especialista en métricas",
+     "start": "2017-03",
+     "end": "2019-07",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Pausa de estudios",
+     "role": "estudios sin empleo",
+     "start": "2020-01",
+     "end": "2020-12",
+     "kind": "study",
+     "memories": [
+      "m5"
+     ]
+    },
+    {
+     "org": "Mar Abierto Air",
+     "role": "proveedor de vuelos",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m5"
+     ]
+    },
+    {
+     "org": "Rastro Labs",
+     "role": "responsable de operaciones",
+     "start": "2021-03-15",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m3"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "¿En qué empresa estaba en 2015?",
+     "answer_org": "Vela Norte"
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "Where was my job in June 2018?",
+     "answer_org": "Quilla Analytics"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "¿Cuál fue mi empleo inmediatamente anterior a Quilla Analytics?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "¿Qué trabajo vino justo después de Quilla Analytics?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "year",
+     "query": "¿Quién me empleaba el 20 de septiembre de 2016?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t07",
+   "title": "The archive ends before the agent's new employer",
+   "traps": [
+    "rehire",
+    "renamed",
+    "untrusted_end",
+    "import",
+    "precision",
+    "promotion"
+   ],
+   "people": {},
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Archived employment record: my first Alder Press job, as an editorial assistant, lasted from February 2014 through November 2016. Alder Press Ltd. is the same employer.",
+     "written": "2025-03-10",
+     "source": "import",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Press",
+       "org": "Alder Press",
+       "relation": "employer"
+      },
+      {
+       "surface": "Alder Press Ltd.",
+       "org": "Alder Press",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Press",
+       "kind": "employee",
+       "title": "editorial assistant",
+       "status": "former",
+       "polarity": "positive",
+       "start": "February 2014",
+       "end": "November 2016",
+       "also_called": "Alder Press Ltd."
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "I worked at Bay Ink as a production editor from January 2017 through December 2019. It was my sole employer between the two Alder Press stints.",
+     "written": "2025-03-11",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Bay Ink",
+       "org": "Bay Ink",
+       "relation": "employer"
+      },
+      {
+       "surface": "Alder Press",
+       "org": "Alder Press",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Bay Ink",
+       "kind": "employee",
+       "title": "production editor",
+       "status": "former",
+       "polarity": "positive",
+       "start": "January 2017",
+       "end": "December 2019",
+       "preceded_by": "Alder Press",
+       "followed_by": "Alder Press"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "My second Alder Press stint began on 6 January 2020 as a production editor and ended on 29 September 2023.",
+     "written": "2025-03-12",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Press",
+       "org": "Alder Press",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Press",
+       "kind": "employee",
+       "title": "production editor",
+       "status": "former",
+       "polarity": "positive",
+       "start": "6 January 2020",
+       "end": "29 September 2023"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "In my second Alder Press stint I became managing editor in 2022, a promotion without leaving. These notes contain no information about my work after September 2023.",
+     "written": "2026-01-15",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Press",
+       "org": "Alder Press",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Press",
+       "kind": "employee",
+       "title": "managing editor",
+       "status": "former",
+       "polarity": "positive",
+       "start": "2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Ari left Alder Press in 2021 and now works at Seabright Media as publishing director, a job started in 2024.",
+     "written": "2026-10-01",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Ari",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Press",
+       "org": "Alder Press",
+       "relation": "employer"
+      },
+      {
+       "surface": "Seabright Media",
+       "org": "Seabright Media",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Press",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2021"
+      },
+      {
+       "org": "Seabright Media",
+       "kind": "employee",
+       "title": "publishing director",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2024"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m4",
+     "m3",
+     "m2",
+     "m1"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Alder Press",
+     "role": "editorial assistant",
+     "start": "2014-02",
+     "end": "2016-11",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Bay Ink",
+     "role": "production editor",
+     "start": "2017-01",
+     "end": "2019-12",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Alder Press",
+     "role": "production editor; promoted to managing editor",
+     "start": "2020-01-06",
+     "end": "2023-09-29",
+     "kind": "employee",
+     "memories": [
+      "m3",
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "My employer in October 2015?",
+     "answer_org": "Alder Press"
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "Where did I work during 2018?",
+     "answer_org": "Bay Ink"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "Which employer preceded Alder Press Ltd.?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "What job followed Alder Press?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "current",
+     "query": "Who employs me now?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t08",
+   "title": "Marzo no alcanza para elegir una empresa",
+   "traps": [
+    "spanish",
+    "precision",
+    "concurrent_slots",
+    "freelance_clients",
+    "vendor",
+    "renamed"
+   ],
+   "people": {
+    "p1": {
+     "names": [],
+     "group": [
+      "manager",
+      "jefa"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Mi empleo principal en Risco Retail duró de febrero de 2016 a marzo de 2019. Era analista comercial.",
+     "written": "2019-04-05",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Risco Retail",
+       "org": "Risco Retail",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Risco Retail",
+       "kind": "employee",
+       "title": "analista comercial",
+       "status": "former",
+       "polarity": "positive",
+       "start": "febrero de 2016",
+       "end": "marzo de 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "Empecé mi empleo principal en Alba Foods en marzo de 2019 como especialista de compras y sigo allí.",
+     "written": "2026-08-10",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alba Foods",
+       "org": "Alba Foods",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alba Foods",
+       "kind": "employee",
+       "title": "especialista de compras",
+       "status": "current",
+       "polarity": "positive",
+       "start": "marzo de 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "Sigo como especialista en ilustración en mi negocio Taller Delta (también Delta Taller), desde 2018. Mi cliente Lago Editorial: ilustraciones de abril de 2022 a agosto de 2022.",
+     "written": "2026-08-11",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Taller Delta",
+       "org": "Taller Delta",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Delta Taller",
+       "org": "Taller Delta",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Lago Editorial",
+       "org": "Lago Editorial",
+       "relation": "client"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Taller Delta",
+       "kind": "self_employed",
+       "title": "especialista en ilustración",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2018",
+       "also_called": "Delta Taller"
+      },
+      {
+       "org": "Lago Editorial",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "start": "abril de 2022",
+       "end": "agosto de 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Solo recuerdo el mes del cambio de Risco Retail a Alba Foods: marzo de 2019. No sé los días de salida y entrada, ni si hubo pausa o solapamiento entre ambos empleos principales.",
+     "written": "2026-08-12",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Risco Retail",
+       "org": "Risco Retail",
+       "relation": "employer"
+      },
+      {
+       "surface": "Alba Foods",
+       "org": "Alba Foods",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Risco Retail",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "time": "marzo de 2019"
+      },
+      {
+       "org": "Alba Foods",
+       "kind": "employee",
+       "status": "unknown",
+       "polarity": "positive",
+       "time": "marzo de 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Mi jefa en Alba Foods me ofreció en privado un aumento del 11 %. Para preparar mi respuesta pagué una sala de trabajo de Patio Cowork.",
+     "written": "2026-09-04",
+     "source": "capture",
+     "sensitivity": "restricted",
+     "names": [],
+     "roles": [
+      {
+       "surface": "Mi jefa",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "manager",
+       "label": "jefa",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Alba Foods",
+       "org": "Alba Foods",
+       "relation": "employer"
+      },
+      {
+       "surface": "Patio Cowork",
+       "org": "Patio Cowork",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alba Foods",
+       "kind": "employee",
+       "status": "current",
+       "polarity": "positive"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Risco Retail",
+     "role": "analista comercial",
+     "start": "2016-02",
+     "end": "2019-03",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m4"
+     ]
+    },
+    {
+     "org": "Alba Foods",
+     "role": "especialista de compras",
+     "start": "2019-03",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m2",
+      "m4",
+      "m5"
+     ]
+    },
+    {
+     "org": "Taller Delta",
+     "role": "especialista en ilustración",
+     "start": "2018",
+     "end": "",
+     "kind": "self_employed",
+     "memories": [
+      "m3"
+     ]
+    },
+    {
+     "org": "Lago Editorial",
+     "role": "cliente de ilustración",
+     "start": "2022-04",
+     "end": "2022-08",
+     "kind": "client",
+     "memories": [
+      "m3"
+     ]
+    },
+    {
+     "org": "Patio Cowork",
+     "role": "proveedor de espacio de trabajo",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m5"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "¿Dónde tenía mi empleo principal en 2017?",
+     "answer_org": "Risco Retail"
+    },
+    {
+     "id": "q2",
+     "kind": "current",
+     "query": "What is my current freelance business called?",
+     "answer_org": "Taller Delta"
+    },
+    {
+     "id": "q3",
+     "kind": "year",
+     "query": "¿Cuál era mi empresa principal el 12 de marzo de 2019?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "year",
+     "query": "Main employer on March 28, 2019?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "current",
+     "query": "¿Dónde trabajo ahora?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t09",
+   "title": "A freelance interval that could fit on either side",
+   "traps": [
+    "undated_order",
+    "import",
+    "gap",
+    "promotion",
+    "precision",
+    "untrusted_end",
+    "freelance_clients"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Lee"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "I worked as a logistics analyst at Finch Works from March 2014 through December 2016.",
+     "written": "2017-01-03",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Finch Works",
+       "org": "Finch Works",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Finch Works",
+       "kind": "employee",
+       "title": "logistics analyst",
+       "status": "former",
+       "polarity": "positive",
+       "start": "March 2014",
+       "end": "December 2016"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "I joined Juniper Dock in February 2018 as a planner, became senior planner in July 2019, and left in March 2020. My colleague Lee organized my farewell.",
+     "written": "2020-04-02",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Lee",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My colleague",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "colleague",
+       "label": "colleague",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Juniper Dock",
+       "org": "Juniper Dock",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Juniper Dock",
+       "kind": "employee",
+       "title": "planner",
+       "status": "former",
+       "polarity": "positive",
+       "start": "February 2018",
+       "end": "March 2020"
+      },
+      {
+       "org": "Juniper Dock",
+       "kind": "employee",
+       "title": "senior planner",
+       "status": "former",
+       "polarity": "positive",
+       "start": "July 2019",
+       "end": "March 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "I started at Ember Grid on 4 April 2022 as a planning lead and still work there.",
+     "written": "2026-03-01",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Ember Grid",
+       "org": "Ember Grid",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Ember Grid",
+       "kind": "employee",
+       "title": "planning lead",
+       "status": "current",
+       "polarity": "positive",
+       "start": "4 April 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Undated: I ran Pine Desk full-time as a freelance planner after leaving Finch Works and before Ember Grid. Client Kite Archive: during that business's entire brief run.",
+     "written": "2026-05-08",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Pine Desk",
+       "org": "Pine Desk",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Finch Works",
+       "org": "Finch Works",
+       "relation": "employer"
+      },
+      {
+       "surface": "Ember Grid",
+       "org": "Ember Grid",
+       "relation": "employer"
+      },
+      {
+       "surface": "Kite Archive",
+       "org": "Kite Archive",
+       "relation": "client"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Pine Desk",
+       "kind": "self_employed",
+       "title": "freelance planner",
+       "status": "former",
+       "polarity": "positive",
+       "preceded_by": "Finch Works",
+       "followed_by": "Ember Grid"
+      },
+      {
+       "org": "Kite Archive",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "time": "during that business's entire brief run"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m6",
+     "text": "Pine Desk was before or after Juniper Dock; I forget which. These are my complete jobs; none overlapped. I took all of 2021 as a sabbatical without paid work.",
+     "written": "2026-05-08",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Pine Desk",
+       "org": "Pine Desk",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Juniper Dock",
+       "org": "Juniper Dock",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Pine Desk",
+       "kind": "self_employed",
+       "status": "former",
+       "polarity": "positive"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "The user started Pine Desk in January 2017 and closed it in December 2017, immediately before Juniper Dock.",
+     "written": "2026-05-09",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Pine Desk",
+       "org": "Pine Desk",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Juniper Dock",
+       "org": "Juniper Dock",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Pine Desk",
+       "kind": "self_employed",
+       "status": "former",
+       "polarity": "positive",
+       "start": "January 2017",
+       "end": "December 2017",
+       "followed_by": "Juniper Dock"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m4",
+     "m6",
+     "m1",
+     "m3",
+     "m2"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Finch Works",
+     "role": "logistics analyst",
+     "start": "2014-03",
+     "end": "2016-12",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Pine Desk",
+     "role": "freelance planner",
+     "start": "2017-02",
+     "end": "2017-08",
+     "kind": "self_employed",
+     "memories": [
+      "m4",
+      "m6"
+     ]
+    },
+    {
+     "org": "Kite Archive",
+     "role": "planning client",
+     "start": "2017-02",
+     "end": "2017-08",
+     "kind": "client",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Juniper Dock",
+     "role": "planner; promoted to senior planner",
+     "start": "2018-02",
+     "end": "2020-03",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Sabbatical",
+     "role": "break without paid work",
+     "start": "2021-01",
+     "end": "2021-12",
+     "kind": "study",
+     "memories": [
+      "m6"
+     ]
+    },
+    {
+     "org": "Ember Grid",
+     "role": "planning lead",
+     "start": "2022-04-04",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m3"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "Where was I employed in 2015?",
+     "answer_org": "Finch Works"
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "What was my workplace in September 2019?",
+     "answer_org": "Juniper Dock"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "What was my work immediately before Juniper Dock?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "Which job did I take after leaving Juniper Dock?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "year",
+     "query": "Where was I working in June 2017?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "t10",
+   "title": "Dos vueltas a Canto y una actividad paralela",
+   "traps": [
+    "spanish",
+    "renamed",
+    "rehire",
+    "concurrent_slots",
+    "untrusted_end",
+    "freelance_clients",
+    "vendor",
+    "precision"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Alex"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "Mi primer empleo en Canto Robotics fue de febrero de 2015 a diciembre de 2017 como especialista de pruebas. Canto es el nombre corto de esa empresa.",
+     "written": "2018-01-04",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Canto Robotics",
+       "org": "Canto Robotics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Canto",
+       "org": "Canto Robotics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Canto Robotics",
+       "kind": "employee",
+       "title": "especialista de pruebas",
+       "status": "former",
+       "polarity": "positive",
+       "start": "febrero de 2015",
+       "end": "diciembre de 2017",
+       "also_called": "Canto"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "Mi único empleo principal entre las dos etapas de Canto Robotics fue Nube Devices, de enero de 2018 a diciembre de 2019, como analista de producto.",
+     "written": "2020-01-07",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Canto Robotics",
+       "org": "Canto Robotics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Nube Devices",
+       "org": "Nube Devices",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Nube Devices",
+       "kind": "employee",
+       "title": "analista de producto",
+       "status": "former",
+       "polarity": "positive",
+       "start": "enero de 2018",
+       "end": "diciembre de 2019",
+       "preceded_by": "Canto Robotics",
+       "followed_by": "Canto Robotics"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "Regresé a Canto Robotics el 13 de enero de 2020 como responsable de pruebas y sigo allí sin interrupción. Mi compañero de trabajo Alex revisó conmigo el plan de otoño.",
+     "written": "2026-09-12",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Alex",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "Mi compañero de trabajo",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "colleague",
+       "label": "compañero de trabajo",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Canto Robotics",
+       "org": "Canto Robotics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Canto Robotics",
+       "kind": "employee",
+       "title": "responsable de pruebas",
+       "status": "current",
+       "polarity": "positive",
+       "start": "13 de enero de 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "Sigo con mi negocio paralelo Isla Desk desde 2016 como especialista en documentación. Cliente: Marea Maps, de mayo de 2024 a julio de 2024. Compré billetes de Viento Air.",
+     "written": "2026-09-13",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Isla Desk",
+       "org": "Isla Desk",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Marea Maps",
+       "org": "Marea Maps",
+       "relation": "client"
+      },
+      {
+       "surface": "Viento Air",
+       "org": "Viento Air",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Isla Desk",
+       "kind": "self_employed",
+       "title": "especialista en documentación",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2016"
+      },
+      {
+       "org": "Marea Maps",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "start": "mayo de 2024",
+       "end": "julio de 2024"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Ari Vale dejó Canto Robotics y cerró Isla Desk en diciembre de 2024. En enero de 2025 empezó su actual empleo en Zenith Fabrication como responsable de calidad.",
+     "written": "2026-10-02",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Ari Vale",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Canto Robotics",
+       "org": "Canto Robotics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Isla Desk",
+       "org": "Isla Desk",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Zenith Fabrication",
+       "org": "Zenith Fabrication",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Canto Robotics",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "diciembre de 2024"
+      },
+      {
+       "org": "Isla Desk",
+       "kind": "self_employed",
+       "status": "former",
+       "polarity": "positive",
+       "end": "diciembre de 2024"
+      },
+      {
+       "org": "Zenith Fabrication",
+       "kind": "employee",
+       "title": "responsable de calidad",
+       "status": "current",
+       "polarity": "positive",
+       "start": "enero de 2025"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "m5",
+     "m4",
+     "m3",
+     "m1",
+     "m2"
+    ]
+   ],
+   "timeline": [
+    {
+     "org": "Canto Robotics",
+     "role": "especialista de pruebas",
+     "start": "2015-02",
+     "end": "2017-12",
+     "kind": "employee",
+     "memories": [
+      "m1"
+     ]
+    },
+    {
+     "org": "Nube Devices",
+     "role": "analista de producto",
+     "start": "2018-01",
+     "end": "2019-12",
+     "kind": "employee",
+     "memories": [
+      "m2"
+     ]
+    },
+    {
+     "org": "Canto Robotics",
+     "role": "responsable de pruebas",
+     "start": "2020-01-13",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m3"
+     ]
+    },
+    {
+     "org": "Isla Desk",
+     "role": "especialista en documentación",
+     "start": "2016",
+     "end": "",
+     "kind": "self_employed",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Marea Maps",
+     "role": "cliente de documentación",
+     "start": "2024-05",
+     "end": "2024-07",
+     "kind": "client",
+     "memories": [
+      "m4"
+     ]
+    },
+    {
+     "org": "Viento Air",
+     "role": "proveedor de vuelos",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "year",
+     "query": "¿Cuál era mi empresa principal en junio de 2016?",
+     "answer_org": "Canto Robotics"
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "My day-job employer in August 2018?",
+     "answer_org": "Nube Devices"
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "¿Qué empleo principal tuve antes de Canto?",
+     "answer_org": ""
+    },
+    {
+     "id": "q4",
+     "kind": "after",
+     "query": "¿A qué empresa pasé después de Canto Robotics?",
+     "answer_org": ""
+    },
+    {
+     "id": "q5",
+     "kind": "current",
+     "query": "¿Cuál es mi trabajo actual?",
+     "answer_org": ""
+    }
+   ]
+  }
+ ]
+}

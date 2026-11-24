@@ -1,0 +1,10 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -c \"python3 -c 'import json; x=json.load(open(\\\"stories.json\\\")); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in x[\\\"stories\\\"][3:8]]'\"",
+ "/bin/zsh -c \"python3 -c 'import json; x=json.load(open(\\\"stories.json\\\")); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in x[\\\"stories\\\"][3:8]]'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\""
+]

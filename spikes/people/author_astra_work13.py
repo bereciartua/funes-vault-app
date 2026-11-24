@@ -24,6 +24,7 @@ HERE = Path(__file__).resolve().parent
 RAW = HERE / "fixtures" / "raw"
 OUT_RAW = RAW / "astra-work13.json"
 LOG = RAW / "astra-work13-provenance"
+OUT_FIXTURE = HERE / "fixtures" / "stories-work13.json"
 MODEL, EFFORT = "gpt-6-astra", "high"
 TYPES = ["partner", "parent", "child", "sibling", "other_family", "friend", "manager", "colleague", "care", "other"]
 TRAPS = ["untrusted_end", "concurrent_slots", "rehire", "promotion", "freelance_clients", "vendor", "gap", "renamed", "import",
@@ -176,7 +177,7 @@ def convert(data):
                         "orders": [o for o in s["orders"] if sorted(o) == sorted(ids) and o != ids],
                         "timeline": s["timeline"], "queries": s["queries"]})
     out = {"user": {"name": data["user_name"], "aliases": data["user_aliases"]}, "author": MODEL, "stories": stories}
-    (HERE / "fixtures" / "stories-work13.json").write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
+    OUT_FIXTURE.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
     print(f"{len(stories)} stories, {sum(len(s['memories']) for s in stories)} memories, "
           f"{sum(len(s['queries']) for s in stories)} queries, {sum(len(s['orders']) for s in stories)} extra orders")
     return problems

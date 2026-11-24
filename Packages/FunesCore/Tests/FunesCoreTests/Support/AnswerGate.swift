@@ -212,7 +212,10 @@ enum AnswerGate {
     /// for every predicate that's linked and declares it.
     static func answerUses(_ env: Env) throws -> FactsUses {
         let reg = FactsRegistry.bundled
-        let shipped = try env.vault.store.writer.read { db in try SearchGate.shipped.uses(db) }
+        var shipped = try env.vault.store.writer.read { db in try SearchGate.shipped.uses(db) }
+        // While nothing ships (13e.1's code voided the records until its gate runs), the mechanism runs on every
+        // declared use, as the next records would turn on.
+        if reg.predicates.allSatisfy({ !shipped.isOn($0.id, .linked) }) { shipped = .everyDeclared(reg) }
         var on = Set<FactsUses.Key>()
         for p in reg.predicates {
             for use in [FactsUse.recorded, .linked, .timeline, .bridges] where shipped.isOn(p.id, use) {

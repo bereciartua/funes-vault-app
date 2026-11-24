@@ -36,8 +36,8 @@ import Testing
     // MARK: Offers
 
     @Test func whatShipsOffersHaikuOnTheClaudePlanOnly() {
-        // 13a.2's Gates step qualified Haiku through Claude Code for both call groups (the person pool; client): the
-        // plan is offered for every group, and the API account, whose adapter has no record, isn't.
+        // 13e.2's records step qualified Haiku through Claude Code for both call groups (the person pool; client and
+        // works at): the plan is offered for every group, and the API account, whose adapter has no record, isn't.
         let s = settings
         let offers = s.factsOffers(qualification: .bundled)
         #expect(offers.map { "\($0.account)·\($0.model)" } == ["claude-code·claude-haiku-5-5"])
