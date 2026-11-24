@@ -1,0 +1,137 @@
+{
+ "engine": "terra",
+ "problems": [],
+ "measures": {
+  "decidable": 60,
+  "decidable_right": 58,
+  "decidable_right_rate": 0.9666666666666667,
+  "decidable_unmarked_wrong": 0,
+  "decidable_marked_wrong": 0,
+  "undecidable": 60,
+  "undecidable_not_sure": 60,
+  "undecidable_not_sure_rate": 1.0,
+  "undecidable_no_answer": 14,
+  "negatives": 48,
+  "negative_wrong_R_per_sample": {},
+  "negative_wrong_P": 4,
+  "someone_else": 0,
+  "owed_skipped": 0,
+  "unmarked_inferred": 0,
+  "failed": 0,
+  "p95_ms": 14099.2,
+  "live_answers_timed": 168,
+  "samples": 1
+ },
+ "gates": {
+  "complete": true,
+  "decidable_right": true,
+  "decidable_wrong": true,
+  "undecidable_not_sure": true,
+  "negatives": true,
+  "someone_else": true,
+  "owed_checks": true,
+  "marking": true,
+  "p95": true,
+  "facts": true
+ },
+ "lists": {
+  "decidable_missed": [
+   "g02|q2|R|1",
+   "g05|q3|R|1"
+  ],
+  "decidable_wrong": [],
+  "undecidable_answered": [],
+  "negative_wrong_R": [],
+  "negative_wrong_P": [
+   "g06|q6|P|1",
+   "g12|q6|P|1",
+   "g20|q7|P|1",
+   "g24|q6|P|1"
+  ],
+  "someone_else": [],
+  "owed_skipped": [],
+  "unmarked_inferred": [],
+  "failed": []
+ },
+ "original_labels": {
+  "measures": {
+   "decidable": 60,
+   "decidable_right": 58,
+   "decidable_right_rate": 0.9666666666666667,
+   "decidable_unmarked_wrong": 0,
+   "decidable_marked_wrong": 0,
+   "undecidable": 60,
+   "undecidable_not_sure": 60,
+   "undecidable_not_sure_rate": 1.0,
+   "undecidable_no_answer": 14,
+   "negatives": 48,
+   "negative_wrong_R_per_sample": {},
+   "negative_wrong_P": 4,
+   "someone_else": 0,
+   "owed_skipped": 0,
+   "unmarked_inferred": 0,
+   "failed": 0,
+   "p95_ms": 14099.2,
+   "live_answers_timed": 168,
+   "samples": 1
+  },
+  "gates": {
+   "complete": true,
+   "decidable_right": true,
+   "decidable_wrong": true,
+   "undecidable_not_sure": true,
+   "negatives": true,
+   "someone_else": true,
+   "owed_checks": true,
+   "marking": true,
+   "p95": true
+  }
+ },
+ "facts": {
+  "gate read": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('x03', 'Small Current Studio', '2019-02', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('w02', 'Cedar Press', '2020-09', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  }
+ },
+ "pass": true
+}
