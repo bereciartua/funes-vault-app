@@ -823,7 +823,7 @@
 
     },
     "Unnamed (%@)" : {
-      "comment" : "An entry no memory names any more, kept for your corrections"
+      "comment" : "An entry no memory names any more, with a memory or a fact still on it"
     },
     "Which %@ %@ did you mean?" : {
       "comment" : "To check: e.g. Which Acme job did you mean?",

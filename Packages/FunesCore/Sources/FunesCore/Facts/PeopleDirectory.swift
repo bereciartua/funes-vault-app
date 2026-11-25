@@ -125,6 +125,8 @@ public struct PeopleDirectory: Sendable {
         public var yours: Bool
         /// Every episode selector your rows on it used (Clear Dates takes back all of them).
         public var yourSelectors: [DateRange?] = []
+        /// A stated rename's row: the same predicate's facts on its other names (Remove from Timeline takes them too).
+        public var renamedFactIDs: [String] = []
 
         public struct Title: Sendable, Hashable {
             public var title: String

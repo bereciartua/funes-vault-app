@@ -40,7 +40,7 @@ enum PeopleText {
     static func name(_ e: PeopleDirectory.Entry) -> String {
         if let n = e.name { return n }
         guard let g = e.group else {
-            return String(localized: "Unnamed (\(kind(e.kind)))", comment: "An entry no memory names any more, kept for your corrections")
+            return String(localized: "Unnamed (\(kind(e.kind)))", comment: "An entry no memory names any more, with a memory or a fact still on it")
         }
         let a = g.attribute.prefix(1).uppercased() + g.attribute.dropFirst()
         return g.count.map { String(localized: "\(a) (\($0))", comment: "A role group and how many: Your sisters (2)") } ?? a

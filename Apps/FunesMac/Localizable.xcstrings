@@ -4526,6 +4526,9 @@
     "Funes stops using it in every memory." : {
 
     },
+    "Funes stops using it in every memory. You can undo it under Corrections on %@'s page." : {
+      "comment" : "Timeline: what removing an entry does; the name of a workplace"
+    },
     "Funes stops using it in every memory. You can undo it under Corrections." : {
 
     },
@@ -6972,6 +6975,9 @@
     "Remove %@" : {
 
     },
+    "Remove %@ from your timeline?" : {
+      "comment" : "Timeline: confirm removing an entry; the name of a workplace"
+    },
     "Remove %@?" : {
 
     },
@@ -6991,6 +6997,9 @@
 
     },
     "Remove everything Funes learned about you?" : {
+
+    },
+    "Remove from Timeline…" : {
 
     },
     "Remove “%@”?" : {
@@ -9349,7 +9358,7 @@
 
     },
     "Unnamed (%@)" : {
-      "comment" : "An entry no memory names any more, kept for your corrections"
+      "comment" : "An entry no memory names any more, with a memory or a fact still on it"
     },
     "Unsaved changes" : {
 
