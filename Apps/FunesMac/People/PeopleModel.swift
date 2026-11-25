@@ -158,6 +158,11 @@ final class PeopleModel {
         await perform { s, a, _ in try s.rejectFact(factID: factID, activity: a) }
     }
 
+    /// Remove from Timeline: the row's fact, and a stated rename's facts on its other names.
+    func removeFromTimeline(_ e: PeopleDirectory.TimelineEpisode) async {
+        await perform { s, a, _ in for id in [e.factID] + e.renamedFactIDs { try s.rejectFact(factID: id, activity: a) } }
+    }
+
     func notName(_ target: WhyLine.NotName) async {
         await perform { s, a, c in _ = try s.rejectLink(memoryID: target.memoryID, entity: target.entity, config: c, activity: a) }
     }

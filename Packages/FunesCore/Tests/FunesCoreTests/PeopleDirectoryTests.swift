@@ -558,15 +558,18 @@ import Testing
         #expect(kept.label == "big sister" && kept.basis == .confirmed)
     }
 
-    @Test func anEntityKeptOnlyForYourCorrectionIsStillListed() throws {
+    @Test func anEntityKeptOnlyForYourCorrectionIsStoredButNotListed() throws {
         let s = try sisters()
         let maria = try #require(entry("Maria", try directory())).id
         try v.store.setDeceased(maria, true, activity: activity, now: t0.plus(days: 1))
         _ = try v.store.deleteMemory(id: s.m1.id, now: t0.plus(days: 2))
         try v.store.purgeMemory(id: s.m1.id, now: t0.plus(days: 3))
-        let p = try #require(try page(maria))
-        #expect(p.entry.name == nil && p.entry.tombstone)
-        #expect(p.corrections.contains { $0.what == .deceased(true) })
+        // Nothing names, mentions or states it: no "Unnamed (Person)" row. The tombstone and your correction stay.
+        let listed = try directory().entries.contains { $0.id == maria }
+        #expect(try page(maria) == nil)
+        #expect(!listed)
+        #expect(try v.count("SELECT COUNT(*) FROM entity WHERE id = '\(maria)' AND tombstone = 1 AND name IS NULL") == 1)
+        #expect(try v.count("SELECT COUNT(*) FROM manual_override WHERE target_id = '\(maria)' AND field = 'deceased'") == 1)
     }
 
     @Test func aKindCheckFollowsAMerge() throws {
@@ -597,15 +600,59 @@ import Testing
         #expect(level == Sensitivity.sensitive.rawValue)
     }
 
-    @Test func anEntityKeptOnlyForARejectionIsStillListed() throws {
+    @Test func anEntityKeptOnlyForARejectionIsStoredButNotListed() throws {
         let s = try sisters()
         let maria = try #require(entry("Maria", try directory())).id
         let fid = try #require(try page(maria)?.facts.first?.factID)
         try v.store.rejectFact(factID: fid, activity: activity, now: t0.plus(days: 1))
         _ = try v.store.deleteMemory(id: s.m1.id, now: t0.plus(days: 2))
         try v.store.purgeMemory(id: s.m1.id, now: t0.plus(days: 3))
-        let p = try #require(try page(maria))
-        #expect(p.corrections.contains { if case .factRejected = $0.what { true } else { false } })
+        #expect(try page(maria) == nil)
+        #expect(try v.count("SELECT COUNT(*) FROM fact WHERE id = '\(fid)' AND tombstone = 1") == 1)
+        #expect(try v.count("SELECT COUNT(*) FROM manual_override WHERE target_id = '\(fid)'") >= 1)
+    }
+
+    @Test func removingATimelineEntryTakesItOffEvenWhenYouEnteredIt() throws {
+        let id = try v.store.addManualEntry(PeopleManualEntry(kind: Self.reg.kindOf(Self.work), name: "Initech", predicate: Self.work,
+                                                              start: "2019", end: "2021"), activity: activity, now: t0)
+        let ep = try #require(try directory().timeline.first { $0.predicate == Self.work }?.episodes.first { $0.entity == id })
+        try v.store.rejectFact(factID: ep.factID, activity: activity, now: t0.plus(days: 1))
+        #expect(try directory().timeline.first { $0.predicate == Self.work }?.episodes.contains { $0.entity == id } != true)
+        let undo = try #require(try page(id)?.corrections.first { if case .factRejected = $0.what { true } else { false } })
+        try v.store.undoPeopleAction(undo.id, activity: activity, now: t0.plus(days: 2))
+        #expect(try directory().timeline.first { $0.predicate == Self.work }?.episodes.contains { $0.entity == id } == true)
+    }
+
+    @Test func removingAgainAfterYouSaidItAgainTakesItOff() throws {
+        let id = try v.store.addManualEntry(PeopleManualEntry(kind: Self.reg.kindOf(Self.work), name: "Initech", predicate: Self.work,
+                                                              start: "2019", end: "2021"), activity: activity, now: t0)
+        func listed() throws -> Bool { try directory().timeline.first { $0.predicate == Self.work }?.episodes.contains { $0.entity == id } == true }
+        let fid = try #require(try directory().timeline.first { $0.predicate == Self.work }?.episodes.first { $0.entity == id }?.factID)
+        try v.store.rejectFact(factID: fid, activity: activity, now: t0.plus(days: 1))
+        #expect(try !listed())
+        // Said again (Change Relation…, a row of yours after the rejection): back on the timeline, and removable again.
+        try v.store.setRelation(entity: id, predicate: Self.work, label: nil, replacing: nil, activity: activity, now: t0.plus(days: 2))
+        try #require(try listed())
+        let again = try #require(try directory().timeline.first { $0.predicate == Self.work }?.episodes.first { $0.entity == id }?.factID)
+        try v.store.rejectFact(factID: again, activity: activity, now: t0.plus(days: 3))
+        #expect(try !listed())
+    }
+
+    @Test func aStatedRenamesRowCarriesItsOtherNamesFacts() throws {
+        // As the timeline round's fixture: two holders first, then the memory saying one was renamed the other.
+        let m1 = try memory("Joining", "Before joining Lattice Harbor, I worked at Ember Circuit.")
+        try apply(m1, job("Lattice Harbor", quote: "joining Lattice Harbor"), group: workGroup)
+        let m2 = try memory("Still there", "I'm still the lab coordinator at Lattice Harbor Labs.", at: 1)
+        try apply(m2, job("Lattice Harbor Labs", quote: "at Lattice Harbor Labs"), group: workGroup)
+        let m3 = try memory("Renamed", "I joined Lattice Harbor in 2017. Renamed Lattice Harbor Labs in 2020; my employment did not restart.", at: 2)
+        var renamed = fact(Self.work, "Lattice Harbor", "2017", nil, quote: "I joined Lattice Harbor in 2017")
+        renamed.alsoCalled = "Lattice Harbor Labs"
+        try apply(m3, FactsExtraction(facts: [renamed]), group: workGroup)
+        let rows = try #require(try directory().timeline.first { $0.predicate == Self.work }?.episodes)
+        let row = try #require(rows.first { $0.name.contains(" / ") })
+        #expect(rows.count == 1 && row.renamedFactIDs.count == 1 && !row.renamedFactIDs.contains(row.factID))
+        for id in [row.factID] + row.renamedFactIDs { try v.store.rejectFact(factID: id, activity: activity, now: t0.plus(days: 2)) }
+        #expect(try directory().timeline.first { $0.predicate == Self.work }?.episodes.isEmpty ?? true)
     }
 
     @Test func withTheTimelineOffAStatusIsOnlyWhatWasSaid() throws {
@@ -640,6 +687,24 @@ import Testing
         #expect(p.entry.name == "Mari" && p.entry.tombstone && p.memories.isEmpty)
         #expect(p.corrections.first?.what == .renamed("Mari"))
         #expect(try v.store.hasUserFactEntries())
+    }
+
+    @Test func aMergeKeptThroughRemoveLearnedFactsListsNoNamelessEntry() throws {
+        _ = try sisters()
+        let m4 = try memory("Maria Lopez called", "Maria Lopez is my sister.", at: 3)
+        try apply(m4, person("Maria Lopez", Self.sib, label: "sister", quote: "Maria Lopez is my sister"))
+        let merge = try directory().toCheck.compactMap { item -> (String, String)? in
+            if case let .merge(a, b, _) = item { return (a, b) } else { return nil }
+        }
+        let (into, other) = try #require(merge.first)
+        try v.store.mergeEntity(other, into: into, activity: activity, now: t0.plus(days: 4))
+        _ = try v.store.removeLearnedFacts(activity: activity, now: t0.plus(days: 5))
+        let d = try directory()
+        #expect(!d.entries.contains { $0.name == nil && $0.group == nil })     // no "Unnamed (Person)"
+        #expect(try v.count("SELECT COUNT(*) FROM manual_override WHERE field = 'merged_into' AND target_id = '\(other)'") == 1)
+        // A merge of two empty tombstones isn't something of yours to show: People closes with learning off.
+        let yours = try v.store.hasUserFactEntries()
+        #expect(d.entries.isEmpty && !yours)
     }
 
     @Test func aPurgeTakesSkipsWithIt() throws {

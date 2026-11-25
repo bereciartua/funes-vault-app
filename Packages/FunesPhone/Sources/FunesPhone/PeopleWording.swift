@@ -39,11 +39,11 @@ public enum PeopleWording {
 
     // MARK: Names
 
-    /// "Maria", "Your sisters (2)", or "Unnamed (Person)" for an entry no memory names any more.
+    /// "Maria", "Your sisters (2)", or "Unnamed (Person)" for an entry no memory names any more (listed while a memory or a fact is on it).
     public static func name(_ e: PeopleEntry) -> String {
         if let n = e.name { return n }
         guard let g = e.group else {
-            return String(localized: "Unnamed (\(kind(e.kind)))", comment: "An entry no memory names any more, kept for your corrections")
+            return String(localized: "Unnamed (\(kind(e.kind)))", comment: "An entry no memory names any more, with a memory or a fact still on it")
         }
         let a = capitalized(g.attribute)
         return g.count.map { String(localized: "\(a) (\($0))", comment: "A role group and how many: Your sisters (2)") } ?? a

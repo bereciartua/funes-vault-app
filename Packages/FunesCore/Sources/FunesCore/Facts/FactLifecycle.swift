@@ -547,7 +547,8 @@ extension VaultStore {
         return try !FactStore.rejectFactEverywhere(db, factID: factID, now: now).isEmpty
     }
 
-    /// Whether the fact is already rejected everywhere (`memoryID` nil), or for that memory since its last edit.
+    /// Whether the fact is already rejected everywhere (`memoryID` nil), or for that memory since its last edit. A row of
+    /// yours made after the rejection everywhere lifts it, as `FactStore.load` reads it.
     static func factRejected(_ db: Database, factID: String, memoryID: String?) throws -> Bool {
         if let memoryID {
             return try Bool.fetchOne(db, sql: """
@@ -556,7 +557,11 @@ extension VaultStore {
                 """, arguments: [factID, memoryID]) == true
         }
         return try Bool.fetchOne(db, sql: """
-            SELECT EXISTS (SELECT 1 FROM manual_override WHERE target_kind = 'fact' AND target_id = ? AND field = 'rejected' AND memory_id IS NULL)
+            WITH r AS (SELECT MAX(created_at) AS at FROM manual_override
+                       WHERE target_kind = 'fact' AND target_id = ?1 AND field = 'rejected' AND memory_id IS NULL)
+            SELECT (SELECT at FROM r) IS NOT NULL AND NOT EXISTS (
+                SELECT 1 FROM fact_evidence e WHERE e.fact_id = ?1 AND e.source = 'user'
+                  AND COALESCE(json_extract(e.asserted, '$.at'), '') > (SELECT at FROM r))
             """, arguments: [factID]) == true
     }
 

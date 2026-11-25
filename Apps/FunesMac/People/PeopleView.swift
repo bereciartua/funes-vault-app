@@ -420,6 +420,7 @@ struct EntityPageView: View {
 struct PeopleTimelineView: View {
     let model: AppModel
     @Binding var sheet: PeopleSheet?
+    @State private var removing: PeopleDirectory.TimelineEpisode?
     private var people: PeopleModel { model.people }
 
     var body: some View {
@@ -429,6 +430,15 @@ struct PeopleTimelineView: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // Not this on the fact behind the row, as on the entity's page: every period of it goes, in every memory.
+        .confirmationDialog(removing.map { String(localized: "Remove \($0.name) from your timeline?",
+                                                  comment: "Timeline: confirm removing an entry; the name of a workplace") } ?? "",
+                            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing) { e in
+            Button(String(localized: "Remove"), role: .destructive) { Task { await people.removeFromTimeline(e) } }
+        } message: { e in
+            Text(String(localized: "Funes stops using it in every memory. You can undo it under Corrections on \(e.name)'s page.",
+                        comment: "Timeline: what removing an entry does; the name of a workplace"))
         }
     }
 
@@ -493,6 +503,8 @@ struct PeopleTimelineView: View {
                     Button(String(localized: "Add Order…")) { sheet = .order(e, s.episodes.filter { $0.factID != e.factID }) }
                         .disabled(s.episodes.count < 2)
                 }
+                Divider()
+                Button(String(localized: "Remove from Timeline…"), role: .destructive) { removing = e }
             } label: {
                 Image(systemName: "ellipsis")
             }

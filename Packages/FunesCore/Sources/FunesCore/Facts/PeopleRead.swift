@@ -233,7 +233,8 @@ struct PeopleRead {
     }
 
     /// Listed: an entity with a name (or a role group), or something of yours. A nameless tombstone, or an entity whose
-    /// memories are all gone, isn't.
+    /// memories are all gone, isn't. Nor is a nameless one with only a correction on it (a merge kept through Remove
+    /// learned facts): nothing names, mentions or states it, so there is nothing to show. The correction stays stored.
     func entry(_ id: String) -> PeopleDirectory.Entry? {
         // Stored entities only: a group the resolver makes for a phrase nobody holds lives in this read alone.
         guard let e = graph.entities[id], columns[id] != nil else { return nil }
@@ -248,6 +249,7 @@ struct PeopleRead {
         let mentioned = mentions[id]?.count ?? 0
         let yours = col.yours || fs.contains { f in f.assertions.contains(where: \.fromUser) }
         guard mentioned > 0 || !fs.isEmpty || yours || group != nil else { return nil }
+        if e.name == nil, group == nil, mentioned == 0, fs.isEmpty { return nil }
         return PeopleDirectory.Entry(id: id, kind: e.kind, name: e.name, group: group, fact: leadingFact(id), mentions: mentioned,
                                      aliases: e.aliases.sorted(), hidden: col.hidden, manual: yours, deceased: e.deceased,
                                      tombstone: col.tombstone)
@@ -350,7 +352,11 @@ struct PeopleRead {
             stating: Array(stating), previous: previous, selector: selector,
             yourDates: e.assertions.contains { $0.fromUser && ($0.start != nil || $0.end != nil) },
             yours: !e.assertions.isEmpty && e.assertions.allSatisfy(\.fromUser),
-            yourSelectors: Array(Set(yourRows.map(\.selector))))
+            yourSelectors: Array(Set(yourRows.map(\.selector))),
+            renamedFactIDs: {
+                let others = (graph.statedGroups(f.predicate).first { $0.contains(f.entity) } ?? []).subtracting([f.entity])
+                return graph.facts.filter { $0.predicate == f.predicate && !$0.negated && others.contains($0.entity) }.compactMap(factID)
+            }())
     }
 
     var timeline: [PeopleDirectory.TimelineSection] {
@@ -537,13 +543,21 @@ extension VaultStore {
     }
 
     /// Whether you've entered or corrected anything (People & history shows while this is true, even with Facts off).
+    /// A correction on an entity with nothing left (no name, alias, role group or fact: one `entry(_:)` doesn't list)
+    /// doesn't count, unless it merges or separates it from one that has something.
     public func hasUserFactEntries() throws -> Bool {
         try writer.read { db in try Self.userFactEntries(db) }
     }
 
     static func userFactEntries(_ db: Database) throws -> Bool {
             try Bool.fetchOne(db, sql: """
-                SELECT EXISTS (SELECT 1 FROM manual_override) OR EXISTS (SELECT 1 FROM fact_evidence WHERE source = 'user')
+                WITH empty AS (
+                    SELECT id FROM entity e WHERE is_you = 0 AND name IS NULL AND group_predicate IS NULL
+                      AND NOT EXISTS (SELECT 1 FROM entity_alias a WHERE a.entity_id = e.id)
+                      AND NOT EXISTS (SELECT 1 FROM fact f WHERE f.entity_id = e.id))
+                SELECT EXISTS (SELECT 1 FROM manual_override o WHERE NOT (o.target_kind = 'entity' AND o.target_id IN empty
+                                 AND (o.field NOT IN ('merged_into','not_same') OR json_extract(o.value, '$') IN empty)))
+                  OR EXISTS (SELECT 1 FROM fact_evidence WHERE source = 'user')
                   OR EXISTS (SELECT 1 FROM mention_decision WHERE source = 'user') OR EXISTS (SELECT 1 FROM fact WHERE manual = 1)
                   OR EXISTS (SELECT 1 FROM entity WHERE manual = 1 AND is_you = 0)
                 """) ?? false
