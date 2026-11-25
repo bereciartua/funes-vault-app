@@ -203,7 +203,8 @@ import Testing
         for resolution in [tested, untested] {
             let config = FactsSearchConfig(engines: resolution.engines(), userAliases: [], cloudLimit: .upTo(.internal))
             let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
-            #expect(!section.on && section.episodes.contains { $0.name == "Hooli" && $0.yours })
+            // Your entry only: the learned jobs don't show while their timeline is off.
+            #expect(!section.on && section.episodes.map(\.name) == ["Hooli"] && section.episodes[0].yours)
         }
     }
 
