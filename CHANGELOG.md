@@ -21,7 +21,7 @@ The Facts release. Funes can now learn facts about you from your memories: who t
 ### Changed
 
 - **Every model your accounts offer, in every picker:** the model pop-ups for New memories, the tidy-up, Search answers and Facts now list every chat model each connected account or plan can run, without adding them by hand. API keys and local servers say which models they have (Funes asks when you open Settings ▸ AI), Codex lists its own, and Claude Code gets its aliases (`haiku`, `sonnet`, `opus`, `fable`) and current full ids. The models Funes tested for each job come first, under **Recommended**. A model that's no longer offered fails with the provider's error when used, instead of being hidden. Your own added models stay first and can still be removed.
-- **The privacy statement covers Facts:** [PRIVACY.md](PRIVACY.md) and funesvault.com/privacy now describe what Facts sends and to which model, what a Facts request quotes (the text of up to 4 other memories naming each person it knows), what an answer sends with learned facts (when a search touches your work history, up to 12 jobs and up to 6 more memories), and what Funes keeps.
+- **The privacy statement covers Facts:** [PRIVACY.md](PRIVACY.md) and funesvault.com/privacy now describe what Facts sends and to which model, what a Facts request quotes (every person Funes knows, with the text of up to 4 other memories naming each, which the Facts page's disclosure also says), what an answer sends with learned facts (when a search touches your work history, up to 12 jobs and up to 6 more memories), and what Funes keeps.
 
 ### Fixed
 

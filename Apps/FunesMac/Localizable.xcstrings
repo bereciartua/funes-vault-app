@@ -3940,22 +3940,22 @@
     "Facts" : {
 
     },
-    "Facts sends new and changed memories (up to %@) to %@ through your %@ sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %lld cloud requests, and your %@ account's training setting applies." : {
+    "Facts sends new and changed memories (up to %@) to %@ through your %@ sign-in, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %lld cloud requests, and your %@ account's training setting applies." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@ through your %3$@ sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %4$lld cloud requests, and your %5$@ account's training setting applies."
+            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@ through your %3$@ sign-in, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %4$lld cloud requests, and your %5$@ account's training setting applies."
           }
         }
       }
     },
-    "Facts sends new and changed memories (up to %@) to %@, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's %lld cloud requests." : {
+    "Facts sends new and changed memories (up to %@) to %@, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward today's %lld cloud requests." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's %3$lld cloud requests."
+            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward today's %3$lld cloud requests."
           }
         }
       }
@@ -3966,12 +3966,12 @@
     "Facts · %@" : {
 
     },
-    "Facts: new and changed memories%@, with the names and facts about you they mention, including other people's names, to %@." : {
+    "Facts: new and changed memories%@, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names, to %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Facts: new and changed memories%1$@, with the names and facts about you they mention, including other people's names, to %2$@."
+            "value" : "Facts: new and changed memories%1$@, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names, to %2$@."
           }
         }
       }
