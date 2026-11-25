@@ -171,19 +171,40 @@ import Testing
         let b = try memory("Initech", "I joined Initech in 2019; I left in 2021.", at: 1)
         try apply(a, job("Acme", start: "2015", end: "2017", quote: "I joined Acme in 2015"), group: workGroup)
         try apply(b, job("Initech", start: "2019", end: "2021", quote: "I joined Initech in 2019"), group: workGroup)
-        let haiku = FactsEngine(ClaudeCodeClient(executable: "/usr/bin/false", model: FactsClients.defaultModel))
-        let untested = FactsEngine(model: "ollama/qwen3:8b", adapter: "ollama")
-        #expect(FactsQualification.bundled.tested(haiku, registry: Self.reg, promptVersions: FactsQualification.promptVersions(Self.reg)))
-        for engine in [haiku, untested] {
-            let config = FactsSearchConfig(engines: [people: engine, workGroup: engine], userAliases: [], cloudLimit: .upTo(.internal))
+        // The engines as the app builds them: the default resolution (the tested Haiku on the Claude plan), and a choice of
+        // a local server's model no record names.
+        var ai = AISettings()
+        ai.upsert(AIAccount(endpoint: .ollama(), name: "Ollama", models: ["qwen3:8b"]))
+        let tested = ai.factsResolution(offers: ai.factsOffers(qualification: .bundled, plans: [.claudeCode]))
+        #expect(tested.chosen?.tested == true && tested.chosen?.model == FactsClients.defaultModel)
+        ai.facts.choice = ModelChoice(account: "ollama", model: "qwen3:8b")
+        let untested = ai.factsResolution(offers: ai.factsOffers(qualification: .bundled, plans: [.claudeCode]))
+        #expect(untested.chosen?.tested == false)
+        for resolution in [tested, untested] {
+            let config = FactsSearchConfig(engines: resolution.engines(), userAliases: [], cloudLimit: .upTo(.internal))
             let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
-            #expect(section.on, "\(engine.model)")
-            #expect(section.episodes.map(\.name) == ["Initech", "Acme"], "\(engine.model)")
-            #expect(section.episodes.allSatisfy { !$0.yours }, "\(engine.model)")
+            #expect(section.on, "\(resolution.chosen?.model ?? "")")
+            #expect(section.episodes.map(\.name) == ["Initech", "Acme"], "\(resolution.chosen?.model ?? "")")
+            #expect(section.episodes.allSatisfy { !$0.yours }, "\(resolution.chosen?.model ?? "")")
         }
-        // No model at all: off, and only your entries would show.
+        // No model at all: off, and nothing learned shows (only your entries would).
         let none = FactsSearchConfig(engines: [:], userAliases: [], cloudLimit: .upTo(.internal))
-        #expect(try v.store.peopleDirectory(config: none).timeline.first { $0.predicate == Self.work }?.on == false)
+        let off = try #require(try v.store.peopleDirectory(config: none).timeline.first { $0.predicate == Self.work })
+        #expect(!off.on && off.episodes.isEmpty)
+        // The timeline switched off locally: off for the untested model too, while your own entry still shows.
+        let engine = try #require(untested.chosen?.engine)
+        try v.store.writer.write { db in
+            try FactsQualification.turnOff(db, .init(predicate: Self.work, use: .timeline, engine: engine,
+                                                     promptVersion: FactsPrompt.version(workGroup, registry: Self.reg),
+                                                     registryVersion: Self.reg.fingerprint), gate: "test", now: t0)
+        }
+        _ = try v.store.addManualEntry(PeopleManualEntry(kind: Self.reg.kindOf(Self.work), name: "Hooli", predicate: Self.work,
+                                                         start: "2022"), activity: activity, now: t0)
+        for resolution in [tested, untested] {
+            let config = FactsSearchConfig(engines: resolution.engines(), userAliases: [], cloudLimit: .upTo(.internal))
+            let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
+            #expect(!section.on && section.episodes.contains { $0.name == "Hooli" && $0.yours })
+        }
     }
 
     @Test func anUndatedJobSaysFunesCantPlaceIt() throws {

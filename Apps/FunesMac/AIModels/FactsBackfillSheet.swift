@@ -145,10 +145,15 @@ extension AIJobText {
             }
         }
         let cap = settings.dailyCap
-        lines.append(e.calls <= 1_000
-            ? String(localized: "It takes under an hour, while Funes isn't busy, and doesn't count toward today's \(cap) cloud requests.")
-            : String(localized: "It takes a few hours, while Funes isn't busy, and doesn't count toward today's \(cap) cloud requests."))
-        lines.append(String(localized: "This happens once. After it, new and changed memories count as usual."))
+        if settings.factsLocality?.isLocal == true {
+            // A model on this Mac or a local server: nothing counts toward the cloud requests, and its speed is unknown.
+            lines.append(String(localized: "It runs while Funes isn't busy. Requests to a local model don't count toward today's cloud requests."))
+        } else {
+            lines.append(e.calls <= 1_000
+                ? String(localized: "It takes under an hour, while Funes isn't busy, and doesn't count toward today's \(cap) cloud requests.")
+                : String(localized: "It takes a few hours, while Funes isn't busy, and doesn't count toward today's \(cap) cloud requests."))
+            lines.append(String(localized: "This happens once. After it, new and changed memories count as usual."))
+        }
         if e.kept > 0, case let .upTo(level)? = e.limit {
             lines.append(String(localized: "\(e.kept) memories above \(CloudLimitText.title(.upTo(level))) stay on this Mac: Funes links them from what it already knows."))
         }

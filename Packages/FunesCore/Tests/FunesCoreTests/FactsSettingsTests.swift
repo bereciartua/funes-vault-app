@@ -110,8 +110,10 @@ import Testing
         #expect(s.factsResolution(offers: offers).chosen?.account == "anthropic")
         #expect(s.factsResolution(offers: offers, runnable: { $0 != "anthropic" }).chosen?.choice
             == ModelChoice(account: "claude-code", model: "claude-haiku-5-5"))
-        // Without a tested one, Haiku by its id; with neither, nothing until a choice.
+        // Without a tested one, Haiku by its id (untested here: an API account); with neither, nothing until a choice.
         let untested = offers.filter { !$0.tested }
+        let apiHaiku = FactsOffer(account: "anthropic", model: "claude-haiku-5-5", engine: key, tested: false)
+        #expect(s.factsResolution(offers: [apiHaiku] + untested).chosen == apiHaiku)
         #expect(s.factsResolution(offers: untested).chosen == nil)
         // Opus (untested for work) on the plan reads every group: no fallback.
         s.facts.choice = ModelChoice(account: "claude-code", model: "opus")
@@ -121,14 +123,25 @@ import Testing
         #expect(FactsResolution().engines(reg).isEmpty)
     }
 
+    @Test func aPinnedChoiceOutlivesItsRecord() {
+        // Turning learning on pins the default: the Claude plan's Haiku by its full id, which the plan's list doesn't name.
+        var s = settings
+        s.facts.choice = ModelChoice(account: "claude-code", model: "claude-haiku-5-5")
+        let lapsed = FactsQualification(records: [])
+        let offers = s.factsOffers(qualification: lapsed, plans: [.claudeCode])
+        let chosen = s.factsResolution(offers: offers).chosen
+        #expect(chosen?.choice == s.facts.choice && chosen?.tested == false)
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == nil)
+    }
+
     @Test func theProblemNamesWhatsMissing() {
         var s = AISettings()
         // No account or plan here.
         var offers = s.factsOffers(qualification: qualification, plans: [])
         #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == .noModel)
-        // A choice that isn't offered any more.
+        // A choice whose account is gone (a model the account doesn't list is still offered: it was chosen).
         s = settings
-        s.facts.choice = ModelChoice(account: "anthropic", model: "claude-opus-5-5")
+        s.facts.choice = ModelChoice(account: "openai", model: "gpt-5-mini")
         offers = s.factsOffers(qualification: qualification, plans: [])
         #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == .chooseModel)
         // The chosen account can't run now.

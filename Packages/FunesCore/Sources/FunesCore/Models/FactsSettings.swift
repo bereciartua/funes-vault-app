@@ -150,15 +150,17 @@ public extension AISettings {
             guard let provider = FactsClients.providerID(account, in: self) else { continue }
             let testable = FactsClients.canBeTested(account, in: self)
             let listed = (models(of: account) ?? []).filter { !$0.isEmpty }
-            // A recorded model this account's provider serves, by its full id, when the list doesn't name it.
-            let extra = testable ? recorded.filter { $0.hasPrefix(provider.rawValue + "/") }
-                .map { String($0.dropFirst(provider.rawValue.count + 1)) } : []
+            // A recorded model this account's provider serves, by its full id, when the list doesn't name it; and the
+            // stored choice (turning learning on pins the default's full id), so a lapsed record never takes it away.
+            let extra = (testable ? recorded.filter { $0.hasPrefix(provider.rawValue + "/") }
+                .map { String($0.dropFirst(provider.rawValue.count + 1)) } : [])
+            let chosen = facts.choice.flatMap { $0.account == account ? $0.model : nil }.map { [$0] } ?? []
             var seen = Set<String>()
-            for model in extra + listed where seen.insert(model).inserted {
+            for model in extra + listed + chosen where !model.isEmpty && seen.insert(model).inserted {
                 guard let engine = FactsClients.engine(account: account, model: model, settings: self) else { continue }
                 let isTested = testable && qualification.tested(engine, registry: registry, promptVersions: versions)
                 let offer = FactsOffer(account: account, model: model, engine: engine, tested: isTested)
-                if isTested { tested.append(offer) } else if listed.contains(model) { rest.append(offer) }
+                if isTested { tested.append(offer) } else if listed.contains(model) || chosen.contains(model) { rest.append(offer) }
             }
         }
         return tested + rest

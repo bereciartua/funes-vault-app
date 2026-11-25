@@ -147,7 +147,7 @@ extension VaultStore {
             let level = try FactStore.level(db, entities: [entity], facts: old.map { [$0] } ?? [])
             if let old, let row = try Row.fetchOne(db, sql: "SELECT predicate FROM fact WHERE id = ?", arguments: [old]),
                (row["predicate"] as String) == predicate {
-                // You're saying it: a row of yours (so it stays yours whatever is qualified), and your word.
+                // You're saying it: a row of yours (so it stays yours whatever is switched off), and your word.
                 try FactStore.addUserEvidence(db, factID: old, asserted: [:], sensitivity: level, now: now)
                 if let label {
                     try FactStore.override(db, targetKind: "qualifier", targetID: old, field: "label", value: label, sensitivity: level, now: now)

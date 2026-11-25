@@ -37,7 +37,8 @@ public struct FactsLearnReport: Sendable {
 /// roster. Validation and the apply use the whole graph: that's local work.
 ///
 /// **What's on** (memory processing §11.10): a group's model, any model, is asked only while some predicate of the group
-/// is recorded with it (declared, and not switched off locally for that engine, prompt version and registry version),
+/// is recorded (declared, and not switched off locally at the group's prompt version, the registry version and the
+/// pipeline revision),
 /// read in the same transaction as the call's graph. Facts the answer gives for a predicate that isn't recorded are
 /// dropped, and earlier ones are hidden (`FactStore.load`). The prompt and schema stay the declared group's, so the
 /// prompt version never depends on an off-switch.

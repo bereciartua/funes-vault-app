@@ -134,7 +134,7 @@ import Testing
         for q in ["What does Maria drink?", "my sister", "Ana", "coffee", "Maria's mate"] {
             let off = try await search(q, facts: nil)
             #expect(try await search(q, facts: Self.config(.none(.bundled))) == off, "no use on: \(q)")
-            // The shipped records for no engine: nothing qualified, nothing on.
+            // The shipped records for no engine: no model, nothing on.
             #expect(try await search(q, facts: FactsSearchConfig(engines: [:], userAliases: [], cloudLimit: .upTo(.internal))) == off)
         }
         #expect(try await search("flat white", facts: Self.config()) == (try await search("flat white", facts: nil)))

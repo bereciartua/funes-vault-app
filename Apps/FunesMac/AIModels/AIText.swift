@@ -235,9 +235,10 @@ struct AIJobText {
         guard let limit else {
             return String(localized: "Search answers send nothing to \(name): the cloud limit is Nothing, so there's no answer.")
         }
-        // With learned facts in the answer (13d), what Funes learned about the people they mention goes too.
+        // With learned facts in the answer (13d, 13e.2), what Funes learned about them goes too, and a timeline answer's
+        // cited memories from outside the results.
         let what = settings.factsInAnswers
-            ? String(localized: "your search, its top results (up to \(limit)) and what Funes learned about them")
+            ? String(localized: "your search, its top results (up to \(limit)), what Funes learned about them and the memories it rests on")
             : String(localized: "your search and its top results (up to \(limit))")
         if let plan = PlanKind(rawValue: account) {
             let via = plan == .claudeCode ? String(localized: "through your Claude Code sign-in") : String(localized: "through your Codex sign-in")
@@ -409,9 +410,9 @@ struct AIJobText {
                     return (String(localized: "Search answers: nothing to \(to); the cloud limit is Nothing."), false)
                 }
                 let level = upTo(local)
-                // With learned facts in the answer (13d), it adds what Funes learned about them.
+                // With learned facts in the answer (13d, 13e.2), it adds what Funes learned and the memories it rests on.
                 let what = settings.factsInAnswers
-                    ? String(localized: "your search, its top results\(level) and what Funes learned about them")
+                    ? String(localized: "your search, its top results\(level), what Funes learned about them and the memories it rests on")
                     : String(localized: "your search and its top results\(level)")
                 let line = switch trigger {
                 case .ask: String(localized: "Search answers: \(what), to \(to), when you ask.")

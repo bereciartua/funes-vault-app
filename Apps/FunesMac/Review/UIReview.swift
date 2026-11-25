@@ -521,7 +521,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
             // Facts with more models recommended: review-only records, never measured and never shipped (the app uses the
             // bundled file). This build starts no runner.
             ai.factsQualification = Self.reviewFactsQualification()
-            await show(.facts, "ai-features-facts-qualified")
+            await show(.facts, "ai-features-facts-recommended")
             ai.factsLearn = true
             ai.factsUse = true
             await show(.facts, "ai-features-facts-learning")

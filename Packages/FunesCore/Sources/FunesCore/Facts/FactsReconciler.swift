@@ -117,7 +117,7 @@ enum FactsReconciler {
     /// read (or only `memoryID`'s). In the caller's write transaction.
     /// `sendable`: the limit the model that will read works under (a cloud model's): knowledge is compared on the graph
     /// it may see, so what's above the limit selects no memory for a call, and a memory above it isn't reconciled.
-    /// `uses`: what's on (§11.10). A group with no recorded predicate (no qualified model reads it) has nothing due, and
+    /// `uses`: what's on (§11.10). A group with no recorded predicate (no model, or switched off) has nothing due, and
     /// a predicate that isn't recorded has no phrase to ask about.
     static func reconcile(_ db: Database, only memoryID: String? = nil, registry: FactsRegistry,
                           userAliases: [String] = [], uses: FactsUses, sendable: CloudLimit? = nil) throws -> [(key: Key, due: Due)] {

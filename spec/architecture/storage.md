@@ -455,9 +455,9 @@ CREATE INDEX manual_override_target ON manual_override(target_kind, target_id);
 
 -- Local rows only: the qualification records ship with the app as Resources/facts-qualification.json, with the
 -- same fields (a record there pools predicates and uses), and only mark a model Recommended. A row here is the two-week
--- review's off-switch (passed = 0) for one predicate, use and basis at the group's prompt version and the registry
--- version, for every model: model, adapter and batching note the engine in use when it was turned off, and aren't
--- matched (ADR-0032, amended 2026-11-24). A local row never turns anything on. Neither is exported, and Remove
+-- review's off-switch (passed = 0) for one predicate, use and basis at the group's prompt version, the registry
+-- version and the pipeline revision (batching), for every model: model and adapter note the engine in use when it was
+-- turned off, and aren't matched (ADR-0032, amended 2026-11-24). A local row never turns anything on. Neither is exported, and Remove
 -- learned facts doesn't touch them.
 CREATE TABLE fact_qualification (
   predicate        TEXT NOT NULL,

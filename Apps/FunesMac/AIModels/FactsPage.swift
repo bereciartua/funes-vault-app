@@ -158,7 +158,7 @@ struct FactsModelRow: View {
     }
 }
 
-/// Facts' model pop-up (model providers §4): first the models Funes tested, under *Recommended*, each "<name> · <account>";
+/// Facts' model pop-up (model providers §4): first the models Funes tested, under *Recommended*, each "<account> · <name>";
 /// then every other model under its account or plan, with why the account can't run now (the chosen one's id is the
 /// pop-up's help tag); then Add a Model….
 struct FactsModelPicker: View {
@@ -212,11 +212,10 @@ struct FactsModelPicker: View {
         .accessibilityLabel(String(localized: "Model: \(current.map(label) ?? String(localized: "Choose a model"))"))
     }
 
-    /// "Claude Haiku 5.5 · Claude (Claude Code)", with why the account can't run now.
+    /// "Claude (Claude Code) · Claude Haiku 5.5", as the chosen one reads, with why the account can't run now.
     private func recommended(_ offer: FactsOffer) -> String {
-        let name = FactsModelName.display(offer.model), account = settings.name(offer.account)
-        return settings.problem(account: offer.account).map { "\(name) · \(account) — \(ProviderText.reason($0))" }
-            ?? "\(name) · \(account)"
+        let text = label(offer.choice)
+        return settings.problem(account: offer.account).map { "\(text) — \(ProviderText.reason($0))" } ?? text
     }
 
     private func header(_ account: String) -> String {

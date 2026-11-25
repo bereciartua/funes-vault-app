@@ -198,11 +198,15 @@ import Testing
         on = try v.store.writer.read { db in try FactsQualification(records: []).withOffSwitches(db) }
             .uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
         #expect(!on.isOn(dated, .linked) && !on.isOn(sibling, .linked) && on.isOn(sibling, .recorded))
-        // A new prompt version (the fix) lapses it.
+        // A new prompt version (the fix) lapses it, and so does a new pipeline revision (a fix in code).
         var fixed = versions
         fixed[people] = "fixed0000000"
         on = try v.store.writer.read { db in try q.withOffSwitches(db) }.uses(engines: engines, registry: reg, promptVersions: fixed)
         #expect(on.isOn(sibling, .linked) && !on.isOn(dated, .linked))
+        let nextPipeline = FactsEngine(model: Self.opus.model, adapter: Self.opus.adapter, batching: "one-memory;pipeline=999")
+        on = try v.store.writer.read { db in try q.withOffSwitches(db) }
+            .uses(engines: [people: nextPipeline, work: nextPipeline], registry: reg, promptVersions: versions)
+        #expect(on.isOn(sibling, .linked) && on.isOn(dated, .linked))
         // Remove learned facts doesn't touch the off-switches, and a passed local row isn't one.
         try v.store.writer.write { db in
             _ = try FactStore.removeLearnedFacts(db, now: t0)

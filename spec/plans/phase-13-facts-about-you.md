@@ -785,6 +785,8 @@
     - **Removed:** "Only models that passed Funes's tests…", "No model has passed… can't be turned on", "Facts needs a model that passed…", the part-reading lines, "Not available yet"; the timeline-off line is now "Funes isn't ordering this now. Only what you enter shows here." (Mac and iPhone).
     - **Tests:** `FactsQualificationTests`, `FactsSettingsTests`, `FactsTimelineRecordTests`, `FactsBackfillTests` and `FactsSearchTests` moved to off-switches; `PeopleDirectoryTests.yourTimelineShowsLearnedJobsWithTheTestedModelAndAnUntestedOne` reads Your Timeline through the shipped records with Haiku and an untested engine.
     - **Known limits:** a model change re-reads nothing already read, and a job that failed on one model waits for the memory to change; Remove Learned Facts, then Read Existing Memories, starts over.
+    - **13b's search gate again** (`FUNES_FACTS_GATES=1`; `results-13b/search-gate.md`): people sets unchanged (busy's waived qwen rank as before); the work set with works at's timeline on: 9 of 69 targets worse with bge-small (2 out of the top 3, 1 out of the top 10, 12 better), 7 to 13 worse with qwen. `FactsSearchGateTests` reports the work set rather than judging it.
+    - **The gate freezes** (`spikes/people/freeze-13a2.txt`, `freeze-13e2.txt`) hash files this change edits, so `scripts/facts_freeze.sh check` fails and `qualify.py` refuses to write a record until a new freeze. `qualify.py verify` (CI) doesn't read the freeze. Re-freeze before any new gate run.
   - **Later:**
     - extraction-side interpretations (`same_as`, `denies` from the model), for the live misses on renames;
     - a stated possible overlap blocking the same-year hand-over;
