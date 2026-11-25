@@ -20,6 +20,7 @@ SEARCH, ASK AND REVIEW
 • Search your vault on the Mac from your phone, read a memory with where it came from, and edit, archive or delete it.
 • Ask Funes a question and your Mac answers in short claims, each quoting the memory it comes from.
 • Review the Inbox: what agents, your captures and the daily tidy-up suggest. Save, merge, split or reject, as on your Mac.
+• With Facts on your Mac, People & History shows who the people in your memories are to you and where you've worked, and you can correct what Funes learned.
 
 PRIVATE BY DESIGN
 • No account, no cloud copy, no analytics, no tracking. Data Not Collected.

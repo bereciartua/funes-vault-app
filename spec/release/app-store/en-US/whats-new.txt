@@ -1,17 +1,9 @@
-This update fixes what a full review of the app turned up, mostly security and reliability.
+Facts: Funes can now learn, from your memories on your Mac, who the people in them are to you and where you've worked, so your searches and answers know them too. It's off by default and turned on in Funes Vault for Mac (Settings ▸ AI ▸ Features ▸ Facts).
 
-SAFER
-• Your iPhone now acts only on replies your Mac has signed, so another device on the same Wi-Fi can't crash the app, move its clock or make it say it was removed.
-• Stopping dictation while it's starting no longer leaves the microphone on.
+NEW
+• People & History, from Search's toolbar: the people, organizations and places your memories mention, what each is to you and how Funes knows, the memories that mention them, your work timeline, and what Funes couldn't settle. Read live from your Mac; nothing is kept on the iPhone.
+• Search results found through a fact say why, for example "My sister → Maria".
+• Answers mark claims that rest on something Funes inferred and, with a cloud model on your Mac, say "not sure" when they can't check a claim about your work history.
+• Correct Funes from your phone: Not Maria when a memory isn't about her, Not This when a fact is wrong.
 
-FIXED
-• A search answer quoting part of an emoji no longer crashes the app.
-• Home's counts and the widgets are no longer cleared at launch or in a background refresh.
-• If your Mac can't check this iPhone for a moment, the app says your vault isn't available, not that the iPhone was removed.
-• Pairing asks for camera access the first time, and Cancel while waiting for Allow on your Mac cancels the pairing there too.
-• After unpairing, a late reply no longer shows Connected or brings the counts back.
-• An answered Inbox card no longer comes back, and a request that arrives while the list is loading now shows.
-• A reload that fails after "Changed on your Mac" keeps your edit.
-• Captures with unusual characters are saved whole, and sharing a very large text is refused instead of failing.
-
-Update Funes Vault for Mac to 0.5.2 first: with an older Mac, this version shows your Mac as not reachable.
+Update Funes Vault for Mac to 0.6.0 first: with 0.5.2 on your Mac, the app works as before, without People & History.

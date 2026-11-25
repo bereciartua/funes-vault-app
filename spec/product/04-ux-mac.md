@@ -721,7 +721,7 @@ Use in search and answers       [ ]
   Searching for someone's name also finds memories that only say "my sister", and answers say what Funes inferred.
 Model             [Claude (Claude Code) · Claude Haiku 5.5 ▾] [Cloud]
   Ready. Funes learns from new and changed memories.
-  ↗ Facts sends new and changed memories (up to Internal) to Claude through your Claude Code sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's 300 cloud requests, and your Claude account's training setting applies.
+  ↗ Facts sends new and changed memories (up to Internal) to Claude through your Claude Code sign-in, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's 300 cloud requests, and your Claude account's training setting applies.
 [Read Existing Memories…]       [Remove Learned Facts…]
 ```
 - **Model:** every model configured on an account or a found plan ([model providers §4](../architecture/model-providers.md#4-configuration-settings--ai), ADR-0032 as amended on 2026-11-24). First, under **Recommended**, the models Funes tested for Facts (memory processing §11.10), each "Claude (Claude Code) · Claude Haiku 5.5", as the chosen one reads; then every other model under the account or plan that runs it, by its display name ("Claude Opus 5.5", read from the full id; an alias such as "haiku" as written), with why an account can't run now after its name, as the other pickers do. The chosen one's id is the pop-up's help tag. A tested engine is one a record names exactly as this app builds it (the model's full id, the adapter with its settings, the batching), so the Claude plan's "haiku" alias and an Anthropic account at another address (a proxy) run Facts but aren't recommended. An untested choice adds one quiet line under the model: "Funes hasn't tested this model for Facts; results may vary." The chosen model reads everything Facts learns; no call-group names are shown. The default, until you choose, is a recommended model on the first account that can run it; turning Learn from memories on stores it as your choice, so adding or removing an account never moves learning elsewhere. Removing the chosen account leaves "Choose a model" (nothing is sent until you pick one). The menu ends with **Add a Model…**.
@@ -854,7 +854,7 @@ WHAT AI FEATURES SEND
 ↗ New memories: new captures (up to Internal) and your category names and descriptions, to Claude through your Claude Code sign-in.
 ↗ Daily tidy-up: related memories (up to Internal), with their dates and sources, to Claude through your Claude Code sign-in.
 ⌂ Search answers: nothing; Apple on-device answers on this Mac.
-↗ Facts: new and changed memories (up to Internal), with the names and facts about you they mention, including other people's names, to Claude through your Claude Code sign-in.
+↗ Facts: new and changed memories (up to Internal), with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names, to Claude through your Claude Code sign-in.
 ⌂ Search index: memory text and your searches to Ollama, on your local network.
   Agents, Remote Access and your iPhone are in their own panes.
 ```
