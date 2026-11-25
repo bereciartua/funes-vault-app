@@ -234,13 +234,28 @@ struct ModelPicker: View {
             Picker(selection: Binding<Tag>(get: { .choice(current) }, set: choose)) {
                 if job.canFollow { Text(String(localized: "Same as New memories")).tag(Tag.choice(.followsNewMemories)) }
                 if job.canUseOnDevice { Text(String(localized: "Apple on-device")).tag(Tag.choice(.onDevice)) }
-                ForEach(settings.pickerSections(job), id: \.account) { section in
+                let sections = settings.pickerSections(job)
+                // The models Funes measured for this job first, under Recommended; every other model under its account.
+                if sections.contains(where: { !$0.recommended.isEmpty }) {
+                    Section(String(localized: "Recommended")) {
+                        ForEach(sections.filter { !$0.recommended.isEmpty }, id: \.account) { section in
+                            ForEach(section.recommended, id: \.self) { name in
+                                Text(recommended(section, name)).tag(Tag.choice(.model(ModelChoice(account: section.account, model: name))))
+                            }
+                        }
+                    }
+                }
+                ForEach(sections, id: \.account) { section in
                     Section(header(section)) {
                         if let chosen = current.modelChoice, chosen.account == section.account, chosen.model == nil {
                             Text(String(localized: "\(settings.name(section.account)) · Choose a model")).tag(Tag.choice(current))
                         }
-                        ForEach(section.models, id: \.self) { name in
+                        ForEach(section.models.filter { !section.recommended.contains($0) }, id: \.self) { name in
                             Text(name).tag(Tag.choice(.model(ModelChoice(account: section.account, model: name))))
+                        }
+                        if let chosen = current.modelChoice, chosen.account == section.account, let name = chosen.model,
+                           !section.models.contains(name) {
+                            Text(name).tag(Tag.choice(current))
                         }
                         if section.models.isEmpty {
                             Text(String(localized: "No models")).tag(Tag.noModels(section.account)).disabled(true)
@@ -259,6 +274,12 @@ struct ModelPicker: View {
         }
         .fixedSize()
         .accessibilityLabel(String(localized: "Model: \(label(current))"))
+    }
+
+    /// "Claude (Claude Code) · haiku", as the chosen one reads, with why the account can't run now.
+    private func recommended(_ section: PickerSection, _ model: String) -> String {
+        let text = "\(settings.name(section.account)) · \(model)"
+        return section.problem.map { "\(text) — \(ProviderText.reason($0))" } ?? text
     }
 
     private func header(_ section: PickerSection) -> String {
@@ -453,7 +474,11 @@ extension View {
     /// last run.
     func aiSettingsRefresh(_ model: AppModel) -> some View {
         self
-            .task { await model.modelSettings.refreshSubscriptions() }
+            .task {
+                await model.modelSettings.refreshSubscriptions()
+                await model.modelSettings.refreshAvailableModels()
+            }
+            .task(id: model.modelSettings.accounts) { await model.modelSettings.refreshAvailableModels() }
             .task(id: model.modelSettings.accounts) { await model.modelSettings.resolveLocalities() }
             .task { await model.tidyUp.load() }
     }

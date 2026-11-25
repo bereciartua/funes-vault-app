@@ -118,6 +118,47 @@ final class ModelSettings {
     /// An account's or plan's models.
     func models(of id: String) -> [String] { stored.models(of: id) ?? [] }
 
+    /// Every chat model an account or plan offers: yours, then what it listed (`AISettings.availableModels`).
+    func availableModels(of id: String) -> [String] { stored.availableModels(of: id) ?? [] }
+
+    /// Stores what an account or plan listed (Load Models, or `refreshAvailableModels`).
+    func setDiscovered(_ models: [String], for id: String) {
+        guard stored.discovered[id] != (models.isEmpty ? nil : models) else { return }
+        change { $0.setDiscovered(models, for: id) }
+    }
+
+    /// When each account or plan was last asked, this launch: asked again only after `discoveryInterval`, or when its
+    /// settings change.
+    @ObservationIgnored private var discoveredAt: [String: (Date, AIAccount?)] = [:]
+    private static let discoveryInterval: TimeInterval = 600
+
+    /// Asks every account and found plan which models it offers (ADR-0030, amended 2026-11-24), so every picker lists
+    /// them: an account's `/v1/models` or Anthropic's list, Codex's `codex debug models`. Claude Code can't list its
+    /// models, so it keeps its maintained list. No memory or search goes with it, and nothing counts toward the cap. A
+    /// failed or empty answer keeps what was found before.
+    func refreshAvailableModels() async {
+        #if FUNES_UI_REVIEW
+        if plansFixed { return }
+        #endif
+        let now = Date()
+        func due(_ id: String, _ account: AIAccount?) -> Bool {
+            guard let (at, was) = discoveredAt[id], was == account else { return true }
+            return now.timeIntervalSince(at) > Self.discoveryInterval
+        }
+        for account in accounts where due(account.id, account) {
+            discoveredAt[account.id] = (now, account)
+            guard let client = try? client(for: account, model: "") else { continue }
+            let found: [String]? = if let openAI = client as? OpenAICompatibleClient { try? await openAI.listModels() }
+                else if let anthropic = client as? AnthropicClient { try? await anthropic.listModels() } else { nil }
+            if let found, !found.isEmpty { setDiscovered(found, for: account.id) }
+        }
+        let codex = PlanKind.codex.rawValue
+        if let path = executables[.codex], due(codex, nil) {
+            discoveredAt[codex] = (now, nil)
+            if let found = await CodexClient(executable: path, model: "").listModels(), !found.isEmpty { setDiscovered(found, for: codex) }
+        }
+    }
+
     /// Localities by endpoint (from the URL alone), filled by
     /// `resolveLocalities()`. Keyed by the endpoint, not the account, so an account whose address
     /// or cloud flag just changed counts as cloud until its new endpoint is resolved (fail closed),

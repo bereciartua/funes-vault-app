@@ -30,7 +30,8 @@ public struct FactsSettings: Codable, Hashable, Sendable {
 }
 
 /// A model the Facts picker offers: an account (or plan) and a model the app can build a Facts client for. Every model
-/// configured on an account or plan is one; a tested engine that the plan's list doesn't name (the list holds aliases)
+/// an account or plan offers is one (`AISettings.availableModels`: yours, then what it listed or, for a plan, its
+/// known models); a tested engine that the plan's list doesn't name (the list holds aliases)
 /// is added (model providers §4).
 public struct FactsOffer: Hashable, Sendable {
     public var account: String
@@ -149,7 +150,7 @@ public extension AISettings {
         for account in accounts.map(\.id) + plans.map(\.rawValue) {
             guard let provider = FactsClients.providerID(account, in: self) else { continue }
             let testable = FactsClients.canBeTested(account, in: self)
-            let listed = (models(of: account) ?? []).filter { !$0.isEmpty }
+            let listed = availableModels(of: account) ?? []
             // A recorded model this account's provider serves, by its full id, when the list doesn't name it; and the
             // stored choice (turning learning on pins the default's full id), so a lapsed record never takes it away.
             let extra = (testable ? recorded.filter { $0.hasPrefix(provider.rawValue + "/") }

@@ -51,6 +51,15 @@ public enum PlanKind: String, Codable, Sendable, CaseIterable, Identifiable {
         }
     }
 
+    /// What the plan can run when its CLI hasn't listed them: Claude Code's maintained list (its CLI can't list them),
+    /// Codex's last known catalog.
+    public var knownModels: [String] {
+        switch self {
+        case .claudeCode: ClaudeCodeClient.knownModels
+        case .codex: CodexClient.knownModels
+        }
+    }
+
     /// The id its client counts usage and CLI blocks under.
     public var providerID: ProviderID {
         switch self {
@@ -118,6 +127,17 @@ public enum AIJob: String, Codable, Sendable, CaseIterable {
     /// 8 of 49 actions right).
     public var canFollow: Bool { self != .newMemories }
     public var canUseOnDevice: Bool { self != .tidyUp }
+
+    /// Whether Funes measured a model for this job, so its picker lists it first, as *Recommended* (ADR-0030, amended
+    /// 2026-11-24): New memories' and the tidy-up's auto-apply measurements (by model id), and for Search answers the
+    /// answer models Facts' answer gates ran (`<provider>/<model>`). Any other model can still be chosen.
+    public func isRecommended(_ model: String, provider: ProviderID) -> Bool {
+        switch self {
+        case .newMemories: NewMemoryAutoApply.measured[model] != nil
+        case .tidyUp: TidyUpAutoApply.measured[model] != nil
+        case .searchAnswers: FactsQualification.bundled.records.contains { $0.answerModels.contains("\(provider.rawValue)/\(model)") }
+        }
+    }
 }
 
 /// A job's choice (ADR-0030 §6): it follows New memories, it's Apple on-device, or an account and
@@ -243,11 +263,13 @@ public enum AccountUse: Hashable, Sendable {
     case facts(model: String)
 }
 
-/// One account's models in a job's picker, with why it can't run now.
+/// One account's models in a job's picker, with why it can't run now: every model it offers, the ones Funes measured
+/// for the job first (`recommended`, shown under *Recommended*).
 public struct PickerSection: Hashable, Sendable {
     public var account: String
     public var models: [String]
     public var problem: AccountProblem?
+    public var recommended: [String] = []
 }
 
 /// What removing a model or an account changes, for its confirmation (ADR-0030 §6).
@@ -290,12 +312,15 @@ public struct AISettings: Codable, Hashable, Sendable {
     public var searchAnswersTrigger: AnswerTrigger = .ask
     /// The Facts task (v0.10): off by default.
     public var facts = FactsSettings()
+    /// What each account or plan said it offers, the last time Funes asked (its `/v1/models`, Anthropic's list, `codex
+    /// debug models`), by account id. Kept so the pickers list them before the next refresh; a failed refresh keeps it.
+    public var discovered: [String: [String]] = [:]
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case version, accounts, plans, newMemories, tidyUp, searchAnswers, embedding, cloudLimit, dailyCap
-        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger, facts
+        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger, facts, discovered
     }
 
     /// Every field but the version may be missing, so a field added later reads as its default.
@@ -316,6 +341,7 @@ public struct AISettings: Codable, Hashable, Sendable {
         searchAnswersOn = try c.decodeIfPresent(Bool.self, forKey: .searchAnswersOn) ?? false
         searchAnswersTrigger = try c.decodeIfPresent(AnswerTrigger.self, forKey: .searchAnswersTrigger) ?? .ask
         facts = try c.decodeIfPresent(FactsSettings.self, forKey: .facts) ?? FactsSettings()
+        discovered = try c.decodeIfPresent([String: [String]].self, forKey: .discovered) ?? [:]
     }
 
     // MARK: Accounts and plans
@@ -334,6 +360,28 @@ public struct AISettings: Codable, Hashable, Sendable {
     }
 
     public func exists(_ id: String) -> Bool { models(of: id) != nil }
+
+    /// Every chat model an account or plan offers (ADR-0030, amended 2026-11-24): the ones you added, in your order,
+    /// then what it listed (`discovered`), or for a plan that hasn't, its known models. Embedding models are left out
+    /// (they can't answer). Nil for an id that isn't an account or plan. A listed model that's gone fails when used.
+    public func availableModels(of id: String) -> [String]? {
+        guard let mine = models(of: id) else { return nil }
+        let found = discovered[id] ?? PlanKind(rawValue: id)?.knownModels ?? []
+        var out: [String] = []
+        for m in mine + found where !m.isEmpty && !out.contains(m) && !EmbeddingCatalog.isEmbeddingModel(m) { out.append(m) }
+        return out
+    }
+
+    /// The models a refresh found for an account or plan, stored (an empty list keeps nothing, so the known models
+    /// stand in for a plan). False when nothing changed.
+    @discardableResult
+    public mutating func setDiscovered(_ models: [String], for id: String) -> Bool {
+        let clean = models.reduce(into: [String]()) { if !$1.isEmpty, !$0.contains($1) { $0.append($1) } }
+        let value: [String]? = clean.isEmpty ? nil : clean
+        guard discovered[id] != value else { return false }
+        discovered[id] = value
+        return true
+    }
 
     /// Adds a chat model to an account or plan: trimmed, never empty or twice. False when nothing
     /// changed.
@@ -478,8 +526,12 @@ public struct AISettings: Codable, Hashable, Sendable {
         let chosen = choice(job).modelChoice?.account
         let plans = PlanKind.allCases.filter { installedPlans.contains($0) || chosen == $0.rawValue }.map(\.rawValue)
         return (accounts.map(\.id) + plans).map { id in
-            PickerSection(account: id, models: models(of: id) ?? [],
-                          problem: problem(account: id, hasKey: hasKey, planStatus: planStatus, blocked: blocked))
+            let models = availableModels(of: id) ?? []
+            let provider = PlanKind(rawValue: id)?.providerID ?? account(id)?.endpoint.id
+            let recommended = provider.map { p in models.filter { job.isRecommended($0, provider: p) } } ?? []
+            return PickerSection(account: id, models: recommended + models.filter { !recommended.contains($0) },
+                                 problem: problem(account: id, hasKey: hasKey, planStatus: planStatus, blocked: blocked),
+                                 recommended: recommended)
         }
     }
 
