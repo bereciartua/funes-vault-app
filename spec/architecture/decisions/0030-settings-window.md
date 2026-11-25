@@ -2,7 +2,7 @@
 
 **Status:** Accepted · 2026-10-30 (after two GPT-6-Astra reviews of the draft against this repository) · **Amends** [FR-AI-05](../../product/03-requirements.md) (models per task), [FR-AI-06](../../product/03-requirements.md) (provider credentials), [FR-AI-12](../../product/03-requirements.md) (usage counters), FR-AI-16 (subscriptions), FR-AI-17 (its Settings path), [ADR-0014](0014-user-selectable-models.md), [ADR-0024](0024-subscription-providers.md) (one model per plan), [model providers §2 and §4](../model-providers.md), [UX: Mac ▸ Surfaces and Settings](../../product/04-ux-mac.md#settings), and every "Settings ▸ AI Models" and "Settings ▸ MCP" reference in the spec, docs and both apps.
 
-**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):** Settings ▸ AI ▸ Features gains a **Facts** row (working name): a qualified model, *Learn from memories*, *Use in search and answers*, and Remove learned facts. It's off by default (FR-F-01).
+**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):** Settings ▸ AI ▸ Features gains a **Facts** row (working name): a model (a tested one recommended, any allowed, as amended on 2026-11-24), *Learn from memories*, *Use in search and answers*, and Remove learned facts. It's off by default (FR-F-01).
 
 ## Context
 - **The window has outgrown its tabs.** Settings is a toolbar `TabView` with nine tabs (About You · General · Capture · AI Models · MCP · iPhone · Data · Updates · Advanced) in a 700×580 window: the labels run edge to edge and can't be grouped. About 80 controls in all.

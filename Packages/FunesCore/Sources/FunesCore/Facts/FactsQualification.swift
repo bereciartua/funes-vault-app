@@ -28,10 +28,13 @@ public struct FactsEngine: Hashable, Sendable {
     }
 }
 
-/// The qualification records (memory processing §11.10): each turns some uses of some predicates on, for one engine, one
-/// call group's prompt version and one registry version. They ship with the app (`Resources/facts-qualification.json`)
-/// and come only from gate runs (the Phase 13 plan's acceptance table). Local rows (`fact_qualification`, `passed = 0`)
-/// are the two-week review's off-switches; a local row never turns anything on.
+/// The qualification records (memory processing §11.10, ADR-0032 as amended on 2026-11-24): each says an engine passed
+/// Funes's tests for some uses of some predicates, at one call group's prompt version and one registry version. They
+/// ship with the app (`Resources/facts-qualification.json`), come only from gate runs (the Phase 13 plan's acceptance
+/// table), and make a model *Recommended*; they never turn a use on or off. With any model, every use the registry
+/// declares is on, but for what a use needs and the local off-switches (`fact_qualification`, `passed = 0`, the two-week
+/// review's). An off-switch holds for every model, until the call group's prompt, the registry or the pipeline revision
+/// changes (the fix). A local row never turns anything on.
 public struct FactsQualification: Sendable {
     public struct Record: Sendable, Decodable, Equatable {
         /// A pool gated as one (the person predicates, decision 9), all in `callGroup`.
@@ -50,9 +53,9 @@ public struct FactsQualification: Sendable {
         /// The run manifests and reports it rests on, repo-relative.
         public var evidence: [String]
         public var recordedAt: String
-        /// For an *attributes* or *bridges* record (13d's answer gates): the answer models it was measured with, as
-        /// `ModelRouter.engine` names them, and the answer prompt's version (`SearchAnswerer.promptVersion`). Those uses go
-        /// only to an answer model listed here, at that version; missing, they go to none.
+        /// For an answer-side record (13d's and 13e.2's answer gates): the answer models it was measured with, as
+        /// `ModelRouter.engine` names them, and the answer prompt's version (`SearchAnswerer.promptVersion`). What it was
+        /// measured with, kept as evidence; it doesn't decide what an answer uses.
         public var answerModels: [String]
         public var answerPromptVersion: String
 
@@ -98,25 +101,6 @@ public struct FactsQualification: Sendable {
             self.answerPromptVersion = answerPromptVersion
         }
 
-        /// Whether its answer-side uses (*attributes*, *bridges*) cover this answer model at this prompt version.
-        func covers(answer: AnswerKey) -> Bool {
-            answerModels.contains(answer.model) && answerPromptVersion == answer.promptVersion
-        }
-
-        /// Whether use `u` of this record counts for a reader: `answer` is the answering model, nil for plain search and the
-        /// Facts task. *Attributes* and *bridges* go to an answer only when the record covers its model (and count as
-        /// recorded elsewhere). From 13e.2, a *timeline* record measured with answer models (13e.2's gate) is an answer's
-        /// alone: it covers only those models, and plain search's grammar never reads it (ADR-0032 decision 5, amended
-        /// 2026-11-21: plain search's timeline stays off until an engine-free record).
-        func counts(_ u: String, answer: AnswerKey?) -> Bool {
-            if u == FactsUse.timeline.rawValue, !answerModels.isEmpty {
-                guard let answer else { return false }
-                return covers(answer: answer)
-            }
-            guard let answer, FactsQualification.answerUses.contains(u) else { return true }
-            return covers(answer: answer)
-        }
-
         public var engine: FactsEngine { FactsEngine(model: model, adapter: adapter, batching: batching) }
 
         func key(_ predicate: String, _ use: String) -> Key {
@@ -125,15 +109,36 @@ public struct FactsQualification: Sendable {
         }
     }
 
-    /// One use of one predicate under one record's key (`fact_qualification`'s primary key).
+    /// One use of one predicate under one engine's key: the engine, the call group's prompt version and the registry
+    /// version (`fact_qualification`'s primary key). A record's uses have it. An off-switch is matched without the
+    /// engine's model and adapter (they say which engine it was turned off under), so another model doesn't lift it;
+    /// `batching` (the pipeline revision, the same for every model) is matched, so a fix in code lapses it too.
     public struct Key: Hashable, Sendable {
         public var predicate, use, basis, model, adapter, batching, promptVersion, registryVersion: String
+
+        public init(predicate: String, use: String, basis: String, model: String, adapter: String, batching: String,
+                    promptVersion: String, registryVersion: String) {
+            self.predicate = predicate
+            self.use = use
+            self.basis = basis
+            self.model = model
+            self.adapter = adapter
+            self.batching = batching
+            self.promptVersion = promptVersion
+            self.registryVersion = registryVersion
+        }
+
+        public init(predicate: String, use: FactsUse, basis: String = "", engine: FactsEngine, promptVersion: String,
+                    registryVersion: String) {
+            self.init(predicate: predicate, use: use.rawValue, basis: basis, model: engine.model, adapter: engine.adapter,
+                      batching: engine.batching, promptVersion: promptVersion, registryVersion: registryVersion)
+        }
     }
 
     public let records: [Record]
     /// Turned off locally (the two-week review, or a failed gate found after shipping).
     public var off: Set<Key>
-    /// Measurement only (the fixture harness, tests): every declared use on for any engine.
+    /// Measurement only (the fixture harness, tests): every declared use on for any engine, off-switches ignored.
     let unchecked: Bool
 
     /// Internal: the app only ever has the shipped records (`bundled`).
@@ -143,8 +148,8 @@ public struct FactsQualification: Sendable {
         unchecked = false
     }
 
-    /// The UI review build's qualified scene only (`FUNES_UI_REVIEW`): records that were never measured, to show the
-    /// Facts page as it will look once the Gates step ships real ones. The runner and the extractor use `bundled`.
+    /// The UI review build only (`FUNES_UI_REVIEW`): records that were never measured, to show the Facts page with
+    /// other models recommended. The runner and the extractor use `bundled`.
     @_spi(FactsReview) public init(reviewRecords: [Record]) {
         self.init(records: reviewRecords)
     }
@@ -155,7 +160,8 @@ public struct FactsQualification: Sendable {
         self.unchecked = unchecked
     }
 
-    /// Every declared use on, whatever the engine: for measuring a model (the harness) and tests, never for the app.
+    /// Every declared use on, whatever the engine and the off-switches: for measuring a model (the harness) and tests,
+    /// never for the app.
     static let unchecked = FactsQualification(unchecked: true)
 
     /// The records shipped with the app.
@@ -185,16 +191,22 @@ public struct FactsQualification: Sendable {
         return q
     }
 
-    /// Turns one use of one predicate off under a record's key (the two-week review: "any wrong one turns that
-    /// predicate's use, and everything downstream of it, off until fixed"). Everything that needs it goes with it at the
-    /// next read; a change to any key field is a new qualification, which needs its own passing record anyway.
-    public static func turnOff(_ db: Database, predicate: String, use: FactsUse, under record: Record, gate: String, now: Date) throws {
+    /// Turns one use of one predicate off (the two-week review: "any wrong one turns that predicate's use, and everything
+    /// downstream of it, off until fixed"), at the group's current prompt version, the registry version and the pipeline
+    /// revision, for every model (the model and adapter are kept as a note of which one was in use). Everything that
+    /// needs it goes with it at the next read. A new prompt, registry or pipeline revision (the fix) lapses it.
+    public static func turnOff(_ db: Database, _ key: Key, gate: String, now: Date) throws {
         try db.execute(sql: """
             INSERT OR REPLACE INTO fact_qualification (predicate, use, basis, model, prompt_version, registry_version, adapter,
               batching, gate, passed, recorded_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-            """, arguments: [predicate, use.rawValue, record.basis, record.model, record.promptVersion, record.registryVersion,
-                             record.adapter, record.batching, gate, now])
+            """, arguments: [key.predicate, key.use, key.basis, key.model, key.promptVersion, key.registryVersion,
+                             key.adapter, key.batching, gate, now])
+    }
+
+    /// `turnOff` under a record's own key (its engine, prompt and registry version).
+    public static func turnOff(_ db: Database, predicate: String, use: FactsUse, under record: Record, gate: String, now: Date) throws {
+        try turnOff(db, record.key(predicate, use.rawValue), gate: gate, now: now)
     }
 
     /// Every group's prompt version (what a record's `prompt_version` is compared with).
@@ -202,70 +214,60 @@ public struct FactsQualification: Sendable {
         Dictionary(uniqueKeysWithValues: registry.callGroups.keys.map { ($0, FactsPrompt.version($0, registry: registry)) })
     }
 
-    /// The answer model and prompt version an answer's *attributes* and *bridges* are checked against (13d).
-    public struct AnswerKey: Hashable, Sendable {
-        public var model: String
-        public var promptVersion: String
-
-        public init(model: String, promptVersion: String) {
-            self.model = model
-            self.promptVersion = promptVersion
-        }
-    }
-
-    /// The answer-side uses, read only by answers.
-    static let answerUses: Set<String> = [FactsUse.attributes.rawValue, FactsUse.bridges.rawValue]
-
-    /// What's on for a configuration: each call group's engine (none: nothing of that group is on). `answer`: for an
-    /// answer, the model answering; a record's *attributes* and *bridges* then count only if it covers that model at the
-    /// current answer prompt version. Without it (search, the Facts task), those uses count as recorded.
-    public func uses(engines: [String: FactsEngine], registry: FactsRegistry, promptVersions: [String: String],
-                     answer: AnswerKey? = nil) -> FactsUses {
+    /// What's on for a configuration: each call group's engine (none: nothing of that group is on). Every use the
+    /// registry declares for a group's predicates is on with any engine, and *attributes* also at the `sole_known`
+    /// basis; the records don't matter (ADR-0032, amended 2026-11-24). Off: what's switched off locally at the group's
+    /// prompt version, the registry version and the engine's pipeline revision, whatever the model, and what needs a use
+    /// that's off (the registry's
+    /// `uses`, transitively; a basis-scoped use also needs the unscoped one). Search, People & history, answers and the
+    /// Facts task all read this.
+    public func uses(engines: [String: FactsEngine], registry: FactsRegistry, promptVersions: [String: String]) -> FactsUses {
         if unchecked { return .everyDeclared(registry) }
+        struct Switch: Hashable { var predicate, use, basis, promptVersion, registryVersion, batching: String }
+        let switches = Set(off.map { Switch(predicate: $0.predicate, use: $0.use, basis: $0.basis, promptVersion: $0.promptVersion,
+                                            registryVersion: $0.registryVersion, batching: $0.batching) })
         var candidates = Set<FactsUses.Key>()
-        for r in records {
-            guard let engine = engines[r.callGroup], engine == r.engine, promptVersions[r.callGroup] == r.promptVersion,
-                  registry.fingerprint == r.registryVersion else { continue }
-            for p in r.predicates where registry.predicate(p)?.callGroup == r.callGroup {
-                for u in r.uses where registry.predicate(p)?.uses.contains(u) == true && !off.contains(r.key(p, u))
-                    && r.counts(u, answer: answer) {
-                    if let use = FactsUse(rawValue: u) { candidates.insert(.init(predicate: p, use: use, basis: r.basis)) }
+        for p in registry.predicates {
+            guard let engine = engines[p.callGroup], let version = promptVersions[p.callGroup] else { continue }
+            for u in p.uses {
+                guard let use = FactsUse(rawValue: u) else { continue }
+                for basis in use == .attributes ? ["", LinkBasis.soleKnown.rawValue] : [""]
+                where !switches.contains(Switch(predicate: p.id, use: u, basis: basis, promptVersion: version,
+                                                registryVersion: registry.fingerprint, batching: engine.batching)) {
+                    candidates.insert(.init(predicate: p.id, use: use, basis: basis))
                 }
             }
         }
         // On only with everything it needs on (the registry's `uses`, transitively); a basis-scoped use also needs the
         // unscoped one.
-        var on = candidates.filter { k in
+        let on = candidates.filter { k in
             (k.basis.isEmpty || candidates.contains(.init(predicate: k.predicate, use: k.use, basis: "")))
                 && registry.prerequisites(k.use.rawValue).allSatisfy { p in
                     FactsUse(rawValue: p).map { candidates.contains(.init(predicate: k.predicate, use: $0, basis: "")) } ?? false
                 }
         }
-        // 13e.2: the timeline gate measured an answer's *timeline* with the persons' *attributes* on (decision 9), so for
-        // an answer *timeline* is on only while some *attributes* use is (a review's off-switch on attributes turns it off).
-        if answer != nil, !on.contains(where: { $0.use == .attributes }) { on = on.filter { $0.use != .timeline } }
         return FactsUses(registry: registry, on: on)
     }
 
-    /// Whether an engine may read a call group: some predicate of the group is recorded with it.
-    public func qualifies(_ engine: FactsEngine, group: String, registry: FactsRegistry, promptVersions: [String: String]) -> Bool {
-        !uses(engines: [group: engine], registry: registry, promptVersions: promptVersions).predicates(.recorded, group: group).isEmpty
+    /// Whether Funes tested an engine for a call group (the picker's *Recommended*): some record of that group names
+    /// exactly this engine (full model id, adapter, batching), the group's current prompt version and the registry version.
+    public func tested(_ engine: FactsEngine, group: String, registry: FactsRegistry, promptVersions: [String: String]) -> Bool {
+        records.contains {
+            $0.callGroup == group && $0.engine == engine && promptVersions[group] == $0.promptVersion
+                && registry.fingerprint == $0.registryVersion
+        }
     }
 
-    /// The model each call group uses (model providers §Facts): the chosen one where it qualified for that group, else
-    /// the fallback (Claude Haiku 5.5) where that qualified, else none: that group's calls stop and its memories get
-    /// code-only links.
-    public func resolve(chosen: (any GenerationProvider)?, fallback: (any GenerationProvider)?, registry: FactsRegistry,
-                        promptVersions: [String: String]) -> [String: any GenerationProvider] {
-        var out: [String: any GenerationProvider] = [:]
-        for group in registry.callGroups.keys {
-            for p in [chosen, fallback].compactMap({ $0 })
-            where qualifies(FactsEngine(p), group: group, registry: registry, promptVersions: promptVersions) {
-                out[group] = p
-                break
-            }
-        }
-        return out
+    /// Whether Funes tested an engine for every call group.
+    public func tested(_ engine: FactsEngine, registry: FactsRegistry, promptVersions: [String: String]) -> Bool {
+        registry.callGroups.keys.allSatisfy { tested(engine, group: $0, registry: registry, promptVersions: promptVersions) }
+    }
+
+    /// The model each call group uses (model providers §Facts): the chosen one, for every group, tested or not. None:
+    /// no group has a model, and memories get code-only links.
+    public static func resolve(chosen: (any GenerationProvider)?, registry: FactsRegistry) -> [String: any GenerationProvider] {
+        guard let chosen else { return [:] }
+        return Dictionary(uniqueKeysWithValues: registry.callGroups.keys.map { ($0, chosen) })
     }
 }
 

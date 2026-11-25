@@ -36,11 +36,12 @@ public struct FactsLearnReport: Sendable {
 /// the memory text with the user's names replaced by the profile matcher (`FactsSentText`). A local model gets the whole
 /// roster. Validation and the apply use the whole graph: that's local work.
 ///
-/// **Gating** (memory processing §11.10): a group's model is asked only while some predicate of the group is recorded
-/// with it (a qualification record for that model, adapter, batching, the group's prompt version and the registry
-/// version, and no off-switch), read in the same transaction as the call's graph. Facts the answer gives for a
-/// predicate that isn't recorded are dropped, and earlier ones are hidden (`FactStore.load`). The prompt and schema stay
-/// the declared group's, so the prompt version never depends on the gate.
+/// **What's on** (memory processing §11.10): a group's model, any model, is asked only while some predicate of the group
+/// is recorded (declared, and not switched off locally at the group's prompt version, the registry version and the
+/// pipeline revision),
+/// read in the same transaction as the call's graph. Facts the answer gives for a predicate that isn't recorded are
+/// dropped, and earlier ones are hidden (`FactStore.load`). The prompt and schema stay the declared group's, so the
+/// prompt version never depends on an off-switch.
 ///
 /// The app runs it through the facts lane (`FactsQueueWorker`, from the Mac's processing runner) while *Learn from
 /// memories* is on; `permit` is checked before every request, so turning learning off, closing the lane or changing
@@ -51,7 +52,8 @@ public struct FactsExtractor: Sendable {
     public let activity: any ActivityRecorder
     public let registry: FactsRegistry
     public let userAliases: [String]
-    /// The records the calls are checked against (the shipped ones; `.unchecked` only to measure a model).
+    /// What the calls are checked against: the declared uses less the local off-switches (`.unchecked`, which ignores
+    /// the off-switches, only to measure a model).
     public let qualification: FactsQualification
     /// Each group's prompt version, as records name it.
     let promptVersions: [String: String]
@@ -126,7 +128,7 @@ public struct FactsExtractor: Sendable {
     /// Each group's engine, from the router.
     var engines: [String: FactsEngine] { router.factsModels.mapValues { FactsEngine($0) } }
 
-    /// What's on now: the records for the router's engines, with the local off-switches read in this transaction.
+    /// What's on now for the router's engines, with the local off-switches read in this transaction.
     func currentUses(_ db: Database) throws -> FactsUses {
         try qualification.withOffSwitches(db).uses(engines: engines, registry: registry, promptVersions: promptVersions)
     }
@@ -215,7 +217,7 @@ public struct FactsExtractor: Sendable {
     /// Validation notes that record what code added, not something the model said that was dropped.
     static let codeAdditions: Set<String> = ["paired_applied", "paired_relation_added", "denial"]
 
-    /// A code-only outcome because no qualified model reads the group (§11.10): not transient.
+    /// A code-only outcome because every predicate of the group is switched off for its model (§11.10): not transient.
     static let unqualified = "unqualified"
     /// What's recorded changed between a call and its retry: the job reads again from the start.
     static let qualificationChanged = "qualification_changed"
@@ -319,7 +321,8 @@ public struct FactsExtractor: Sendable {
             }
             // A partial re-read is of a version the model has read: it never falls back to code-only links.
             let partial = scope != .full
-            // No qualified model, or a cloud model and a memory above its limit: code-only links, with no request built.
+            // No model, nothing of the group on, or a cloud model and a memory above its limit: code-only links, with no
+            // request built.
             guard modelAllowed(group, a.uses), let model = router.factsModels[group],
                   rosterLimit.map({ $0.allows(a.sensitivity) }) ?? true else {
                 if !partial { try codeOnly(a, group: group, runID: runID) }

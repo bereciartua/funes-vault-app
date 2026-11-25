@@ -173,7 +173,7 @@ struct FactsRow: View {
             Spacer()
             if settings.factsLearn {
                 switch settings.factsProblem {
-                case .nothingQualified?, .needsAccount?, .chooseModel?:
+                case .noModel?, .chooseModel?:
                     ProblemLabel(text: String(localized: "Choose a model"))
                 case let .account(_, problem)?:
                     ProblemLabel(text: ProviderText.label(.account("", problem)))

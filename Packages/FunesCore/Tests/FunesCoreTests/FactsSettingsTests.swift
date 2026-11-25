@@ -5,8 +5,9 @@ import Synchronization
 import Testing
 @testable import FunesCore
 
-/// Phase 13a.2's Settings ▸ AI ▸ Features ▸ Facts (FR-F-01, model providers §4): what the picker offers from the
-/// qualification records, what Facts resolves to, the stored settings, and your names.
+/// Settings ▸ AI ▸ Features ▸ Facts (FR-F-01, model providers §4): what the picker offers (every configured model, the
+/// ones Funes tested first, ADR-0032 as amended on 2026-11-24), what Facts resolves to, the stored settings, and your
+/// names.
 @Suite struct FactsSettingsTests {
     let reg = FactsRegistry.bundled
     var versions: [String: String] { FactsQualification.promptVersions(reg) }
@@ -21,7 +22,8 @@ import Testing
     func plan(_ model: String) -> FactsEngine { FactsEngine(ClaudeCodeClient(executable: "/usr/bin/false", model: model)) }
     var key: FactsEngine { FactsEngine(model: "anthropic/claude-haiku-5-5", adapter: "anthropic") }
 
-    /// Haiku for every group through the Claude plan and an Anthropic key; Opus for the people group through the plan.
+    /// Haiku tested for every group through the Claude plan and an Anthropic key; Opus through the plan for the people
+    /// group only.
     var qualification: FactsQualification {
         FactsQualification(records: groups.flatMap { [record($0, plan("claude-haiku-5-5")), record($0, key)] }
                            + [record(people, plan("claude-opus-5-5"))])
@@ -29,64 +31,71 @@ import Testing
 
     var settings: AISettings {
         var s = AISettings()
-        s.upsert(AIAccount(endpoint: .anthropic(), name: "Anthropic", models: ["claude-haiku-5-5"]))
+        s.upsert(AIAccount(endpoint: .anthropic(), name: "Anthropic", models: ["claude-haiku-5-5", "claude-sonnet-5-5"]))
         return s
     }
 
+    func names(_ offers: [FactsOffer]) -> [String] { offers.map { "\($0.account)·\($0.model)\($0.tested ? "*" : "")" } }
+
     // MARK: Offers
 
-    @Test func whatShipsOffersHaikuOnTheClaudePlanOnly() {
-        // 13e.2's records step qualified Haiku through Claude Code for both call groups (the person pool; client and
-        // works at): the plan is offered for every group, and the API account, whose adapter has no record, isn't.
+    @Test func whatShipsRecommendsHaikuOnTheClaudePlanAndOffersEveryModel() {
+        // 13e.2's records step tested Haiku through Claude Code for both call groups: it's recommended, and every other
+        // configured model is offered after it, untested (the API account's adapter has no record).
         let s = settings
-        let offers = s.factsOffers(qualification: .bundled)
-        #expect(offers.map { "\($0.account)·\($0.model)" } == ["claude-code·claude-haiku-5-5"])
-        #expect(offers.first?.groups == Set(groups))
-        #expect(s.factsProblem(qualification: .bundled, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in nil }) != .nothingQualified)
+        let offers = s.factsOffers(qualification: .bundled, plans: [.claudeCode])
+        #expect(names(offers) == ["claude-code·claude-haiku-5-5*", "anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5",
+                                  "claude-code·haiku", "claude-code·opus"])
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == nil)
+        #expect(s.factsResolution(offers: offers).chosen?.choice == ModelChoice(account: "claude-code", model: "claude-haiku-5-5"))
     }
 
-    @Test func offersAreTheQualifiedEnginesThisAppBuilds() {
-        let offers = settings.factsOffers(qualification: qualification)
-        let all = Set(groups)
-        #expect(offers.map { "\($0.account)·\($0.model)" } == ["anthropic·claude-haiku-5-5", "claude-code·claude-haiku-5-5",
-                                                               "claude-code·claude-opus-5-5"])
-        #expect(offers[0].groups == all && offers[1].groups == all && offers[2].groups == [people])
-        // Whatever the account's own model list says: the plan's "haiku" alias is never a record's full id.
-        #expect(!offers.contains { $0.model == "haiku" })
+    @Test func testedOffersComeFirstAndUntestedOnesStillRun() {
+        let offers = settings.factsOffers(qualification: qualification, plans: [.claudeCode])
+        // Opus is tested for the people group only, so it isn't recommended, and the plan's list doesn't name its full id.
+        #expect(names(offers) == ["anthropic·claude-haiku-5-5*", "claude-code·claude-haiku-5-5*", "anthropic·claude-sonnet-5-5",
+                                  "claude-code·haiku", "claude-code·opus"])
         // A plan the picker doesn't list (its CLI not found, not chosen) offers nothing.
-        #expect(settings.factsOffers(qualification: qualification, plans: []).map(\.account) == ["anthropic"])
+        #expect(Set(settings.factsOffers(qualification: qualification, plans: []).map(\.account)) == ["anthropic"])
+        // Without records, every configured model is still offered.
+        #expect(names(settings.factsOffers(qualification: FactsQualification(records: []), plans: [.claudeCode]))
+            == ["anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5", "claude-code·haiku", "claude-code·opus"])
     }
 
-    @Test func anEngineThatDiffersInAnyPartIsntOffered() {
+    @Test func anEngineThatDiffersInAnyPartIsntTested() {
         // Another effort for the same model: another adapter, so no record.
         let high = FactsEngine(ClaudeCodeClient(executable: "/usr/bin/false", model: "claude-haiku-5-5", effort: "high"))
         let q = FactsQualification(records: groups.map { record($0, high) })
-        #expect(settings.factsOffers(qualification: q).isEmpty)
+        #expect(settings.factsOffers(qualification: q).allSatisfy { !$0.tested })
         // Another batching or pipeline revision.
         var other = plan("claude-haiku-5-5")
         other.batching = "one-memory;pipeline=0"
-        #expect(settings.factsOffers(qualification: FactsQualification(records: groups.map { record($0, other) })).isEmpty)
-        // A record that turns on no recorded use doesn't let a model read a group.
-        let linkedOnly = FactsQualification(records: groups.map { record($0, plan("claude-haiku-5-5"), uses: ["linked"]) })
-        #expect(settings.factsOffers(qualification: linkedOnly).isEmpty)
+        #expect(settings.factsOffers(qualification: FactsQualification(records: groups.map { record($0, other) })).allSatisfy { !$0.tested })
+        // A stale prompt version.
+        var stale = record(people, plan("claude-haiku-5-5"))
+        stale.promptVersion = "000000"
+        let partly = FactsQualification(records: [stale] + groups.filter { $0 != people }.map { record($0, plan("claude-haiku-5-5")) })
+        #expect(!partly.tested(plan("claude-haiku-5-5"), registry: reg, promptVersions: versions))
     }
 
-    @Test func anHTTPAccountCountsOnlyAtItsProvidersOwnAddress() {
+    @Test func aProxyRunsFactsButIsNeverRecommended() throws {
         var s = AISettings()
         s.upsert(AIAccount(endpoint: ProviderEndpoint(id: "anthropic", kind: .anthropic, baseURL: URL(string: "https://proxy.example.com/v1")!),
-                           name: "Anthropic"))
-        #expect(s.factsOffers(qualification: qualification, plans: []).isEmpty)
-        #expect(throws: ProviderError.self) {
-            try FactsClients.make(account: "anthropic", model: "claude-haiku-5-5", settings: s, executable: nil, key: "k")
-        }
+                           name: "Anthropic", models: ["claude-haiku-5-5"]))
+        // Its engine names the same provider id as the real one's, which a record covers, but it isn't the preset's address.
+        let offers = s.factsOffers(qualification: qualification, plans: [])
+        #expect(names(offers) == ["anthropic·claude-haiku-5-5"])
+        #expect(offers.first?.engine == key)
+        let built = try FactsClients.make(account: "anthropic", model: "claude-haiku-5-5", settings: s, executable: nil, key: "k")
+        #expect(FactsEngine(built) == key)
     }
 
     @Test func theEngineAnOfferNamesIsTheEngineTheBuiltClientReports() throws {
         var s = settings
         s.upsert(AIAccount(endpoint: .openAI(), name: "OpenAI"))
+        s.upsert(AIAccount(endpoint: .ollama(), name: "Ollama"))
         for (account, model) in [("anthropic", "claude-haiku-5-5"), ("openai", "gpt-5-mini"), ("claude-code", "claude-haiku-5-5"),
-                                 ("codex", "gpt-5.5")] {
+                                 ("codex", "gpt-5.5"), ("ollama", "qwen3:8b")] {
             let built = try FactsClients.make(account: account, model: model, settings: s, executable: "/usr/bin/false", key: "k")
             #expect(FactsClients.engine(account: account, model: model, settings: s) == FactsEngine(built), "\(account)")
         }
@@ -94,67 +103,71 @@ import Testing
 
     // MARK: Resolution
 
-    @Test func haikuIsTheDefaultAndOpusFallsBackToHaikuOnItsOwnAccount() {
+    @Test func aTestedModelIsTheDefaultAndAChoiceReadsEveryGroup() {
         var s = settings
-        let offers = s.factsOffers(qualification: qualification)
-        // The default: Haiku on the first account that can run it.
+        let offers = s.factsOffers(qualification: qualification, plans: [.claudeCode])
+        // The default: a tested model on the first account that can run it.
         #expect(s.factsResolution(offers: offers).chosen?.account == "anthropic")
-        #expect(s.factsResolution(offers: offers, runnable: { $0 != "anthropic" }).chosen?.account == "claude-code")
-        #expect(s.factsResolution(offers: offers).fallback == nil)
-        // Opus on the plan: Haiku reads the rest, on the plan too (one destination).
-        s.facts.choice = ModelChoice(account: "claude-code", model: "claude-opus-5-5")
+        #expect(s.factsResolution(offers: offers, runnable: { $0 != "anthropic" }).chosen?.choice
+            == ModelChoice(account: "claude-code", model: "claude-haiku-5-5"))
+        // Without a tested one, Haiku by its id (untested here: an API account); with neither, nothing until a choice.
+        let untested = offers.filter { !$0.tested }
+        let apiHaiku = FactsOffer(account: "anthropic", model: "claude-haiku-5-5", engine: key, tested: false)
+        #expect(s.factsResolution(offers: [apiHaiku] + untested).chosen == apiHaiku)
+        #expect(s.factsResolution(offers: untested).chosen == nil)
+        // Opus (untested for work) on the plan reads every group: no fallback.
+        s.facts.choice = ModelChoice(account: "claude-code", model: "opus")
         let r = s.factsResolution(offers: offers)
-        #expect(r.chosen?.model == "claude-opus-5-5" && r.fallback?.account == "claude-code" && r.fallback?.model == "claude-haiku-5-5")
-        #expect(r.groups == Set(groups))
-        // Without Haiku on that account, the rest isn't learned.
-        let noPlanHaiku = offers.filter { !($0.account == "claude-code" && $0.model == "claude-haiku-5-5") }
-        #expect(s.factsResolution(offers: noPlanHaiku).fallback == nil)
-        #expect(s.factsResolution(offers: noPlanHaiku).groups == [people])
+        #expect(r.chosen?.model == "opus" && r.chosen?.tested == false)
+        #expect(r.engines(reg) == Dictionary(uniqueKeysWithValues: groups.map { ($0, FactsEngine(model: "claude-code/opus", adapter: plan("opus").adapter)) }))
+        #expect(FactsResolution().engines(reg).isEmpty)
+    }
+
+    @Test func aPinnedChoiceOutlivesItsRecord() {
+        // Turning learning on pins the default: the Claude plan's Haiku by its full id, which the plan's list doesn't name.
+        var s = settings
+        s.facts.choice = ModelChoice(account: "claude-code", model: "claude-haiku-5-5")
+        let lapsed = FactsQualification(records: [])
+        let offers = s.factsOffers(qualification: lapsed, plans: [.claudeCode])
+        let chosen = s.factsResolution(offers: offers).chosen
+        #expect(chosen?.choice == s.facts.choice && chosen?.tested == false)
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == nil)
     }
 
     @Test func theProblemNamesWhatsMissing() {
         var s = AISettings()
-        // Records exist, but no account here can run them.
-        let q = FactsQualification(records: groups.map { record($0, key) })
-        var offers = s.factsOffers(qualification: q, plans: [])
-        #expect(s.factsProblem(qualification: q, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in nil }) == .needsAccount(["claude-haiku-5-5"]))
-        // A choice that isn't offered any more.
+        // No account or plan here.
+        var offers = s.factsOffers(qualification: qualification, plans: [])
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == .noModel)
+        // A choice whose account is gone (a model the account doesn't list is still offered: it was chosen).
         s = settings
-        s.facts.choice = ModelChoice(account: "anthropic", model: "claude-opus-5-5")
-        offers = s.factsOffers(qualification: q)
-        #expect(s.factsProblem(qualification: q, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in nil }) == .chooseModel)
+        s.facts.choice = ModelChoice(account: "openai", model: "gpt-5-mini")
+        offers = s.factsOffers(qualification: qualification, plans: [])
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == .chooseModel)
         // The chosen account can't run now.
         s.facts.choice = nil
-        #expect(s.factsProblem(qualification: q, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in .noKey }) == .account("anthropic", .noKey))
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in .noKey })
+            == .account("anthropic", .noKey))
     }
 
-    @Test func theRouterDropsAClientWhoseEngineIsntItsOffers() throws {
+    @Test func theRouterGivesTheChosenModelEveryGroupAndDropsAClientWhoseEngineIsntItsOffers() throws {
         let s = settings
-        let offers = s.factsOffers(qualification: qualification)
-        let opus = try #require(offers.first { $0.model == "claude-opus-5-5" })
+        let offers = s.factsOffers(qualification: qualification, plans: [.claudeCode])
+        let opus = try #require(offers.first { $0.model == "opus" })
         let haiku = try #require(offers.first { $0.account == "claude-code" && $0.model == "claude-haiku-5-5" })
-        func config(_ chosen: FactsOffer, _ fallback: FactsOffer?) -> FactsConfiguration {
-            FactsConfiguration(settings: s, chosen: .init(offer: chosen, executable: "/usr/bin/false", key: nil),
-                               fallback: fallback.map { .init(offer: $0, executable: "/usr/bin/false", key: nil) },
+        func config(_ chosen: FactsOffer, executable: String? = "/usr/bin/false") -> FactsConfiguration {
+            FactsConfiguration(settings: s, chosen: .init(offer: chosen, executable: executable, key: nil),
                                cloudLimit: .upTo(.internal), cap: nil, backoff: ProviderBackoff())
         }
-        let router = config(opus, haiku).router(qualification: qualification)
-        #expect(router.factsModels[people]?.modelID == "claude-opus-5-5")
-        #expect(groups.filter { $0 != people }.allSatisfy { router.factsModels[$0]?.modelID == "claude-haiku-5-5" })
+        // An untested model reads every group.
+        #expect(groups.allSatisfy { config(opus).router().factsModels[$0]?.modelID == "opus" })
+        #expect(groups.allSatisfy { config(haiku).router().factsModels[$0]?.modelID == "claude-haiku-5-5" })
         // An offer whose engine the client doesn't report (a changed adapter) reads nothing.
         var tampered = haiku
         tampered.engine.adapter = "claude-code/1;effort=high"
-        #expect(config(tampered, nil).router(qualification: qualification).factsModels.isEmpty)
+        #expect(config(tampered).router().factsModels.isEmpty)
         // No CLI: no client, so no model.
-        let none = FactsConfiguration(settings: s, chosen: .init(offer: haiku, executable: nil, key: nil), fallback: nil,
-                                      cloudLimit: .upTo(.internal), cap: nil, backoff: ProviderBackoff())
-        #expect(none.router(qualification: qualification).factsModels.isEmpty)
-        // The shipped records (Haiku only): Opus chosen falls back to Haiku in every group.
-        let shipped = config(opus, haiku).router(qualification: .bundled)
-        #expect(groups.allSatisfy { shipped.factsModels[$0]?.modelID == "claude-haiku-5-5" })
+        #expect(config(haiku, executable: nil).router().factsModels.isEmpty)
     }
 
     // MARK: Stored settings
@@ -174,11 +187,10 @@ import Testing
         s.facts.choice = ModelChoice(account: "anthropic", model: "claude-haiku-5-5")
         s.removeAccount("anthropic")
         // The choice dangles: "Choose a model", nothing resolves, nothing is sent, though the plan offers Haiku too.
-        let offers = s.factsOffers(qualification: qualification)
-        #expect(offers.map(\.account) == ["claude-code", "claude-code"])
+        let offers = s.factsOffers(qualification: qualification, plans: [.claudeCode])
+        #expect(Set(offers.map(\.account)) == ["claude-code"])
         #expect(s.factsResolution(offers: offers).chosen == nil)
-        #expect(s.factsProblem(qualification: qualification, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in nil }) == .chooseModel)
+        #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == .chooseModel)
     }
 
     @Test func aPresetsAddressCountsWithATrailingSlashButAnotherHostDoesnt() {

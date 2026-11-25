@@ -12,9 +12,9 @@ private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category:
 ///
 /// Facts jobs (memory processing §11.3) run in the low-priority lane while *Learn from memories* is on
 /// (`FactsLane`, admitted atomically with the claim), each with a configuration built for it: the
-/// chosen model and its fallback, the cloud limit, your names from About you, and the shipped
-/// qualification records with the local off-switches. A group no model resolves for waits
-/// (`no_model`) until the Facts settings change.
+/// chosen model (for every call group), the cloud limit and your names from About you; the extractor
+/// reads the local off-switches itself. With no model, a job waits (`no_model`) until the Facts
+/// settings change.
 ///
 /// The first Facts backfill (FR-F-03) is started from the Facts page with an extractor built the same way
 /// (`factsExtractor`); its marked jobs run here like any other. At launch an ended backfill is settled, and at launch and
@@ -149,17 +149,14 @@ final class ProcessingRunner {
         do { try await FactsQueueWorker(extractor: extractor).scheduleCatchUp() } catch { logger.error("The facts catch-up failed") }
     }
 
-    /// A Facts extractor as a job would get it now (the configuration, your names, the records with the local
-    /// off-switches), for the backfill's estimate and start and the catch-up; nil when no model resolves.
+    /// A Facts extractor as a job would get it now (the configuration and your names; it reads the local off-switches
+    /// itself), for the backfill's estimate and start and the catch-up; nil when no model resolves.
     func factsExtractor() async -> FactsExtractor? {
         let store = environment.store, activity = environment.activity, profiles = environment.profiles
         guard let configuration = settings.factsConfiguration(cap: settings.cap(store: store, activity: activity)) else { return nil }
         return await Task.detached(priority: .utility) { () async -> FactsExtractor? in
-            guard let aliases = try? await profiles.profile().factsAliases,
-                  let qualification = try? await store.writer.read({ db in try FactsQualification.bundled.withOffSwitches(db) })
-            else { return nil }
-            return FactsExtractor(store: store, router: configuration.router(qualification: qualification), activity: activity,
-                                  userAliases: aliases)
+            guard let aliases = try? await profiles.profile().factsAliases else { return nil }
+            return FactsExtractor(store: store, router: configuration.router(), activity: activity, userAliases: aliases)
         }.value
     }
 
@@ -191,8 +188,7 @@ final class ProcessingRunner {
             var router: ModelRouter?
             do {
                 let aliases = try await profiles.profile().factsAliases
-                let qualification = try await store.writer.read { db in try FactsQualification.bundled.withOffSwitches(db) }
-                let built = configuration.router(qualification: qualification)
+                let built = configuration.router()
                 router = built
                 if let group = job.callGroup, built.factsModels[group] == nil {
                     return (.success(.later(until: Date().addingTimeInterval(86_400), code: Self.noModel)), router)

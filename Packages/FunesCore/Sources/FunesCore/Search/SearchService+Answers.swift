@@ -19,8 +19,8 @@ extension SearchService {
     }
 
     /// An answer's learned facts (memory processing §10.3, §11.9; 13d), or nil when facts in answers is off for this
-    /// call: learned facts aren't in use in search, no predicate is linked, no *attributes* record covers `answerModel`,
-    /// the view's limit isn't the one search was configured with, or anything failed (the answer then reads 13b's plain
+    /// call: learned facts aren't in use in search, no predicate is linked, neither *attributes* nor (for a checked
+    /// cloud answer) *timeline* is on, the view's limit isn't the one search was configured with, or anything failed (the answer then reads 13b's plain
     /// selection, `answerSelection`, never the ids as given).
     ///
     /// What it reads: the view's own re-ranking of the search (admission, the −0.1 demotions, the rest-of-query score and
@@ -34,9 +34,9 @@ extension SearchService {
         do {
             let state: (FactsUses, FactsUses)? = try await store.writer.read { db in
                 let uses = try config.uses(db)
-                let answerUses = try config.answerUses(db, answerModel: answerModel)
-                // 13e.2: an answer reads learned facts with an *attributes* record for its model, or a *timeline* one that
-                // gives it rows (a cloud engine, a screen that shows checked claims).
+                let answerUses = try config.answerUses(db)
+                // 13e.2: an answer reads learned facts with *attributes* on, or *timeline* on where it gives rows (a cloud
+                // engine, a screen that shows checked claims).
                 let rowsAllowed = checked && !onDevice && view != .full && !answerUses.predicates(.timeline).isEmpty
                 guard !uses.predicates(.linked).isEmpty, !answerUses.predicates(.attributes).isEmpty || rowsAllowed else { return nil }
                 return (uses, answerUses)

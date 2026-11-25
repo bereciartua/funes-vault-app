@@ -518,10 +518,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await show(.searchIndex, "ai-features-search-index-second-index")
             await show(SettingsDestination(.privacy), "ai-privacy-second-index")
             ai.setEmbedding(nil)
-            // Facts once models have qualified: review-only records, never measured and never shipped (the app and its
-            // runner use the bundled file, which is empty until 13a.2's Gates step). This build starts no runner.
+            // Facts with more models recommended: review-only records, never measured and never shipped (the app uses the
+            // bundled file). This build starts no runner.
             ai.factsQualification = Self.reviewFactsQualification()
-            await show(.facts, "ai-features-facts-qualified")
+            await show(.facts, "ai-features-facts-recommended")
             ai.factsLearn = true
             ai.factsUse = true
             await show(.facts, "ai-features-facts-learning")
@@ -555,7 +555,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await show(.facts, "ai-features-facts-cap-share")
             model.factsCapWait = []
             model.factsBackfill = nil
-            ai.setFactsChoice(ModelChoice(account: "claude-code", model: "claude-opus-5-5"))
+            // A model Funes didn't test for every group: it runs everything, with the page's quiet line.
+            ai.setFactsChoice(ModelChoice(account: "claude-code", model: "opus"))
             await show(.facts, "ai-features-facts-opus")
             ai.setFactsChoice(nil)
             ai.factsLearn = false
@@ -995,9 +996,6 @@ extension UIReview {
         for group in registry.callGroups.keys.sorted() {
             records.append(record(group, plan(FactsClients.defaultModel)))
             records.append(record(group, key))
-        }
-        if let people = registry.callGroups.keys.sorted().first {
-            records.append(record(people, plan("claude-opus-5-5")))
         }
         return FactsQualification(reviewRecords: records)
     }

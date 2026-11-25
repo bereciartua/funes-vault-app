@@ -504,7 +504,7 @@ public final class SearchAnswerer: Sendable {
         let rowFacts = Array(plan.rowsFacts), rowHolders = Array(plan.rowsHolders)
         return { db in
             guard let config else { return attributes.isEmpty && rowsPredicate == nil }
-            let uses = try config.answerUses(db, answerModel: answerModel)
+            let uses = try config.answerUses(db)
             // 13e.2: the rows' use is still on, and the user's own entries and corrections behind them still within the limit.
             if let rowsPredicate, !uses.isOn(rowsPredicate, .timeline) { return false }
             if !local, !rowFacts.isEmpty {

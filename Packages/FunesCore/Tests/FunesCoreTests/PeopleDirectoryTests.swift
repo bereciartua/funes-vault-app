@@ -163,6 +163,51 @@ import Testing
         #expect(!section.episodes[0].stating.isEmpty)
     }
 
+    /// Your Timeline reads the uses with no answer model (`FactsSearchConfig.uses`), from the shipped records and the
+    /// Facts engines as the app builds them. Before ADR-0032's amendment of 2026-11-24 it was always off: both shipped
+    /// timeline records name answer models, and a record with answer models didn't count without one.
+    @Test func yourTimelineShowsLearnedJobsWithTheTestedModelAndAnUntestedOne() throws {
+        let a = try memory("Acme", "I joined Acme in 2015 and left in 2017.")
+        let b = try memory("Initech", "I joined Initech in 2019; I left in 2021.", at: 1)
+        try apply(a, job("Acme", start: "2015", end: "2017", quote: "I joined Acme in 2015"), group: workGroup)
+        try apply(b, job("Initech", start: "2019", end: "2021", quote: "I joined Initech in 2019"), group: workGroup)
+        // The engines as the app builds them: the default resolution (the tested Haiku on the Claude plan), and a choice of
+        // a local server's model no record names.
+        var ai = AISettings()
+        ai.upsert(AIAccount(endpoint: .ollama(), name: "Ollama", models: ["qwen3:8b"]))
+        let tested = ai.factsResolution(offers: ai.factsOffers(qualification: .bundled, plans: [.claudeCode]))
+        #expect(tested.chosen?.tested == true && tested.chosen?.model == FactsClients.defaultModel)
+        ai.facts.choice = ModelChoice(account: "ollama", model: "qwen3:8b")
+        let untested = ai.factsResolution(offers: ai.factsOffers(qualification: .bundled, plans: [.claudeCode]))
+        #expect(untested.chosen?.tested == false)
+        for resolution in [tested, untested] {
+            let config = FactsSearchConfig(engines: resolution.engines(), userAliases: [], cloudLimit: .upTo(.internal))
+            let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
+            #expect(section.on, "\(resolution.chosen?.model ?? "")")
+            #expect(section.episodes.map(\.name) == ["Initech", "Acme"], "\(resolution.chosen?.model ?? "")")
+            #expect(section.episodes.allSatisfy { !$0.yours }, "\(resolution.chosen?.model ?? "")")
+        }
+        // No model at all: off, and nothing learned shows (only your entries would).
+        let none = FactsSearchConfig(engines: [:], userAliases: [], cloudLimit: .upTo(.internal))
+        let off = try #require(try v.store.peopleDirectory(config: none).timeline.first { $0.predicate == Self.work })
+        #expect(!off.on && off.episodes.isEmpty)
+        // The timeline switched off locally: off for the untested model too, while your own entry still shows.
+        let engine = try #require(untested.chosen?.engine)
+        try v.store.writer.write { db in
+            try FactsQualification.turnOff(db, .init(predicate: Self.work, use: .timeline, engine: engine,
+                                                     promptVersion: FactsPrompt.version(workGroup, registry: Self.reg),
+                                                     registryVersion: Self.reg.fingerprint), gate: "test", now: t0)
+        }
+        _ = try v.store.addManualEntry(PeopleManualEntry(kind: Self.reg.kindOf(Self.work), name: "Hooli", predicate: Self.work,
+                                                         start: "2022"), activity: activity, now: t0)
+        for resolution in [tested, untested] {
+            let config = FactsSearchConfig(engines: resolution.engines(), userAliases: [], cloudLimit: .upTo(.internal))
+            let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
+            // Your entry only: the learned jobs don't show while their timeline is off.
+            #expect(!section.on && section.episodes.map(\.name) == ["Hooli"] && section.episodes[0].yours)
+        }
+    }
+
     @Test func anUndatedJobSaysFunesCantPlaceIt() throws {
         let a = try memory("Acme", "I joined Acme in 2015 and left in 2017.")
         let h = try memory("Hooli", "I did a contract at Hooli at some point.", at: 1)

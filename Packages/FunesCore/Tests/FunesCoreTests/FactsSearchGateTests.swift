@@ -93,9 +93,10 @@ import Testing
                     report.append("\(t.passes ? "PASS" : "FAIL"): \(t)")
                     report += lines
                     report.append("")
-                    // The gate judges what ships (the shipped uses) on every set, and every declared use on the people
-                    // sets; works at with every use on is reported (its linked and timeline uses have no record yet).
-                    let judged = arm == "shipped uses" || s.0 != "work"
+                    // The gate judges the people sets. Since ADR-0032's amendment of 2026-11-24 every declared use ships
+                    // with any model, so the shipped arm is every declared use too; the work set's losses with works at's
+                    // timeline on are reported, a known cost the author accepted, not judged.
+                    let judged = s.0 != "work"
                     if !t.passes, judged { failures.append("\(s.0)/\(index.rawValue)/\(arm): \(t)") }
                 }
             }

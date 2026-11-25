@@ -387,11 +387,7 @@ final class AppModel {
             search.facts = nil
             return
         }
-        let resolution = modelSettings.factsResolution
-        var engines: [String: FactsEngine] = [:]
-        for offer in [resolution.fallback, resolution.chosen].compactMap({ $0 }) {
-            for group in offer.groups { engines[group] = offer.engine }      // the chosen one wins where it qualified
-        }
+        let engines = modelSettings.factsResolution.engines()
         let limit = modelSettings.cloudLimit, profiles = services.profiles
         if let current = search.facts, current.engines != engines || current.cloudLimit != limit { search.facts = nil }
         Task {
@@ -421,11 +417,7 @@ final class AppModel {
     /// use it now), whether or not *Use in search and answers* is on; nil while your names can't be read.
     func peopleConfig() async -> FactsSearchConfig? {
         if let override = peopleConfigOverride { return override }
-        let resolution = modelSettings.factsResolution
-        var engines: [String: FactsEngine] = [:]
-        for offer in [resolution.fallback, resolution.chosen].compactMap({ $0 }) {
-            for group in offer.groups { engines[group] = offer.engine }
-        }
+        let engines = modelSettings.factsResolution.engines()
         guard let aliases = try? await services.profiles.profile().factsAliases else { return nil }
         return FactsSearchConfig(engines: engines, userAliases: aliases, cloudLimit: modelSettings.cloudLimit)
     }

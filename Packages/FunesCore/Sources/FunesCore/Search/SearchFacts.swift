@@ -2,8 +2,8 @@ import Foundation
 import GRDB
 
 /// Learned facts in Vault search (memory processing §4, FR-F-05; owner side only): set on `SearchService.facts` while
-/// *Use in search and answers* is on, nil otherwise. What's on is read in each search's own transaction, from the
-/// shipped qualification records and the local off-switches for `engines` (each call group's current Facts engine),
+/// *Use in search and answers* is on, nil otherwise. What's on is read in each search's own transaction: every declared
+/// use of each call group with an engine in `engines` (each group's current Facts engine), less the local off-switches,
 /// so a use turned off stops at the next search.
 public struct FactsSearchConfig: Sendable {
     public var registry: FactsRegistry
@@ -32,14 +32,14 @@ public struct FactsSearchConfig: Sendable {
         self.cloudLimit = cloudLimit
     }
 
-    /// The UI-review build's: every declared use on, whatever is qualified.
+    /// The UI-review build's: every declared use on.
     @_spi(FactsReview) public static func review(userAliases: [String] = []) -> FactsSearchConfig {
         var c = FactsSearchConfig(engines: [:], userAliases: userAliases, cloudLimit: .upTo(.internal))
         c.measuredUses = .everyDeclared(.bundled)
         return c
     }
 
-    /// The UI-review build's picture of what ships in v0.10: people recorded and linked, a recorded-only predicate
+    /// The UI-review build's picture of a partial configuration: people recorded and linked, a recorded-only predicate
     /// recorded, nothing else (no timeline).
     @_spi(FactsReview) public static func reviewShipped(userAliases: [String] = []) -> FactsSearchConfig {
         let reg = FactsRegistry.bundled
@@ -64,14 +64,11 @@ public struct FactsSearchConfig: Sendable {
                                                           promptVersions: FactsQualification.promptVersions(registry))
     }
 
-    /// What's on for an answer by `answerModel` (`ModelRouter.engine`), read in `db`: *attributes* and *bridges* only where a
-    /// record covers that model at the current answer prompt version (13d).
-    func answerUses(_ db: Database, answerModel: String) throws -> FactsUses {
+    /// What's on for an answer, read in `db`: the same as search's, whatever the answer model (ADR-0032, amended
+    /// 2026-11-24). A measurement may set its own.
+    func answerUses(_ db: Database) throws -> FactsUses {
         if let measuredAnswerUses { return measuredAnswerUses }
-        if let measuredUses { return measuredUses }
-        return try qualification.withOffSwitches(db).uses(engines: engines, registry: registry,
-                                                          promptVersions: FactsQualification.promptVersions(registry),
-                                                          answer: .init(model: answerModel, promptVersion: SearchAnswerer.promptVersion))
+        return try uses(db)
     }
 }
 

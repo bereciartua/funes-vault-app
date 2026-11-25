@@ -240,10 +240,9 @@ public final class ModelRouter: Sendable {
     /// call on a cloud model, minutes on a small local one).
     public let splitTimeout: Duration
 
-    /// The Facts model of each call group (memory processing §11.3, §11.10, model providers §Facts): the chosen model
-    /// where it qualified for that group, else Claude Haiku 5.5 where that did (`FactsQualification.resolve`). A group
-    /// with none gets code-only links. Never falls back to another provider. `FactsExtractor` still checks every call
-    /// against the qualification records, whatever is set here.
+    /// The Facts model of each call group (memory processing §11.3, §11.10, model providers §Facts): the chosen model,
+    /// for every group (`FactsQualification.resolve`). A group with none gets code-only links. Never falls back to
+    /// another provider. `FactsExtractor` still checks every call against what's on (the local off-switches).
     public let factsModels: [String: any GenerationProvider]
 
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
