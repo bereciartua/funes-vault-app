@@ -330,6 +330,32 @@ import Testing
         #expect(PeopleWording.question(PeopleToCheckItem(id: "x")) == nil)
     }
 
+    /// An open end (memories disagree on whether it ended; the Mac sends `maxDay`) never shows as the year 9999.
+    @Test func anOpenEndIsNeverTheYear9999() {
+        let start = PeopleDateRange(lo: PeopleDay.number(year: 2023, month: 7, day: 1), hi: PeopleDay.number(year: 2023, month: 7, day: 31), precision: .month)
+        let open = PeopleDateRange(lo: PeopleDay.number(year: 2026, month: 3, day: 1), hi: PeopleDateRange.maxDay, precision: .conflict)
+        let range = PeopleWording.range(start: start, end: open, ongoing: false)
+        #expect(range == "since July 2023, end unclear")
+        #expect(PeopleWording.range(start: nil, end: open, ongoing: false) == "end unclear")
+        let e = PeopleEpisode(id: "x", factID: "f", entityID: "e", name: "Acme", start: start, end: open, former: true, conflictEnd: true)
+        let warning = PeopleWording.conflict(e)
+        #expect(warning == "Ended or still ongoing: two memories disagree")
+        // A list row with an open end says what it is, not "until 9999".
+        let row = PeopleWording.line(PeopleEntry.Fact(attribute: "where you worked", status: .former, until: open))
+        #expect(row == "where you worked, former")
+        // No start, an open end from the first day: still no year.
+        let fromFirst = PeopleDateRange(lo: PeopleDateRange.minDay, hi: PeopleDateRange.maxDay, precision: .conflict)
+        #expect(PeopleWording.conflict(PeopleEpisode(id: "z", factID: "f", entityID: "e", name: "Acme", end: fromFirst, conflictEnd: true))
+                == "Ended or still ongoing: two memories disagree")
+        for text in [range, PeopleWording.range(start: nil, end: open, ongoing: false), warning, row] {
+            #expect(text?.contains("9999") == false)
+        }
+        // A closed conflicting end still names both years.
+        let closed = PeopleDateRange(lo: PeopleDay.number(year: 2019, month: 1, day: 1), hi: PeopleDay.number(year: 2020, month: 12, day: 31), precision: .conflict)
+        let c = PeopleEpisode(id: "y", factID: "f", entityID: "e", name: "Acme", start: nil, end: closed, conflictEnd: true)
+        #expect(PeopleWording.conflict(c) == "Ended 2019 or 2020: two memories disagree")
+    }
+
     @Test func theDemoShowsEachState() async throws {
         let on = DemoVault(people: .on)
         let d = try await on.call(PeopleDirectoryGet.self, EmptyParams())

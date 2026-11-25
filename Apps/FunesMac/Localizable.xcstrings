@@ -3853,6 +3853,9 @@
     "Ended %@: two memories disagree" : {
       "comment" : "Timeline: conflicting dates"
     },
+    "Ended or still ongoing: two memories disagree" : {
+      "comment" : "Timeline: memories disagree on whether an episode ended"
+    },
     "Enter a local server by its address, like 127.0.0.1 or 192.168.1.20, or as localhost. Funes treats any other name, .local ones included, as cloud, whatever this says." : {
 
     },
@@ -9930,6 +9933,9 @@
     "e.g. she/her" : {
 
     },
+    "end unclear" : {
+      "comment" : "An undated episode whose memories disagree on whether it ended"
+    },
     "expires %@" : {
 
     },
@@ -10208,6 +10214,9 @@
     },
     "since %@" : {
       "comment" : "An episode that still holds"
+    },
+    "since %@, end unclear" : {
+      "comment" : "An episode whose memories disagree on whether it ended"
     },
     "status" : {
 

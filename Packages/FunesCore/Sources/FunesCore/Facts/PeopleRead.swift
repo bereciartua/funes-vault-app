@@ -226,7 +226,8 @@ struct PeopleRead {
         var line = PeopleDirectory.FactLine(attribute: attribute(f.predicate, label: f.label ?? f.cls), status: status(f),
                                             since: nil, until: nil, recordedOnly: !uses.isOn(f.predicate, .linked))
         if declaresTimeline(f.predicate), uses.isOn(f.predicate, .timeline), let last = episodes(f).last {
-            if last.ongoing { line.since = last.tstart } else { line.until = last.end }
+            // An open end (memories disagree whether it ended; `maxDay`) is no "until".
+            if last.ongoing { line.since = last.tstart } else if let end = last.end, end.hi < DateRange.maxDay { line.until = end }
         }
         return line
     }
@@ -330,7 +331,8 @@ struct PeopleRead {
         if basis == .ambiguous, undated || earlier {
             previous = .cantTell
         } else if basis == .gap, let got, let s = e.tstart,
-                  let pe = all.filter({ $0.entity == got && $0 !== e && $0.end != nil }).max(by: { $0.end!.hi < $1.end!.hi })?.end {
+                  let pe = all.filter({ $0.entity == got && $0 !== e && $0.end != nil }).max(by: { $0.end!.hi < $1.end!.hi })?.end,
+                  pe.hi < DateRange.maxDay {      // an open end bounds no gap
             previous = .gap(months: max(1, Int((Double(s.lo - pe.hi) / 30.44).rounded())))
         }
         // Acting on it again targets your rows' own selector (so Clear Dates finds them and a new date supersedes

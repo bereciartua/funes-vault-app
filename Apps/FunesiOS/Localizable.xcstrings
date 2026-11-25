@@ -1062,6 +1062,9 @@
     "Ended %@: two memories disagree" : {
       "comment" : "Timeline: conflicting dates"
     },
+    "Ended or still ongoing: two memories disagree" : {
+      "comment" : "Timeline: memories disagree on whether an episode ended"
+    },
     "Event" : {
 
     },
@@ -2757,6 +2760,9 @@
     "deceased" : {
 
     },
+    "end unclear" : {
+      "comment" : "An undated episode whose memories disagree on whether it ended"
+    },
     "former" : {
       "comment" : "Timeline: a job of yours marked former, no dates"
     },
@@ -2774,6 +2780,9 @@
     },
     "since %@" : {
       "comment" : "An episode that still holds"
+    },
+    "since %@, end unclear" : {
+      "comment" : "An episode whose memories disagree on whether it ended"
     },
     "undated" : {
 

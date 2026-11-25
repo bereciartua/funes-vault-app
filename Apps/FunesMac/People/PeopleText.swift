@@ -89,9 +89,17 @@ enum PeopleText {
         return f.string(from: d)
     }
 
-    /// "2019 – March 2021", "since 2021", "until 2017", or nil when undated.
+    /// Whether an end is open: memories disagree and it may still hold today (its last day is `DateRange.maxDay`, the
+    /// store's "no end", never a date to show).
+    static func isOpen(_ r: DateRange) -> Bool { r.hi >= DateRange.maxDay }
+
+    /// "2019 – March 2021", "since 2021", "until 2017", "since 2021, end unclear", or nil when undated.
     static func range(start: DateRange?, end: DateRange?, ongoing: Bool) -> String? {
         switch (start, end) {
+        case let (s?, e?) where isOpen(e):
+            return String(localized: "since \(date(s)), end unclear", comment: "An episode whose memories disagree on whether it ended")
+        case (nil, let e?) where isOpen(e):
+            return String(localized: "end unclear", comment: "An undated episode whose memories disagree on whether it ended")
         case let (s?, e?): return String(localized: "\(date(s)) – \(date(e, end: true))", comment: "An episode's dates")
         case let (s?, nil): return ongoing ? String(localized: "since \(date(s))", comment: "An episode that still holds")
                                            : String(localized: "from \(date(s))", comment: "An episode with no known end")
@@ -103,7 +111,7 @@ enum PeopleText {
     static func line(_ f: PeopleDirectory.FactLine) -> String {
         if f.recordedOnly { return f.attribute }
         if let s = f.since { return String(localized: "\(f.attribute) since \(date(s))", comment: "List row: e.g. where you worked since 2021") }
-        if let u = f.until { return String(localized: "\(f.attribute) until \(date(u, end: true))", comment: "List row: e.g. where you worked until 2021") }
+        if let u = f.until, !isOpen(u) { return String(localized: "\(f.attribute) until \(date(u, end: true))", comment: "List row: e.g. where you worked until 2021") }
         if f.status == .former { return String(localized: "\(f.attribute), former", comment: "List row: a former relation") }
         return f.attribute
     }
@@ -139,7 +147,8 @@ enum PeopleText {
     /// "2019 or 2020: two memories disagree".
     static func conflict(_ e: PeopleDirectory.TimelineEpisode) -> String? {
         func years(_ r: DateRange) -> String? {
-            let a = civil(r.lo).year ?? 0, b = civil(min(r.hi, DateRange.maxDay - 1)).year ?? 0
+            guard !isOpen(r) else { return nil }
+            let a = civil(r.lo).year ?? 0, b = civil(r.hi).year ?? 0
             return a == b ? nil : String(localized: "\(String(a)) or \(String(b))", comment: "Two years memories disagree on")
         }
         if e.conflictStart, let s = e.start {
@@ -148,6 +157,12 @@ enum PeopleText {
                 ?? String(localized: "Its start: two memories disagree", comment: "Timeline: conflicting dates")
         }
         if e.conflictEnd, let x = e.end {
+            // An open end: one memory ends it, another says it still held later (no return stated). Its first day
+            // isn't an end date (it can be the start or the day a "no longer" was written), so no year is named.
+            if isOpen(x) {
+                return String(localized: "Ended or still ongoing: two memories disagree",
+                              comment: "Timeline: memories disagree on whether an episode ended")
+            }
             return years(x).map { String(localized: "Ended \($0): two memories disagree", comment: "Timeline: conflicting dates") }
                 ?? String(localized: "Its end: two memories disagree", comment: "Timeline: conflicting dates")
         }
