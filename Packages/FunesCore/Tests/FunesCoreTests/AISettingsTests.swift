@@ -182,6 +182,62 @@ import Testing
         #expect(AISettings.load(old).settings.discovered.isEmpty)
     }
 
+    @Test func aListBelongsToItsAccountAndConnection() {
+        var s = AISettings()
+        s.upsert(AIAccount(endpoint: .openAI(), name: "OpenAI", models: ["my-embed-tuned"]))
+        // Models that can't chat are left out of what it listed, never out of yours.
+        s.setDiscovered(["gpt-6-sol", "whisper-1", "tts-1-hd", "dall-e-3", "omni-moderation-latest", "gpt-image-1",
+                         "text-embedding-3-large", "gpt-4o-realtime-preview"], for: "openai")
+        #expect(s.availableModels(of: "openai") == ["my-embed-tuned", "gpt-6-sol"])
+        // What it listed is in Facts' inputs (its offers and default read it).
+        let before = s.factsInputs
+        s.setDiscovered(["gpt-6-sol", "gpt-6-luna"], for: "openai")
+        #expect(s.factsInputs != before)
+        // Another address is another server: its list goes. The same address keeps it.
+        var same = s.account("openai")!
+        same.name = "Work OpenAI"
+        s.upsert(same)
+        #expect(s.discovered["openai"] != nil)
+        var moved = same
+        moved.endpoint.baseURL = URL(string: "https://proxy.example.com/v1")!
+        s.upsert(moved)
+        #expect(s.discovered["openai"] == nil)
+        // Removed: its list goes, and a late answer for it isn't stored.
+        s.setDiscovered(["gpt-6-sol"], for: "openai")
+        s.removeAccount("openai")
+        #expect(s.discovered["openai"] == nil)
+        let late = s.setDiscovered(["gpt-6-sol"], for: "openai")
+        #expect(!late && s.discovered.isEmpty)
+    }
+
+    @Test func removingAModelTheAccountStillOffersResetsNoJob() {
+        var s = AISettings()
+        s.setChoice(Self.model("claude-code", "opus"), for: .tidyUp)
+        // "opus" is one of Claude Code's known models: removed from yours, it stays in every picker, and so does the choice.
+        s.addModel("claude-opus-5-5", to: "claude-code")
+        #expect(s.removalEffect(model: "opus", from: "claude-code").isEmpty)
+        s.removeModel("opus", from: "claude-code")
+        #expect(s.choice(.tidyUp) == Self.model("claude-code", "opus") && s.availableModels(of: "claude-code")?.contains("opus") == true)
+        // A model it doesn't offer resets its jobs, as before.
+        s.addModel("my-tuned", to: "claude-code")
+        s.setChoice(Self.model("claude-code", "my-tuned"), for: .tidyUp)
+        #expect(s.removalEffect(model: "my-tuned", from: "claude-code").direct == [.tidyUp])
+    }
+
+    @Test func discoveryIsAskedAgainAfterAFailureAKeyChangeOrTenMinutes() {
+        var t = ModelDiscoveryThrottle()
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        #expect(t.isDue("openai", connection: "a#0", now: t0))
+        // Nothing stamped until it answers: a failure or a cancelled request is due again at once.
+        #expect(t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(1)))
+        t.answered("openai", connection: "a#0", now: t0)
+        #expect(!t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(599)))
+        #expect(t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(600)))
+        // A new key (or address) is due at once.
+        #expect(t.isDue("openai", connection: "a#1", now: t0.addingTimeInterval(1)))
+        #expect(t.isDue("ollama", connection: "a#0", now: t0.addingTimeInterval(1)))
+    }
+
     @Test func eachPickerListsWhatFunesMeasuredForItsJobFirst() {
         var s = AISettings()
         s.setDiscovered(["gpt-6-sol", "gpt-5.6-terra", "gpt-6-luna"], for: "codex")

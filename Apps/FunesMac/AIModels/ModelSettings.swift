@@ -127,10 +127,9 @@ final class ModelSettings {
         change { $0.setDiscovered(models, for: id) }
     }
 
-    /// When each account or plan was last asked, this launch: asked again only after `discoveryInterval`, or when its
-    /// settings change.
-    @ObservationIgnored private var discoveredAt: [String: (Date, AIAccount?)] = [:]
-    private static let discoveryInterval: TimeInterval = 600
+    /// When each account or plan last answered, this launch, and with what connection: asked again after
+    /// `ModelDiscoveryThrottle.interval`, or at once when its address or key changes.
+    @ObservationIgnored private var discoveryThrottle = ModelDiscoveryThrottle()
 
     /// Asks every account and found plan which models it offers (ADR-0030, amended 2026-11-24), so every picker lists
     /// them: an account's `/v1/models` or Anthropic's list, Codex's `codex debug models`. Claude Code can't list its
@@ -140,22 +139,28 @@ final class ModelSettings {
         #if FUNES_UI_REVIEW
         if plansFixed { return }
         #endif
-        let now = Date()
-        func due(_ id: String, _ account: AIAccount?) -> Bool {
-            guard let (at, was) = discoveredAt[id], was == account else { return true }
-            return now.timeIntervalSince(at) > Self.discoveryInterval
-        }
-        for account in accounts where due(account.id, account) {
-            discoveredAt[account.id] = (now, account)
+        // The connection a list belongs to: the account (its address) and the keys' generation. A list that comes
+        // back after either changed, or after the account went, is dropped.
+        func connection(_ account: AIAccount) -> String { "\(account.endpoint)#\(keyGeneration)" }
+        for account in accounts where discoveryThrottle.isDue(account.id, connection: connection(account), now: Date()) {
+            guard !Task.isCancelled else { return }
             guard let client = try? client(for: account, model: "") else { continue }
             let found: [String]? = if let openAI = client as? OpenAICompatibleClient { try? await openAI.listModels() }
                 else if let anthropic = client as? AnthropicClient { try? await anthropic.listModels() } else { nil }
-            if let found, !found.isEmpty { setDiscovered(found, for: account.id) }
+            // Left the page mid-request: nothing is stamped, so the next opening asks again.
+            guard !Task.isCancelled else { return }
+            guard let found, !found.isEmpty, let now = stored.account(account.id), connection(now) == connection(account) else { continue }
+            setDiscovered(found, for: account.id)
+            discoveryThrottle.answered(account.id, connection: connection(account), now: Date())
         }
+        // Codex only while it's ready (FR-AI-16: a CLI that isn't is never called), with its sign-in and features checked.
         let codex = PlanKind.codex.rawValue
-        if let path = executables[.codex], due(codex, nil) {
-            discoveredAt[codex] = (now, nil)
-            if let found = await CodexClient(executable: path, model: "").listModels(), !found.isEmpty { setDiscovered(found, for: codex) }
+        if let path = executables[.codex], subscriptionStatus[.codex]?.isReady == true,
+           discoveryThrottle.isDue(codex, connection: path, now: Date()), !Task.isCancelled,
+           let found = await CodexClient(executable: path, model: "", allowsFileReads: codexAllowsFileReads).listModels(),
+           !Task.isCancelled, !found.isEmpty {
+            setDiscovered(found, for: codex)
+            discoveryThrottle.answered(codex, connection: path, now: Date())
         }
     }
 

@@ -31,7 +31,7 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 | **ChatGPT (Codex)** (subscription, v0.3) | Cloud | — | OpenAI models through the user's own `codex` CLI, signed in to their ChatGPT plan | Codex installed and signed in; no key in Funes |
 
 - **"Local"** means the endpoint's host resolves to loopback or a private address, and the user hasn't marked it as cloud. Funes treats any other host as **cloud** for the guardrails, whatever the user called it.
-- **Model lists** come from the provider's `/v1/models` (or the equivalent), with free text as a fallback. Funes doesn't hard-code model names, except one suggested default per provider (a small, fast model is enough for classification), shown as a suggestion.
+- **Model lists** come from the provider's `/v1/models` (or the equivalent: Anthropic's list, `codex debug models`), with free text as a fallback. Funes doesn't hard-code model names, except one suggested default per provider (a small, fast model is enough for classification), shown as a suggestion, and the lists a CLI can't give: Claude Code's maintained `knownModels`, and Codex's last known catalog until it answers (ADR-0030, amended 2026-11-24).
 - **An account offers several models** (v0.8, [ADR-0030](decisions/0030-settings-window.md)): each API or local-server account, and each plan, keeps an ordered list of chat models the user added (a plan's starts with its suggestions), and each task picks an account and one of its models. Before v0.8 an account held one model.
 
 ## 3. Architecture

@@ -265,7 +265,9 @@ struct ModelListSection: View {
                 }
             }
             if !more.isEmpty {
-                Text(String(localized: "Also available in every picker: \(more.joined(separator: ", "))"))
+                let shown = more.prefix(20).joined(separator: ", ")
+                Text(more.count > 20 ? String(localized: "Also available in every picker: \(shown) and \(more.count - 20) more")
+                                     : String(localized: "Also available in every picker: \(shown)"))
                     .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
             HStack {
@@ -394,7 +396,7 @@ struct TestSection: View {
     private var settings: ModelSettings { model.modelSettings }
 
     var body: some View {
-        let models = settings.models(of: id)
+        let models = settings.availableModels(of: id)
         Section(String(localized: "Test")) {
             HStack {
                 Picker(String(localized: "Model"), selection: $chosen) {

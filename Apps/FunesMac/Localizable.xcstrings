@@ -2474,6 +2474,16 @@
     "Also available in every picker: %@" : {
 
     },
+    "Also available in every picker: %@ and %lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also available in every picker: %1$@ and %2$lld more"
+          }
+        }
+      }
+    },
     "Also called %@" : {
 
     },

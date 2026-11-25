@@ -245,7 +245,9 @@ struct ModelPicker: View {
                         }
                     }
                 }
-                ForEach(sections, id: \.account) { section in
+                // An account whose models are all under Recommended needs no section of its own, unless it has a problem.
+                ForEach(sections.filter { s in s.models.isEmpty || s.problem != nil || s.models.contains { !s.recommended.contains($0) }
+                    || current.modelChoice?.account == s.account }, id: \.account) { section in
                     Section(header(section)) {
                         if let chosen = current.modelChoice, chosen.account == section.account, chosen.model == nil {
                             Text(String(localized: "\(settings.name(section.account)) · Choose a model")).tag(Tag.choice(current))
@@ -478,7 +480,9 @@ extension View {
                 await model.modelSettings.refreshSubscriptions()
                 await model.modelSettings.refreshAvailableModels()
             }
-            .task(id: model.modelSettings.accounts) { await model.modelSettings.refreshAvailableModels() }
+            .task(id: "\(model.modelSettings.accounts.hashValue)#\(model.modelSettings.keyGeneration)") {
+                await model.modelSettings.refreshAvailableModels()
+            }
             .task(id: model.modelSettings.accounts) { await model.modelSettings.resolveLocalities() }
             .task { await model.tidyUp.load() }
     }

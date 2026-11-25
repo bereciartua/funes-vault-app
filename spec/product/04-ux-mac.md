@@ -688,7 +688,7 @@ Propose a title, kind and categories   [●]
 Split into separate memories           [●]
   (today's split caption)
 ```
-- **Model** pop-up: Apple on-device; then, per configured account, a section with its name and its models ("haiku", "opus"), with why it can't run now after the name ("No key", "Not signed in"); then **Add a Model…**. A plan shows when its CLI is found or it's the current choice (today's rule). An account with no models shows "No models" (disabled). An unresolved choice shows "<account> · Choose a model".
+- **Model** pop-up: Apple on-device; then, under **Recommended**, the models Funes measured for this job ("Claude (Claude Code) · haiku"); then, per configured account, a section with its name and every model it offers, yours first, then what it listed (ADR-0030, amended 2026-11-24), with why it can't run now after the name ("No key", "Not signed in"); then **Add a Model…**. A plan shows when its CLI is found or it's the current choice (today's rule). An account with no models shows "No models" (disabled). An unresolved choice shows "<account> · Choose a model".
 - Status, disclosure, the split switch's availability and captions: today's text and rules, with the account and model the choice names.
 
 ##### Page: Daily tidy-up
@@ -769,7 +769,7 @@ Ollama             Used by: Search index           1 model      [Local server] �
   Keys stay in this Mac's Keychain, never in the vault, exports or Activity.
 ```
 - **Groups:** Built in, Your plans, API keys, Local servers. An OpenAI-compatible account goes under Local servers when its endpoint resolves local and isn't marked cloud, under API keys otherwise (cloud until resolved). Empty groups show one line: "None. Add one with Add Account…" (API keys, Local servers).
-- **Row:** name; "Used by: …" (the jobs whose effective choice is this account, or "none"); the state ("Ready", "Key in Keychain", "No key", "Signed in", "Not signed in", "Not installed", "Update Codex to use it", "Off: needs your OK to read files" for Codex; for a local server, its number of models, or "No models"); the locality badge. Funes doesn't probe servers to fill this in: Test Connection is still the check.
+- **Row:** name; "Used by: …" (the jobs whose effective choice is this account, or "none"); the state ("Ready", "Key in Keychain", "No key", "Signed in", "Not signed in", "Not installed", "Update Codex to use it", "Off: needs your OK to read files" for Codex; for a local server, its number of models, or "No models"); the locality badge. Funes doesn't probe servers for this state: Test Connection is still the check. It does ask each account for its model list when Settings ▸ AI opens (ADR-0030, amended 2026-11-24), which only fills the pickers.
 - **Apple on-device** has no page; its state is "Ready" or "Not available on this Mac". **bge-small** opens Features ▸ Search index.
 - **Add Account…** menu: Anthropic, OpenAI, Ollama, LM Studio (a preset already added is disabled, as today), then Other OpenAI-Compatible Server…. It opens today's add sheet (Name, Base URL, API key, It's a cloud service, a first **Model** with Load Models, Test Connection); **Add** saves and opens the new account's page. Plans aren't added: they're found on the Mac.
 
