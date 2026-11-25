@@ -51,6 +51,15 @@ public enum PlanKind: String, Codable, Sendable, CaseIterable, Identifiable {
         }
     }
 
+    /// What the plan can run when its CLI hasn't listed them: Claude Code's maintained list (its CLI can't list them),
+    /// Codex's last known catalog.
+    public var knownModels: [String] {
+        switch self {
+        case .claudeCode: ClaudeCodeClient.knownModels
+        case .codex: CodexClient.knownModels
+        }
+    }
+
     /// The id its client counts usage and CLI blocks under.
     public var providerID: ProviderID {
         switch self {
@@ -118,6 +127,17 @@ public enum AIJob: String, Codable, Sendable, CaseIterable {
     /// 8 of 49 actions right).
     public var canFollow: Bool { self != .newMemories }
     public var canUseOnDevice: Bool { self != .tidyUp }
+
+    /// Whether Funes measured a model for this job, so its picker lists it first, as *Recommended* (ADR-0030, amended
+    /// 2026-11-24): New memories' and the tidy-up's auto-apply measurements (by model id), and for Search answers the
+    /// answer models Facts' answer gates ran (`<provider>/<model>`). Any other model can still be chosen.
+    public func isRecommended(_ model: String, provider: ProviderID) -> Bool {
+        switch self {
+        case .newMemories: NewMemoryAutoApply.measured[model] != nil
+        case .tidyUp: TidyUpAutoApply.measured[model] != nil
+        case .searchAnswers: FactsQualification.bundled.records.contains { $0.answerModels.contains("\(provider.rawValue)/\(model)") }
+        }
+    }
 }
 
 /// A job's choice (ADR-0030 §6): it follows New memories, it's Apple on-device, or an account and
@@ -243,11 +263,32 @@ public enum AccountUse: Hashable, Sendable {
     case facts(model: String)
 }
 
-/// One account's models in a job's picker, with why it can't run now.
+/// When to ask an account or plan again which models it offers (ADR-0030, amended 2026-11-24): stamped only when it
+/// answered, so a failure, a cancelled request or a missing key is retried at the next opening; asked again after
+/// `interval`, or at once when its connection (address, key) changes.
+public struct ModelDiscoveryThrottle: Sendable {
+    public static let interval: TimeInterval = 600
+    private var answeredAt: [String: (at: Date, connection: String)] = [:]
+
+    public init() {}
+
+    public func isDue(_ id: String, connection: String, now: Date) -> Bool {
+        guard let last = answeredAt[id], last.connection == connection else { return true }
+        return now.timeIntervalSince(last.at) >= Self.interval
+    }
+
+    public mutating func answered(_ id: String, connection: String, now: Date) {
+        answeredAt[id] = (now, connection)
+    }
+}
+
+/// One account's models in a job's picker, with why it can't run now: every model it offers, the ones Funes measured
+/// for the job first (`recommended`, shown under *Recommended*).
 public struct PickerSection: Hashable, Sendable {
     public var account: String
     public var models: [String]
     public var problem: AccountProblem?
+    public var recommended: [String] = []
 }
 
 /// What removing a model or an account changes, for its confirmation (ADR-0030 §6).
@@ -290,12 +331,15 @@ public struct AISettings: Codable, Hashable, Sendable {
     public var searchAnswersTrigger: AnswerTrigger = .ask
     /// The Facts task (v0.10): off by default.
     public var facts = FactsSettings()
+    /// What each account or plan said it offers, the last time Funes asked (its `/v1/models`, Anthropic's list, `codex
+    /// debug models`), by account id. Kept so the pickers list them before the next refresh; a failed refresh keeps it.
+    public var discovered: [String: [String]] = [:]
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case version, accounts, plans, newMemories, tidyUp, searchAnswers, embedding, cloudLimit, dailyCap
-        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger, facts
+        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger, facts, discovered
     }
 
     /// Every field but the version may be missing, so a field added later reads as its default.
@@ -316,6 +360,7 @@ public struct AISettings: Codable, Hashable, Sendable {
         searchAnswersOn = try c.decodeIfPresent(Bool.self, forKey: .searchAnswersOn) ?? false
         searchAnswersTrigger = try c.decodeIfPresent(AnswerTrigger.self, forKey: .searchAnswersTrigger) ?? .ask
         facts = try c.decodeIfPresent(FactsSettings.self, forKey: .facts) ?? FactsSettings()
+        discovered = try c.decodeIfPresent([String: [String]].self, forKey: .discovered) ?? [:]
     }
 
     // MARK: Accounts and plans
@@ -334,6 +379,42 @@ public struct AISettings: Codable, Hashable, Sendable {
     }
 
     public func exists(_ id: String) -> Bool { models(of: id) != nil }
+
+    /// Every chat model an account or plan offers (ADR-0030, amended 2026-11-24): the ones you added, in your order,
+    /// then what it listed (`discovered`), or for a plan that hasn't, its known models. Embedding models are left out
+    /// (they can't answer). Nil for an id that isn't an account or plan. A listed model that's gone fails when used.
+    public func availableModels(of id: String) -> [String]? {
+        guard let mine = models(of: id) else { return nil }
+        var out = mine.filter { !$0.isEmpty }.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        for m in listed(id) where !out.contains(m) { out.append(m) }
+        return out
+    }
+
+    /// What an account or plan offers besides yours: what it listed, or a plan's known models, without models that
+    /// can't chat (embeddings, speech, images, moderation). Yours are never filtered: you added them.
+    func listed(_ id: String) -> [String] {
+        (discovered[id] ?? PlanKind(rawValue: id)?.knownModels ?? []).filter { !$0.isEmpty && Self.canChat($0) }
+    }
+
+    /// Whether a listed model id can be a chat model: OpenAI's `/v1/models` also lists embedding, speech, transcription,
+    /// image, realtime and moderation models.
+    static func canChat(_ model: String) -> Bool {
+        let id = model.lowercased()
+        let others = ["whisper", "tts", "dall-e", "moderation", "transcribe", "realtime", "audio", "image", "davinci", "babbage"]
+        return !EmbeddingCatalog.isEmbeddingModel(model) && !others.contains { id.contains($0) }
+    }
+
+    /// The models a refresh found for an account or plan, stored (an empty list keeps nothing, so the known models
+    /// stand in for a plan). False when nothing changed.
+    @discardableResult
+    public mutating func setDiscovered(_ models: [String], for id: String) -> Bool {
+        guard exists(id) else { return false }          // removed while it was being asked
+        let clean = models.reduce(into: [String]()) { if !$1.isEmpty, !$0.contains($1) { $0.append($1) } }
+        let value: [String]? = clean.isEmpty ? nil : clean
+        guard discovered[id] != value else { return false }
+        discovered[id] = value
+        return true
+    }
 
     /// Adds a chat model to an account or plan: trimmed, never empty or twice. False when nothing
     /// changed.
@@ -362,6 +443,8 @@ public struct AISettings: Codable, Hashable, Sendable {
         account.models = account.models.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && seen.insert($0).inserted }
         if let index = accounts.firstIndex(where: { $0.id == account.id }) {
+            // Another address is another server: what the old one listed goes.
+            if accounts[index].endpoint != account.endpoint { discovered[account.id] = nil }
             accounts[index] = account
         } else {
             accounts.append(account)
@@ -478,16 +561,22 @@ public struct AISettings: Codable, Hashable, Sendable {
         let chosen = choice(job).modelChoice?.account
         let plans = PlanKind.allCases.filter { installedPlans.contains($0) || chosen == $0.rawValue }.map(\.rawValue)
         return (accounts.map(\.id) + plans).map { id in
-            PickerSection(account: id, models: models(of: id) ?? [],
-                          problem: problem(account: id, hasKey: hasKey, planStatus: planStatus, blocked: blocked))
+            let models = availableModels(of: id) ?? []
+            let provider = PlanKind(rawValue: id)?.providerID ?? account(id)?.endpoint.id
+            let recommended = provider.map { p in models.filter { job.isRecommended($0, provider: p) } } ?? []
+            return PickerSection(account: id, models: recommended + models.filter { !recommended.contains($0) },
+                                 problem: problem(account: id, hasKey: hasKey, planStatus: planStatus, blocked: blocked),
+                                 recommended: recommended)
         }
     }
 
     // MARK: Removal
 
     /// What removing `model` from an account changes: the jobs that chose it directly, and those
-    /// following New memories when New memories is one of them.
+    /// following New memories when New memories is one of them. Nothing when the account still offers it (it listed
+    /// it, or it's a plan's known model): it stays in every picker, so its jobs keep it.
     public func removalEffect(model: String, from id: String) -> RemovalEffect {
+        if listed(id).contains(model) { return RemovalEffect() }
         let direct = AIJob.allCases.filter { choice($0) == .model(ModelChoice(account: id, model: model)) }
         return RemovalEffect(direct: direct, followers: followers(of: direct))
     }
@@ -528,6 +617,7 @@ public struct AISettings: Codable, Hashable, Sendable {
         for job in effect.direct { setChoice(job.defaultChoice, for: job) }
         accounts.removeAll { $0.id == id }
         usage[id] = nil
+        discovered[id] = nil
         if effect.secondIndex { embedding = nil }
         // Facts' choice is kept, dangling, so it reads "Choose a model" and nothing is sent: falling back to the default
         // would move learning to another account without the user choosing it.
@@ -628,10 +718,13 @@ public extension AISettings {
         var accounts: [AIAccount]
         var plans: [AIPlan]
         var codexAllowsFileReads: Bool
+        /// What accounts listed: Facts' offers, and so its default, read it.
+        var discovered: [String: [String]]
     }
 
     var factsInputs: FactsInputs {
-        FactsInputs(facts: facts, cloudLimit: cloudLimit, accounts: accounts, plans: plans, codexAllowsFileReads: codexAllowsFileReads)
+        FactsInputs(facts: facts, cloudLimit: cloudLimit, accounts: accounts, plans: plans, codexAllowsFileReads: codexAllowsFileReads,
+                    discovered: discovered)
     }
 
     /// Facts' line in "Used by" for an account, while learning is on.

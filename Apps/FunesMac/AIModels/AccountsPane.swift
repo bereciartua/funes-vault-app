@@ -247,10 +247,12 @@ struct ModelListSection: View {
 
     private var settings: ModelSettings { model.modelSettings }
     private var models: [String] { settings.models(of: id) }
+    /// What it offers besides yours (ADR-0030, amended 2026-11-24): every picker lists these too.
+    private var more: [String] { settings.availableModels(of: id).filter { !models.contains($0) } }
 
     var body: some View {
         Section(String(localized: "Models")) {
-            if models.isEmpty {
+            if models.isEmpty && more.isEmpty {
                 Text(String(localized: "No models yet. Add the chat models you want to use.")).foregroundStyle(.secondary)
             }
             ForEach(models, id: \.self) { name in
@@ -261,6 +263,12 @@ struct ModelListSection: View {
                         .disabled(!settings.stored.canRemove(model: name, from: id))
                         .accessibilityLabel(String(localized: "Remove \(name)"))
                 }
+            }
+            if !more.isEmpty {
+                let shown = more.prefix(20).joined(separator: ", ")
+                Text(more.count > 20 ? String(localized: "Also available in every picker: \(shown) and \(more.count - 20) more")
+                                     : String(localized: "Also available in every picker: \(shown)"))
+                    .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
             HStack {
                 TextField(String(localized: "Model name"), text: $typed, prompt: Text(String(localized: "Model name")))
@@ -317,6 +325,7 @@ struct ModelListSection: View {
         Task {
             do {
                 loaded = try await load()
+                settings.setDiscovered(loaded, for: id)
                 message = loaded.isEmpty ? String(localized: "The server listed no models.") : String(localized: "\(loaded.count) models")
             } catch {
                 message = ProviderText.error(error)
@@ -387,7 +396,7 @@ struct TestSection: View {
     private var settings: ModelSettings { model.modelSettings }
 
     var body: some View {
-        let models = settings.models(of: id)
+        let models = settings.availableModels(of: id)
         Section(String(localized: "Test")) {
             HStack {
                 Picker(String(localized: "Model"), selection: $chosen) {

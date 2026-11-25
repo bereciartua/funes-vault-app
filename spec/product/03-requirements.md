@@ -759,7 +759,7 @@
   - Every choice shows a locality badge: On this Mac · Local server · Apple cloud · Cloud.
   - Model lists come from the provider.
   - **Test connection** verifies the setup.
-  - From v0.8 each account offers the models the user added, and each task picks an account and one of its models, so one key or plan can serve different tasks with different models. A task's choice never silently changes to another account or model.
+  - From v0.8 each account offers the models the user added (from 2026-11-24, also every model it lists, or for a plan its known models: ADR-0030's amendment), and each task picks an account and one of its models, so one key or plan can serve different tasks with different models. A task's choice never silently changes to another account or model.
 - **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), amended 2026-11-24): a task can recommend the models that passed its tests. Facts offers every configured model (Apple on-device excepted) and lists the ones that passed its fixtures first as *Recommended*: Claude Haiku 5.5 through the Claude plan, the default. A model whose qualification lapses (a new prompt, registry or adapter version) loses the recommendation, not its uses ([memory processing §11.10](../domain/memory-processing.md#1110-gating)).
 
 **FR-AI-06 Provider credentials** · M · v0.1

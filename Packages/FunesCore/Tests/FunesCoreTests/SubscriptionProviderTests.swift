@@ -536,4 +536,21 @@ import Testing
             FileHandle.standardError.write(Data("\(name) events: \(shape)\n".utf8))
         }
     }
+
+    /// ADR-0030, amended 2026-11-24: Codex says which models it offers (`codex debug models`); hidden ones stay out.
+    @Test func codexListsItsCatalogsListedModels() async throws {
+        let json = #"{"models":[{"slug":"gpt-6.1-terra","visibility":"list"},{"slug":"gpt-reserve","visibility":"hide"},"#
+            + #"{"slug":"gpt-6-luna","visibility":"list"},{"slug":"gpt-6-luna","visibility":"list"},{"visibility":"list"}]}"#
+        #expect(CodexClient.listedModels(json) == ["gpt-6.1-terra", "gpt-6-luna"])
+        #expect(CodexClient.listedModels("not json") == nil && CodexClient.listedModels(#"{"other":[]}"#) == nil)
+        let cli = FakeCLI { inv in
+            inv.arguments == ["debug", "models"] ? .init(lines: [json]) : .init(lines: [], exitCode: 1)
+        }
+        let codex = CodexClient(executable: "/x/codex-\(UUID().uuidString.prefix(6))", model: "", runner: cli)
+        #expect(await codex.listModels() == ["gpt-6.1-terra", "gpt-6-luna"])
+        #expect(cli.invocations.map(\.arguments) == [["debug", "models"]])
+        // An older Codex without the command: nil, so the known models stand in.
+        let old = CodexClient(executable: "/x/codex-\(UUID().uuidString.prefix(6))", model: "", runner: FakeCLI { _ in .init(lines: [], exitCode: 2) })
+        #expect(await old.listModels() == nil)
+    }
 }

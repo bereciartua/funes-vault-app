@@ -66,6 +66,11 @@ public struct ClaudeCodeClient: SubscriptionClient {
                                 "--no-session-persistence", "--json-schema", "--output-format", "--system-prompt"]
     /// Model suggestions (Spike E ran both).
     public static let suggestedModels = ["haiku", "opus"]
+    /// What the plan can run, maintained here: `claude` has no command that lists its models (ADR-0030, amended
+    /// 2026-11-24). Its aliases follow the newest model of each family; the full ids pin one. A model that's gone
+    /// fails when used, with the CLI's own error.
+    public static let knownModels = ["haiku", "sonnet", "opus", "fable",
+                                     "claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5-2"]
     /// Telemetry and error reporting off where Claude Code allows it.
     static let quiet = ["DISABLE_TELEMETRY": "1", "DISABLE_ERROR_REPORTING": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"]
 
@@ -312,6 +317,33 @@ public struct CodexClient: SubscriptionClient {
 
     /// The feature the opt-in accepts.
     static let fileReadFeature = "unified_exec"
+
+    /// Used when `codex debug models` can't be read (an older Codex, or it failed): the models its catalog listed on
+    /// 2026-11-24.
+    public static let knownModels = ["gpt-6.1-terra", "gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna",
+                                     "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]
+
+    /// The models this Codex offers: its catalog's (`codex debug models`, the ones it lists to people), in its order.
+    /// Nil when it can't be read. Never a model call.
+    public func listModels() async -> [String]? {
+        guard !CLIRunner.isBlocked(id),
+              let run = await Self.check(runner, executable, ["debug", "models"], environment: environment), run.exitCode == 0
+        else { return nil }
+        return Self.listedModels(run.lines.joined(separator: "\n"))
+    }
+
+    /// The slugs `codex debug models` lists (`visibility` "list"; hidden and internal ones left out). Nil when it isn't
+    /// that JSON.
+    static func listedModels(_ json: String) -> [String]? {
+        guard let object = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+              let models = object["models"] as? [[String: Any]] else { return nil }
+        var out: [String] = []
+        for m in models {
+            guard let slug = m["slug"] as? String, !slug.isEmpty, (m["visibility"] as? String) == "list", !out.contains(slug) else { continue }
+            out.append(slug)
+        }
+        return out
+    }
 
     public init(executable: String, model: String, effort: String = "low", allowsFileReads: Bool = false,
                 runner: any CLIProcessRunning = SystemCLIProcess(),

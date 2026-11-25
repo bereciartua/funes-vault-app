@@ -139,12 +139,124 @@ import Testing
         #expect(sections.map(\.account) == ["anthropic", "ollama", "lmstudio", "claude-code"])
         #expect(sections[0].problem == .noKey)
         #expect(sections[2].models.isEmpty)
-        #expect(sections[3].models == ["haiku", "opus"])
-        // Codex isn't found but is the current choice, so it stays listed with why.
+        // The plan's suggestions, then every model it can run (its maintained list: Claude Code can't list them).
+        let plan = Self.joined(["haiku", "opus"], ClaudeCodeClient.knownModels)
+        #expect(sections[3].models == plan)
+        // Codex isn't found but is the current choice, so it stays listed with why: its suggestions, then its known models.
         s.setChoice(Self.model("codex", "gpt-6-luna"), for: .newMemories)
         sections = s.pickerSections(.newMemories, installedPlans: [], hasKey: Self.keyed, planStatus: [.codex: .notInstalled],
                                     blocked: Self.noBlocks)
-        #expect(sections.last == PickerSection(account: "codex", models: ["gpt-6-luna", "gpt-5.6-terra"], problem: .notInstalled))
+        #expect(sections.last?.account == "codex" && sections.last?.problem == .notInstalled)
+        #expect(sections.last?.models.prefix(2) == ["gpt-6-luna", "gpt-5.6-terra"])
+        #expect(Set(sections.last?.models ?? []) == Set(CodexClient.knownModels + CodexClient.suggestedModels))
+    }
+
+    /// `a`, then what of `b` isn't in it.
+    static func joined(_ a: [String], _ b: [String]) -> [String] { a + b.filter { !a.contains($0) } }
+
+    /// ADR-0030, amended 2026-11-24: every model an account offers, without adding it by hand.
+    @Test func availableModelsAreYoursThenWhatTheAccountListed() throws {
+        var s = AISettings()
+        s.upsert(AIAccount(endpoint: .openAI(), name: "OpenAI", models: ["gpt-5-mini"]))
+        // Nothing listed yet: yours only.
+        #expect(s.availableModels(of: "openai") == ["gpt-5-mini"])
+        // What it listed, after yours, without repeats or embedding models.
+        let first = s.setDiscovered(["gpt-6-sol", "gpt-5-mini", "text-embedding-3-small", "gpt-6-sol", ""], for: "openai")
+        #expect(first)
+        #expect(s.availableModels(of: "openai") == ["gpt-5-mini", "gpt-6-sol"])
+        let again = s.setDiscovered(["gpt-6-sol", "gpt-5-mini", "text-embedding-3-small"], for: "openai")
+        #expect(!again)
+        // A plan that hasn't listed any: its known models; Codex after it lists: what it listed.
+        let claude = Self.joined(ClaudeCodeClient.suggestedModels, ClaudeCodeClient.knownModels)
+        #expect(s.availableModels(of: "claude-code") == claude)
+        s.setDiscovered(["gpt-7-test"], for: "codex")
+        #expect(s.availableModels(of: "codex") == CodexClient.suggestedModels + ["gpt-7-test"])
+        // An empty answer clears it (the known models stand in again); an unknown id has none.
+        s.setDiscovered([], for: "codex")
+        #expect(s.discovered["codex"] == nil && s.availableModels(of: "nope") == nil)
+        // Kept with the settings; settings from before read as nothing listed.
+        s.setDiscovered(["gpt-6-sol"], for: "openai")
+        let saved = try JSONEncoder().encode(s)
+        #expect(AISettings.load(saved).settings.discovered == ["openai": ["gpt-6-sol"]])
+        let old = try JSONSerialization.data(withJSONObject: ["version": 2])
+        #expect(AISettings.load(old).settings.discovered.isEmpty)
+    }
+
+    @Test func aListBelongsToItsAccountAndConnection() {
+        var s = AISettings()
+        s.upsert(AIAccount(endpoint: .openAI(), name: "OpenAI", models: ["my-embed-tuned"]))
+        // Models that can't chat are left out of what it listed, never out of yours.
+        s.setDiscovered(["gpt-6-sol", "whisper-1", "tts-1-hd", "dall-e-3", "omni-moderation-latest", "gpt-image-1",
+                         "text-embedding-3-large", "gpt-4o-realtime-preview"], for: "openai")
+        #expect(s.availableModels(of: "openai") == ["my-embed-tuned", "gpt-6-sol"])
+        // What it listed is in Facts' inputs (its offers and default read it).
+        let before = s.factsInputs
+        s.setDiscovered(["gpt-6-sol", "gpt-6-luna"], for: "openai")
+        #expect(s.factsInputs != before)
+        // Another address is another server: its list goes. The same address keeps it.
+        var same = s.account("openai")!
+        same.name = "Work OpenAI"
+        s.upsert(same)
+        #expect(s.discovered["openai"] != nil)
+        var moved = same
+        moved.endpoint.baseURL = URL(string: "https://proxy.example.com/v1")!
+        s.upsert(moved)
+        #expect(s.discovered["openai"] == nil)
+        // Removed: its list goes, and a late answer for it isn't stored.
+        s.setDiscovered(["gpt-6-sol"], for: "openai")
+        s.removeAccount("openai")
+        #expect(s.discovered["openai"] == nil)
+        let late = s.setDiscovered(["gpt-6-sol"], for: "openai")
+        #expect(!late && s.discovered.isEmpty)
+    }
+
+    @Test func removingAModelTheAccountStillOffersResetsNoJob() {
+        var s = AISettings()
+        s.setChoice(Self.model("claude-code", "opus"), for: .tidyUp)
+        // "opus" is one of Claude Code's known models: removed from yours, it stays in every picker, and so does the choice.
+        s.addModel("claude-opus-5-5", to: "claude-code")
+        #expect(s.removalEffect(model: "opus", from: "claude-code").isEmpty)
+        s.removeModel("opus", from: "claude-code")
+        #expect(s.choice(.tidyUp) == Self.model("claude-code", "opus") && s.availableModels(of: "claude-code")?.contains("opus") == true)
+        // A model it doesn't offer resets its jobs, as before.
+        s.addModel("my-tuned", to: "claude-code")
+        s.setChoice(Self.model("claude-code", "my-tuned"), for: .tidyUp)
+        #expect(s.removalEffect(model: "my-tuned", from: "claude-code").direct == [.tidyUp])
+    }
+
+    @Test func discoveryIsAskedAgainAfterAFailureAKeyChangeOrTenMinutes() {
+        var t = ModelDiscoveryThrottle()
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        #expect(t.isDue("openai", connection: "a#0", now: t0))
+        // Nothing stamped until it answers: a failure or a cancelled request is due again at once.
+        #expect(t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(1)))
+        t.answered("openai", connection: "a#0", now: t0)
+        #expect(!t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(599)))
+        #expect(t.isDue("openai", connection: "a#0", now: t0.addingTimeInterval(600)))
+        // A new key (or address) is due at once.
+        #expect(t.isDue("openai", connection: "a#1", now: t0.addingTimeInterval(1)))
+        #expect(t.isDue("ollama", connection: "a#0", now: t0.addingTimeInterval(1)))
+    }
+
+    @Test func eachPickerListsWhatFunesMeasuredForItsJobFirst() {
+        var s = AISettings()
+        s.setDiscovered(["gpt-6-sol", "gpt-5.6-terra", "gpt-6-luna"], for: "codex")
+        // The tidy-up measured Haiku and Opus (Claude Code's aliases and ids) and GPT-5.6-Terra.
+        let tidy = s.pickerSections(.tidyUp, installedPlans: [.claudeCode, .codex], hasKey: { _ in true }, planStatus: [:],
+                                    blocked: Self.noBlocks)
+        let claude = tidy.first { $0.account == "claude-code" }!, codex = tidy.first { $0.account == "codex" }!
+        #expect(claude.recommended == ["haiku", "opus", "claude-haiku-5-5", "claude-opus-5-5"])
+        #expect(claude.models.prefix(4) == claude.recommended[...])
+        #expect(codex.recommended == ["gpt-5.6-terra"] && codex.models.first == "gpt-5.6-terra")
+        // Search answers: the answer models Facts' gates ran, by provider and full id.
+        let answers = s.pickerSections(.searchAnswers, installedPlans: [.claudeCode, .codex], hasKey: { _ in true }, planStatus: [:],
+                                       blocked: Self.noBlocks)
+        #expect(answers.first { $0.account == "claude-code" }?.recommended == ["claude-haiku-5-5"])
+        #expect(answers.first { $0.account == "codex" }?.recommended == ["gpt-5.6-terra"])
+        // New memories measured none yet: nothing recommended, every model listed.
+        let capture = s.pickerSections(.newMemories, installedPlans: [.codex], hasKey: { _ in true }, planStatus: [:], blocked: Self.noBlocks)
+        let none = capture.allSatisfy { $0.recommended.isEmpty }
+        #expect(none)
     }
 
     // MARK: Models

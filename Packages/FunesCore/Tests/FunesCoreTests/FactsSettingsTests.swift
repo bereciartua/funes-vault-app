@@ -37,6 +37,12 @@ import Testing
 
     func names(_ offers: [FactsOffer]) -> [String] { offers.map { "\($0.account)·\($0.model)\($0.tested ? "*" : "")" } }
 
+    /// The Claude plan's untested offers: its suggestions, then its known models, but the tested full id.
+    func planRest(tested: [String] = ["claude-haiku-5-5"]) -> [String] {
+        ClaudeCodeClient.knownModels.reduce(into: ClaudeCodeClient.suggestedModels) { if !$0.contains($1) { $0.append($1) } }
+            .filter { !tested.contains($0) }.map { "claude-code·\($0)" }
+    }
+
     // MARK: Offers
 
     @Test func whatShipsRecommendsHaikuOnTheClaudePlanAndOffersEveryModel() {
@@ -44,8 +50,8 @@ import Testing
         // configured model is offered after it, untested (the API account's adapter has no record).
         let s = settings
         let offers = s.factsOffers(qualification: .bundled, plans: [.claudeCode])
-        #expect(names(offers) == ["claude-code·claude-haiku-5-5*", "anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5",
-                                  "claude-code·haiku", "claude-code·opus"])
+        #expect(names(offers) == ["claude-code·claude-haiku-5-5*", "anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5"]
+            + planRest())
         #expect(s.factsProblem(offers: offers, resolution: s.factsResolution(offers: offers), accountProblem: { _ in nil }) == nil)
         #expect(s.factsResolution(offers: offers).chosen?.choice == ModelChoice(account: "claude-code", model: "claude-haiku-5-5"))
     }
@@ -53,13 +59,18 @@ import Testing
     @Test func testedOffersComeFirstAndUntestedOnesStillRun() {
         let offers = settings.factsOffers(qualification: qualification, plans: [.claudeCode])
         // Opus is tested for the people group only, so it isn't recommended, and the plan's list doesn't name its full id.
-        #expect(names(offers) == ["anthropic·claude-haiku-5-5*", "claude-code·claude-haiku-5-5*", "anthropic·claude-sonnet-5-5",
-                                  "claude-code·haiku", "claude-code·opus"])
+        let got = names(offers)
+        #expect(Array(got.prefix(3)) == ["anthropic·claude-haiku-5-5*", "claude-code·claude-haiku-5-5*", "anthropic·claude-sonnet-5-5"])
+        #expect(Set(got.dropFirst(3)) == Set(planRest()) && got.count == 3 + planRest().count)
         // A plan the picker doesn't list (its CLI not found, not chosen) offers nothing.
         #expect(Set(settings.factsOffers(qualification: qualification, plans: []).map(\.account)) == ["anthropic"])
         // Without records, every configured model is still offered.
         #expect(names(settings.factsOffers(qualification: FactsQualification(records: []), plans: [.claudeCode]))
-            == ["anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5", "claude-code·haiku", "claude-code·opus"])
+            == ["anthropic·claude-haiku-5-5", "anthropic·claude-sonnet-5-5"] + planRest(tested: []))
+        // What an account listed is offered too, after yours.
+        var listed = settings
+        listed.setDiscovered(["claude-opus-5-5"], for: "anthropic")
+        #expect(listed.factsOffers(qualification: qualification, plans: []).map(\.model) == ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"])
     }
 
     @Test func anEngineThatDiffersInAnyPartIsntTested() {
