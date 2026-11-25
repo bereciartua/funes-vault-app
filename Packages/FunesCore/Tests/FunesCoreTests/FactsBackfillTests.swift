@@ -56,6 +56,17 @@ import Testing
         return x
     }
 
+    /// Every predicate of `only` (default: every group) not recorded, switched off locally: no model reads those groups.
+    func switchedOff(_ only: [String]? = nil) -> FactsQualification {
+        let reg = FactsRegistry.bundled
+        var q = FactsQualification(records: [])
+        for p in reg.predicates where (only ?? groups).contains(p.callGroup) {
+            q.off.insert(.init(predicate: p.id, use: .recorded, engine: FactsEngine(Model()),
+                               promptVersion: FactsPrompt.version(p.callGroup, registry: reg), registryVersion: reg.fingerprint))
+        }
+        return q
+    }
+
     @discardableResult
     func drain(_ x: FactsExtractor) async throws -> Int {
         try await queue.drain(now: { t0 }) { job in try await FactsQueueWorker(extractor: x).process(job) }
@@ -99,8 +110,8 @@ import Testing
         try await x.learn([first], groups: [groups[0]])
         e = try await v.store.factsBackfillEstimate(extractor: x)
         #expect(e.calls == 3 * groups.count - 1 && e.memories == 4)
-        // No model allowed (no record for it): nothing to read.
-        let none = try await v.store.factsBackfillEstimate(extractor: extractor(model, qualification: FactsQualification(records: [])))
+        // No model allowed (every group switched off): nothing to read.
+        let none = try await v.store.factsBackfillEstimate(extractor: extractor(model, qualification: switchedOff()))
         #expect(none.groups.isEmpty && none.calls == 0 && none.memories == 0)
         #expect(model.calls.withLock { $0 } == 1)
     }
@@ -361,12 +372,9 @@ import Testing
         let x = extractor(Model())
         _ = try memories(1)
         try await start(x)
-        // Only one group's model is allowed now (a synthetic record for it alone): the other's marks can't be exempt.
-        let g = groups[0], reg = FactsRegistry.bundled
-        let one = FactsQualification(records: [FactsQualification.Record(
-            predicates: reg.groupPredicates(g), uses: ["recorded"], callGroup: g, engine: FactsEngine(Model()),
-            promptVersion: FactsPrompt.version(g, registry: reg), registryVersion: reg.fingerprint, gate: "test", recordedAt: "2026-11-18")])
-        let narrower = extractor(Model(), qualification: one)
+        // Only one group is read now (the other switched off): the other's marks can't be exempt.
+        let g = groups[0]
+        let narrower = extractor(Model(), qualification: switchedOff(groups.filter { $0 != g }))
         try await drain(narrower)
         #expect(try state()?.changed == true)
         let owed = try await v.store.factsBackfillEstimate(extractor: narrower, owed: true)
@@ -463,8 +471,8 @@ import Testing
         let model = Model()
         _ = try memories(1)
         try await start(extractor(model))
-        // Its use turned off (no record for it now): marked jobs wait for a review instead of ending code-only.
-        try await drain(extractor(model, qualification: FactsQualification(records: [])))
+        // Its uses switched off: marked jobs wait for a review instead of ending code-only.
+        try await drain(extractor(model, qualification: switchedOff()))
         #expect(try state()?.changed == true && marked() == groups.count && model.calls.withLock { $0 } == 0)
     }
 
@@ -610,14 +618,14 @@ import Testing
         #expect(try await FactsQueueWorker(extractor: wider).scheduleCatchUp() == 0)
     }
 
-    @Test func aMemoryCodeOnlyForWantOfAModelIsReadOnceOneQualifies() async throws {
+    @Test func aMemoryCodeOnlyWhileSwitchedOffIsReadOnceSwitchedBackOn() async throws {
         lane.setLearning(true)
         let model = Model()
-        let unqualified = extractor(model, qualification: FactsQualification(records: []))
-        _ = try v.memory("New", "Captured before any model qualified.")
-        try await drain(unqualified)                                    // code-only: no model may read it
+        let off = extractor(model, qualification: switchedOff())
+        _ = try v.memory("New", "Captured while every group was switched off.")
+        try await drain(off)                                            // code-only: no model may read it
         #expect(model.calls.withLock { $0 } == 0)
-        // A model qualifies (coverage grows): the memory had jobs, so it's read, though no backfill ran.
+        // Switched back on (coverage grows): the memory had jobs, so it's read, though no backfill ran.
         let x = extractor(model)
         #expect(try await FactsQueueWorker(extractor: x).scheduleCatchUp() == groups.count)
         try await drain(x)

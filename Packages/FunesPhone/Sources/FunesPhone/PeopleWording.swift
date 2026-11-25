@@ -229,7 +229,7 @@ public enum PeopleWording {
     public static func reading(_ r: PeopleDirectoryResult.Reading) -> String {
         String(localized: "Reading your memories: \(r.done) of \(r.total)")
     }
-    public static let timelineOff = String(localized: "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here.")
+    public static let timelineOff = String(localized: "Funes isn't ordering this now. Only what you enter shows here.")
     public static let toCheckFooter = String(localized: "Answer these on your Mac. Nothing waits on them.")
     public static let toCheckEmpty = String(localized: "Nothing to check. Funes asks here only what it couldn't settle; nothing waits on it.")
     public static let macOnly = String(localized: "Rename, merge, hide, dates and undo are on your Mac.")

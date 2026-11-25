@@ -1122,9 +1122,6 @@
     "Funes can't use the microphone. Turn it on in Settings ▸ Funes Vault." : {
 
     },
-    "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." : {
-
-    },
     "Funes for iPhone" : {
 
     },
@@ -1138,6 +1135,9 @@
 
     },
     "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
+
+    },
+    "Funes isn't ordering this now. Only what you enter shows here." : {
 
     },
     "Funes on the Mac" : {

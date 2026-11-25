@@ -5,10 +5,10 @@ import Synchronization
 import Testing
 @testable import FunesCore
 
-/// Qualification and gating (memory processing §11.10, FR-F-02): each use of each predicate is on only with a
-/// qualification record for the current engine, call-group prompt and registry version; what a use needs is registry
-/// data, so turning one off turns off everything downstream with no code change; each call group uses a model that
-/// qualified for it.
+/// Tested models and the uses' switches (memory processing §11.10, FR-F-02, ADR-0032 as amended on 2026-11-24): with any
+/// engine every declared use is on; a qualification record only marks an engine tested (*Recommended*); what a use
+/// needs is registry data, so switching one off locally turns off everything downstream with no code change; the
+/// chosen model reads every call group.
 @Suite(.serialized) struct FactsQualificationTests {
     let reg = FactsRegistry.bundled
     let people: String
@@ -39,6 +39,15 @@ import Testing
         return .init(predicates: predicates, uses: uses.map(\.rawValue), basis: basis, callGroup: group, engine: engine,
                      promptVersion: FactsPrompt.version(group, registry: r), registryVersion: r.fingerprint,
                      gate: "test", recordedAt: "2026-11-17")
+    }
+
+    /// An off-switch's key for a use of a predicate, at its group's current prompt version, under `engine`.
+    func offKey(_ p: String, _ u: FactsUse, basis: String = "", engine: FactsEngine = FactsQualificationTests.haiku,
+                registry: FactsRegistry? = nil) -> FactsQualification.Key {
+        let r = registry ?? reg
+        let group = r.predicate(p)!.callGroup
+        return .init(predicate: p, use: u, basis: basis, engine: engine, promptVersion: FactsPrompt.version(group, registry: r),
+                     registryVersion: r.fingerprint)
     }
 
     // MARK: The registry
@@ -104,50 +113,64 @@ import Testing
 
     // MARK: What's on
 
-    @Test func aUseIsOnOnlyWithARecordMatchingEveryKeyField() {
+    @Test func anyEngineTurnsOnEveryDeclaredUse() {
+        // No records at all: every engine, tested or not, an alias included, turns on every use its groups declare.
         let none = FactsQualification(records: [])
-        #expect(none.uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions).predicates(.recorded).isEmpty)
+        for engine in [Self.haiku, Self.opus, FactsEngine(model: "claude-code/haiku", adapter: Self.haiku.adapter),
+                       FactsEngine(model: "ollama/qwen3:8b", adapter: "ollama")] {
+            let on = none.uses(engines: [people: engine, work: engine], registry: reg, promptVersions: versions)
+            for p in reg.predicates {
+                for u in FactsUse.allCases {
+                    #expect(on.isOn(p.id, u) == p.uses.contains(u.rawValue), "\(engine.model) \(p.id) \(u)")
+                }
+                #expect(on.isOn(p.id, .attributes, basis: LinkBasis.soleKnown.rawValue) == p.uses.contains("attributes"))
+            }
+        }
+        // A group with no engine has nothing on; the other group keeps its uses.
+        let half = none.uses(engines: [people: Self.opus], registry: reg, promptVersions: versions)
+        #expect(Set(half.predicates(.recorded)) == Set(persons) && half.predicates(.timeline).isEmpty)
+        // A record for a use the registry doesn't declare still turns nothing on.
+        let undeclared = FactsQualification(records: [record(persons, [.recorded, .linked, .timeline], group: people)])
+        #expect(undeclared.uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions).predicates(.timeline).isEmpty)
+    }
+
+    @Test func testedMatchesEveryKeyField() {
         let r = record(persons, [.recorded, .linked], group: people)
         let q = FactsQualification(records: [r])
-        let on = q.uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(on.predicates(.recorded) == persons && on.predicates(.linked) == persons)
-        #expect(on.predicates(.attributes).isEmpty && !on.isOn(dated, .recorded))
-        // Each field of the key, changed: off.
+        #expect(q.tested(Self.haiku, group: people, registry: reg, promptVersions: versions))
+        #expect(!q.tested(Self.haiku, registry: reg, promptVersions: versions))       // not for the work group
         var other = versions
         other[people] = "000000"
-        for (engines, pv) in [([people: Self.opus], versions),
-                              ([people: FactsEngine(model: Self.haiku.model, adapter: "anthropic")], versions),
-                              ([people: FactsEngine(model: Self.haiku.model, adapter: Self.haiku.adapter, batching: "one-memory;pipeline=0")], versions),
-                              ([work: Self.haiku], versions),
-                              ([people: Self.haiku], other)] {
-            #expect(q.uses(engines: engines, registry: reg, promptVersions: pv).predicates(.recorded).isEmpty, "\(engines) \(pv)")
+        for (engine, group, pv) in [(Self.opus, people, versions),
+                                    (FactsEngine(model: Self.haiku.model, adapter: "anthropic"), people, versions),
+                                    (FactsEngine(model: Self.haiku.model, adapter: Self.haiku.adapter, batching: "one-memory;pipeline=0"), people, versions),
+                                    (Self.haiku, work, versions),
+                                    (Self.haiku, people, other),
+                                    (FactsEngine(model: "claude-code/haiku", adapter: Self.haiku.adapter), people, versions)] {
+            #expect(!q.tested(engine, group: group, registry: reg, promptVersions: pv), "\(engine) \(group) \(pv)")
         }
         var stale = r
         stale.registryVersion = reg.version + "-000000000000"
-        #expect(FactsQualification(records: [stale]).uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-            .predicates(.recorded).isEmpty)
-        // A use the registry doesn't declare for the predicate stays off.
-        let undeclared = record(persons, [.recorded, .linked, .timeline], group: people)
-        #expect(FactsQualification(records: [undeclared]).uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-            .predicates(.timeline).isEmpty)
-        // A model alias never matches a record that names the full model.
-        let alias = FactsEngine(model: "claude-code/haiku", adapter: Self.haiku.adapter)
-        #expect(q.uses(engines: [people: alias], registry: reg, promptVersions: versions).predicates(.recorded).isEmpty)
+        #expect(!FactsQualification(records: [stale]).tested(Self.haiku, group: people, registry: reg, promptVersions: versions))
+        // Tested or not, the uses are the same.
+        #expect(Set(q.uses(engines: [people: Self.opus], registry: reg, promptVersions: versions).predicates(.attributes)) == Set(persons))
     }
 
     @Test func aUseNeedsWhatTheRegistrySaysItNeeds() {
-        // A record for linked and attributes without recorded turns nothing on.
-        let q = FactsQualification(records: [record(persons, [.linked, .attributes], group: people)])
-        let on = q.uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(on.predicates(.linked).isEmpty && on.predicates(.attributes).isEmpty)
-        // A basis-scoped record needs the unscoped use.
-        let scoped = record(persons, [.attributes], group: people, basis: "sole_known")
-        let base = record(persons, [.recorded, .linked], group: people)
-        var u = FactsQualification(records: [base, scoped]).uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(!u.isOn(sibling, .attributes, basis: "sole_known"))
-        let full = record(persons, [.recorded, .linked, .attributes], group: people)
-        u = FactsQualification(records: [full, scoped]).uses(engines: [people: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(u.isOn(sibling, .attributes) && u.isOn(sibling, .attributes, basis: "sole_known"))
+        // Recorded switched off: linked and attributes go with it.
+        var q = FactsQualification(records: [])
+        q.off.insert(offKey(sibling, .recorded))
+        var on = q.uses(engines: [people: Self.opus], registry: reg, promptVersions: versions)
+        #expect(!on.isOn(sibling, .linked) && !on.isOn(sibling, .attributes) && !on.isOn(sibling, .attributes, basis: "sole_known"))
+        // The unscoped attributes switched off: the sole_known basis goes with it; the basis alone leaves the unscoped one.
+        q = FactsQualification(records: [])
+        q.off.insert(offKey(sibling, .attributes))
+        on = q.uses(engines: [people: Self.opus], registry: reg, promptVersions: versions)
+        #expect(on.isOn(sibling, .linked) && !on.isOn(sibling, .attributes, basis: "sole_known"))
+        q = FactsQualification(records: [])
+        q.off.insert(offKey(sibling, .attributes, basis: "sole_known"))
+        on = q.uses(engines: [people: Self.opus], registry: reg, promptVersions: versions)
+        #expect(on.isOn(sibling, .attributes) && !on.isOn(sibling, .attributes, basis: "sole_known"))
     }
 
     /// FR-F-02's acceptance: turning linking off turns attributes and bridges off too, with no code change.
@@ -171,7 +194,16 @@ import Testing
         }
         // The other predicates of the pool keep theirs.
         #expect(persons.filter { $0 != sibling }.allSatisfy { on.isOn($0, .attributes) })
-        // Remove learned facts doesn't touch the off-switches, and a local row never turns anything on.
+        // A switch holds for another model, tested or not, and without any record.
+        on = try v.store.writer.read { db in try FactsQualification(records: []).withOffSwitches(db) }
+            .uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
+        #expect(!on.isOn(dated, .linked) && !on.isOn(sibling, .linked) && on.isOn(sibling, .recorded))
+        // A new prompt version (the fix) lapses it.
+        var fixed = versions
+        fixed[people] = "fixed0000000"
+        on = try v.store.writer.read { db in try q.withOffSwitches(db) }.uses(engines: engines, registry: reg, promptVersions: fixed)
+        #expect(on.isOn(sibling, .linked) && !on.isOn(dated, .linked))
+        // Remove learned facts doesn't touch the off-switches, and a passed local row isn't one.
         try v.store.writer.write { db in
             _ = try FactStore.removeLearnedFacts(db, now: t0)
             try db.execute(sql: "UPDATE fact_qualification SET passed = 1 WHERE predicate = ?", arguments: [sibling])
@@ -179,7 +211,7 @@ import Testing
         #expect(try v.count("SELECT COUNT(*) FROM fact_qualification") == 2)
         on = try v.store.writer.read { db in try FactsQualification(records: []).withOffSwitches(db) }
             .uses(engines: engines, registry: reg, promptVersions: versions)
-        #expect(!on.isOn(sibling, .recorded))
+        #expect(on.isOn(sibling, .linked) && !on.isOn(dated, .linked))
     }
 
     @Test func anotherDependencyGraphCascadesDifferentlyWithNoCodeChange() throws {
@@ -204,26 +236,15 @@ import Testing
 
     // MARK: The model per call group
 
-    @Test func opusReadsPeopleOnlyWhereItQualifiedAndWorkStaysOnHaiku() {
+    @Test func theChosenModelReadsEveryGroupTestedOrNot() {
         let providers = (haiku: Fake(model: "claude-haiku-5-5"), opus: Fake(model: "claude-opus-5-5"))
-        let opusPeople = record(persons, [.recorded, .linked, .attributes], group: people, engine: FactsEngine(providers.opus))
-        let haikuAll = reg.callGroups.keys.map { record(reg.groupPredicates($0), [.recorded, .linked], group: $0, engine: FactsEngine(providers.haiku)) }
-        var q = FactsQualification(records: [opusPeople] + haikuAll)
-        var got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
-        #expect(got[people]?.modelID == "claude-opus-5-5" && got[work]?.modelID == "claude-haiku-5-5")
-        // Without a work record for Haiku, the work group has no model: its calls stop.
-        q = FactsQualification(records: [opusPeople])
-        got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
-        #expect(got[people]?.modelID == "claude-opus-5-5" && got[work] == nil)
-        // Opus's people record turned off: people falls back to Haiku.
-        q = FactsQualification(records: [opusPeople] + haikuAll)
-        for p in persons { q.off.insert(opusPeople.key(p, FactsUse.recorded.rawValue)) }
-        got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
-        #expect(got[people]?.modelID == "claude-haiku-5-5")
-        // What ships (13e.2's records step, on 13e.1's code): Haiku qualified for both groups, Opus for neither, so both
-        // fall back to Haiku.
-        got = FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
-        #expect(got[people]?.modelID == "claude-haiku-5-5" && got[work]?.modelID == "claude-haiku-5-5")
+        // Opus, which no shipped record names, reads both groups; nothing falls back to Haiku.
+        let got = FactsQualification.resolve(chosen: providers.opus, registry: reg)
+        #expect(got[people]?.modelID == "claude-opus-5-5" && got[work]?.modelID == "claude-opus-5-5")
+        #expect(FactsQualification.resolve(chosen: nil, registry: reg).isEmpty)
+        // What ships: Haiku through Claude Code is tested for both groups, Opus for neither.
+        #expect(FactsQualification.bundled.tested(FactsEngine(providers.haiku), registry: reg, promptVersions: versions))
+        #expect(!FactsQualification.bundled.tested(FactsEngine(providers.opus), group: people, registry: reg, promptVersions: versions))
     }
 
     struct Fake: GenerationProvider {
@@ -262,14 +283,10 @@ import Testing
         // The adapters' current revisions.
         for (id, rev) in [(ClaudeCodeClient.providerID.rawValue, ClaudeCodeClient.adapterRevision), (CodexClient.providerID.rawValue, CodexClient.adapterRevision)]
         where r.adapter.hasPrefix(id + "/") && !r.adapter.hasPrefix("\(id)/\(rev);") { out.append("adapter revision") }
-        // And it turns on what it lists, for its own engine, with the bundle's other records (its uses' prerequisites).
-        let mine = bundle.filter { $0.engine == r.engine && $0.callGroup == r.callGroup }
-        // A record measured with answer models counts for those answers: checked as the first of them reads it, with the
-        // whole bundle (a timeline record measured with an answer model needs that model's attributes beside it).
-        let answer = r.answerModels.first.map { FactsQualification.AnswerKey(model: $0, promptVersion: r.answerPromptVersion) }
-        let engines = answer == nil ? [r.callGroup: r.engine] : Dictionary(bundle.map { ($0.callGroup, $0.engine) }, uniquingKeysWith: { a, _ in a })
-        let on = FactsQualification(records: answer == nil ? mine : bundle.filter { engines[$0.callGroup] == $0.engine })
-            .uses(engines: engines, registry: registry, promptVersions: versions, answer: answer)
+        // And its engine is tested for its group, and what it lists is on (declared; the basis only beside its use).
+        let q = FactsQualification(records: bundle)
+        if !q.tested(r.engine, group: r.callGroup, registry: registry, promptVersions: versions) { out.append("not tested") }
+        let on = q.uses(engines: [r.callGroup: r.engine], registry: registry, promptVersions: versions)
         for p in r.predicates { for u in r.uses where !on.isOn(p, FactsUse(rawValue: u) ?? .recorded, basis: r.basis) { out.append("\(p) \(u) stays off") } }
         for p in r.predicates {
             guard let pred = registry.predicate(p), pred.callGroup == r.callGroup else { out.append("\(p) isn't in \(r.callGroup)"); continue }
@@ -292,16 +309,11 @@ import Testing
         var stale = record(persons, [.recorded], group: people)
         #expect(Self.keyProblems(stale, bundle: [stale], registry: reg, versions: versions).isEmpty)
         stale.registryVersion = "v1-000000000000"
-        #expect(Self.keyProblems(stale, bundle: [stale], registry: reg, versions: versions).first == "registry version")
-        let linkedOnly = record(persons, [.linked], group: people)
-        #expect(Self.keyProblems(linkedOnly, bundle: [linkedOnly], registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
+        #expect(Self.keyProblems(stale, bundle: [stale], registry: reg, versions: versions).prefix(2) == ["registry version", "not tested"])
+        let undeclared = record(persons, [.timeline], group: people)
+        #expect(Self.keyProblems(undeclared, bundle: [undeclared], registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
         let oldAdapter = record(persons, [.recorded], group: people, engine: FactsEngine(model: Self.haiku.model, adapter: "claude-code/0;effort=low"))
         #expect(Self.keyProblems(oldAdapter, bundle: [oldAdapter], registry: reg, versions: versions) == ["adapter revision"])
-        // The bundle, not the record alone: a timeline record rests on the linked record beside it.
-        let wa = reg.timelinePredicates[0]
-        let timeline = record([wa], [.timeline], group: work), linked = record([wa], [.recorded, .linked], group: work)
-        #expect(Self.keyProblems(timeline, bundle: [timeline], registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
-        #expect(Self.keyProblems(timeline, bundle: [timeline, linked], registry: reg, versions: versions).isEmpty)
         // Without evidence, nothing qualifies.
         #expect(Self.problems(record(persons, [.recorded, .linked], group: people), registry: reg, versions: versions) == ["no scores.json in the evidence"])
     }
@@ -417,35 +429,22 @@ import Testing
         #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg)?.id == "timeline")
     }
 
-    @Test func whatShipsIsHaikusPersonPoolClientAndWorksAt() {
-        // 13e.2's records step (Phase B on 13e.1's code, ceb9d97): the person pool {recorded, linked}, client {recorded}
-        // and works at {recorded, linked}, all Haiku. Then 13e.2's gate (r4): for each answer model, Claude Haiku 5.5 and
-        // GPT-5.6-Terra, the person *attributes* (unscoped and sole_known) and works at's *timeline*, at this answer
-        // prompt (Haiku's timeline under the author's waiver). Plain search gets no timeline or bridges; attributes count
-        // there as recorded, and go to an answer only when a record covers its model.
+    @Test func whatShipsRecommendsHaikuAndAnyEngineRunsEverything() {
+        // 13e.2's records: the person pool {recorded, linked}, client {recorded}, works at {recorded, linked}, and for each
+        // answer model the person *attributes* (unscoped and sole_known) and works at's *timeline*, all Haiku through
+        // Claude Code. They only make Haiku *Recommended* (ADR-0032, amended 2026-11-24).
         #expect(FactsQualification.bundled.records.count == 9)
-        let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(Set(on.predicates(.linked)) == Set(persons + ["works_at"]))
-        #expect(Set(on.predicates(.recorded)) == Set(persons + ["client", "works_at"]))
-        #expect([FactsUse.timeline, .bridges].allSatisfy { on.predicates($0).isEmpty })
-        for model in ["claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra"] {
-            let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
-                                                         answer: .init(model: model, promptVersion: SearchAnswerer.promptVersion))
-            #expect(Set(answer.predicates(.attributes)) == Set(persons), "\(model)")
-            #expect(answer.predicates(.timeline) == ["works_at"], "\(model)")
-            #expect(answer.predicates(.bridges).isEmpty, "\(model)")
-            // Another answer prompt: neither.
-            let old = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
-                                                      answer: .init(model: model, promptVersion: "a13d-1"))
-            #expect(old.predicates(.attributes).isEmpty && old.predicates(.timeline).isEmpty, "\(model)")
+        #expect(FactsQualification.bundled.tested(Self.haiku, registry: reg, promptVersions: versions))
+        #expect(!FactsQualification.bundled.tested(Self.opus, group: people, registry: reg, promptVersions: versions))
+        // Haiku and Opus alike: every declared use, plain search's timeline included (Your Timeline reads these).
+        for engine in [Self.haiku, Self.opus] {
+            let on = FactsQualification.bundled.uses(engines: [people: engine, work: engine], registry: reg, promptVersions: versions)
+            #expect(Set(on.predicates(.linked)) == Set(persons + ["works_at"]))
+            #expect(Set(on.predicates(.recorded)) == Set(persons + ["client", "works_at"]))
+            #expect(Set(on.predicates(.attributes)) == Set(persons + ["works_at"]))
+            #expect(on.predicates(.timeline) == ["works_at"] && on.predicates(.bridges) == ["works_at"])
+            #expect(persons.allSatisfy { on.isOn($0, .attributes, basis: LinkBasis.soleKnown.rawValue) })
         }
-        // An answer model the gates didn't run: neither.
-        let other = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
-                                                    answer: .init(model: "claude-code/claude-opus-5-5", promptVersion: SearchAnswerer.promptVersion))
-        #expect(other.predicates(.attributes).isEmpty && other.predicates(.timeline).isEmpty)
-        // Another engine gets nothing.
-        let opus = FactsQualification.bundled.uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
-        #expect(FactsUse.allCases.allSatisfy { opus.predicates($0).isEmpty })
     }
 
     // MARK: The write side
@@ -463,24 +462,31 @@ import Testing
         return x
     }
 
-    func records(for provider: any GenerationProvider, people preds: [String]? = nil, work workUses: [FactsUse]? = nil) -> FactsQualification {
-        var out = [record(preds ?? persons, [.recorded, .linked, .attributes], group: people, engine: FactsEngine(provider))]
-        if let workUses { out.append(record(reg.groupPredicates(work), workUses, group: work, engine: FactsEngine(provider))) }
-        return FactsQualification(records: out)
+    /// Off-switches for an engine (no records, which change nothing): every person predicate but `preds` not recorded,
+    /// and the work group's uses not in `workUses` (nil: nothing of work recorded).
+    func switches(for provider: any GenerationProvider, people preds: [String]? = nil, work workUses: [FactsUse]? = nil) -> FactsQualification {
+        var q = FactsQualification(records: [])
+        let e = FactsEngine(provider)
+        for p in persons where !(preds ?? persons).contains(p) { q.off.insert(offKey(p, .recorded, engine: e)) }
+        for p in reg.groupPredicates(work) {
+            for u in FactsUse.allCases where !(workUses ?? []).contains(u) { q.off.insert(offKey(p, u, engine: e)) }
+        }
+        return q
     }
 
-    @Test func anUnqualifiedGroupMakesNoCall() async throws {
+    @Test func anUntestedModelIsCalledAndAGroupSwitchedOffIsnt() async throws {
         let id = try memory("My sister Maria lives in Lisbon. I joined Acme in 2019.")
         let scripted = FactsExtractorTests.Scripted { _ in [:] }
-        // What ships: no record, so no call for either group.
+        // What ships names no "scripted" engine: both groups are called anyway.
         var report = try await extractor(scripted, .bundled).learn([id])
-        #expect(scripted.seen.withLock { $0.count } == 0)
-        #expect(report.calls.allSatisfy { $0.outcome == .codeOnly && $0.dropped == [FactsExtractor.unqualified] })
-        #expect(try v.count("SELECT COUNT(*) FROM facts_run WHERE engine = 'code'") == 2)
-        // The people group qualified, work not: one call, for people.
-        report = try await extractor(scripted, records(for: scripted)).learn([id])
-        #expect(scripted.seen.withLock { $0.map(\.instructions) }.count == 1)
+        #expect(scripted.seen.withLock { $0.count } == 2)
+        #expect(report.calls.allSatisfy { $0.outcome == .applied })
+        // The work group switched off: one call, for people; work gets code-only links.
+        let second = try memory("My sister Maria moved to Porto. I left Acme in 2022.", days: 1)
+        report = try await extractor(scripted, switches(for: scripted)).learn([second])
+        #expect(scripted.seen.withLock { $0.count } == 3)
         #expect(report.calls.first { $0.group == work }?.outcome == .codeOnly)
+        #expect(report.calls.first { $0.group == work }?.dropped == [FactsExtractor.unqualified])
         #expect(report.calls.first { $0.group == people }?.outcome == .applied)
     }
 
@@ -495,7 +501,7 @@ import Testing
         }
         let scripted = FactsExtractorTests.Scripted(answer)
         // Every person predicate but the sibling one is recorded: its fact is dropped, and that's not the model's error.
-        let partial = records(for: scripted, people: persons.filter { $0 != sib })
+        let partial = switches(for: scripted, people: persons.filter { $0 != sib })
         let report = try await extractor(scripted, partial).learn([first], groups: [people])
         #expect(report.calls.first?.dropped.contains(FactsExtractor.unqualifiedPredicate) == true)
         #expect(try v.count("SELECT COUNT(*) FROM fact WHERE predicate = '\(sib)'") == 0)
@@ -506,12 +512,11 @@ import Testing
 
         // Read with every person predicate recorded, then the sibling one turned off: its earlier fact is hidden from the
         // graph every path reads (rosters, phrases, resolution), but stays stored; a fact the user entered stays shown.
-        let everyone = records(for: scripted)
-        let x = extractor(scripted, everyone)
+        let x = extractor(scripted, FactsQualification(records: []))
         try await x.learn([first], groups: [people])
         #expect(try v.count("SELECT COUNT(*) FROM fact WHERE predicate = '\(sib)'") == 1)
         try await v.store.writer.write { db in
-            try FactsQualification.turnOff(db, predicate: sib, use: .recorded, under: everyone.records[0], gate: "test", now: t0)
+            try FactsQualification.turnOff(db, offKey(sib, .recorded, engine: FactsEngine(scripted)), gate: "test", now: t0)
         }
         let later = try memory("My sister called.", days: 1)
         let a = try #require(try x.prepare(later, group: people))
@@ -550,14 +555,13 @@ import Testing
              "facts": [FactsExtractorTests.fact("My sister Maria", sib, "Maria", label: "sister"),
                        FactsExtractorTests.fact("My friend Tom", friend, "Tom", label: "friend")]]
         }
-        let everyone = records(for: scripted)
-        let x = extractor(scripted, everyone)
+        let x = extractor(scripted, FactsQualification(records: []))
         try await x.learn([id], groups: [people])
         let evidence = "SELECT COUNT(*) FROM fact_evidence e JOIN fact f ON f.id = e.fact_id WHERE f.predicate = '\(sib)'"
         let before = try v.count(evidence)
         #expect(before >= 1)
         try await v.store.writer.write { db in
-            try FactsQualification.turnOff(db, predicate: sib, use: .recorded, under: everyone.records[0], gate: "test", now: t0)
+            try FactsQualification.turnOff(db, offKey(sib, .recorded, engine: FactsEngine(scripted)), gate: "test", now: t0)
         }
         // The same version read again in full: the friend's rows are replaced, the sibling's stay stored, hidden.
         try await x.learn([id], groups: [people], kind: "reread")
@@ -592,12 +596,11 @@ import Testing
     @Test func aRetryAfterAUseIsTurnedOffStartsOver() async throws {
         let id = try memory("My friend Tom paints.")
         let store = v.store, persons = persons
-        let provider = TurnsOffThenFails { }
-        let q = records(for: provider)
-        let record = q.records[0]
+        let q = FactsQualification(records: [])
+        let keys = persons.map { offKey($0, .recorded, engine: FactsEngine(TurnsOffThenFails { })) }
         let off = TurnsOffThenFails {
             try store.writer.write { db in
-                for p in persons { try FactsQualification.turnOff(db, predicate: p, use: .recorded, under: record, gate: "test", now: t0) }
+                for k in keys { try FactsQualification.turnOff(db, k, gate: "test", now: t0) }
             }
         }
         let report = try await extractor(off, q).learn([id], groups: [people])
@@ -619,8 +622,9 @@ import Testing
         let ph = s.rolePhrases(text)[0]
         #expect(s.resolve(mem, ph).basis == .inferred)
 
-        // Recorded and linked, but the timeline off.
-        let q2 = FactsQualification(records: [record(reg.groupPredicates(work), [.recorded, .linked], group: work)])
+        // Recorded and linked, but the timeline switched off.
+        var q2 = FactsQualification(records: [])
+        q2.off.insert(offKey(dated, .timeline))
         s.uses = q2.uses(engines: [work: Self.haiku], registry: reg, promptVersions: versions)
         #expect(s.intent(q) == nil)
         #expect(s.answer(it!, query: q).entities.isEmpty)

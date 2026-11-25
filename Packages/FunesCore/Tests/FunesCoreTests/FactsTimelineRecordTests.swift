@@ -2,8 +2,9 @@ import Foundation
 import Testing
 @testable import FunesCore
 
-/// 13e.2: a *timeline* record measured with answer models (ADR-0032 decision 9, amended 2026-11-21) is an answer's
-/// alone: it covers only those models at that answer prompt version, and plain search's grammar never reads it.
+/// 13e.2's *timeline* records, measured with answer models, and the record step's evidence rules. Since ADR-0032's
+/// amendment of 2026-11-24 a record only marks an engine tested: the timeline is on for every reader, every engine and
+/// every answer model.
 @Suite struct FactsTimelineRecordTests {
     let reg = FactsRegistry.bundled
     var d: String { FX.dated }
@@ -26,34 +27,27 @@ import Testing
                      answerPromptVersion: answerModels.isEmpty ? "" : SearchAnswerer.promptVersion)
     }
 
-    @Test func aTimelineRecordWithAnswerModelsIsTheirsAlone() {
+    @Test func aTimelineRecordWithAnswerModelsNoLongerHoldsTheTimelineBack() {
         let haikuAnswers = "claude-code/claude-haiku-5-5"
         let q = FactsQualification(records: [record([.recorded, .linked]),
                                              record([.timeline], answerModels: [haikuAnswers], answerPrompt: SearchAnswerer.promptVersion),
                                              persons([.recorded, .linked]), persons([.attributes], answerModels: [haikuAnswers])])
         let people = reg.predicates.first { $0.objectKind == FactsValidator.personKind }!
-        let engines = [work: Self.haiku, people.callGroup: Self.haiku]
         let versions = FactsQualification.promptVersions(reg)
-        // Plain search and the Facts task: no timeline.
-        #expect(!q.uses(engines: engines, registry: reg, promptVersions: versions).isOn(d, .timeline))
-        // The answer model it was measured with, at this prompt: on.
-        let mine = q.uses(engines: engines, registry: reg, promptVersions: versions,
-                          answer: .init(model: haikuAnswers, promptVersion: SearchAnswerer.promptVersion))
-        #expect(mine.isOn(d, .timeline) && mine.isOn(d, .linked))
-        // Another answer model, or another answer prompt: off.
-        for key in [FactsQualification.AnswerKey(model: "codex/gpt-5.6-terra", promptVersion: SearchAnswerer.promptVersion),
-                    FactsQualification.AnswerKey(model: haikuAnswers, promptVersion: "a13d-1")] {
-            #expect(!q.uses(engines: engines, registry: reg, promptVersions: versions, answer: key).isOn(d, .timeline), "\(key)")
+        let opus = FactsEngine(model: "claude-code/claude-opus-5-5", adapter: Self.haiku.adapter)
+        // Plain search, People & history and the Facts task (no answer model): on, for the tested engine and another.
+        for engine in [Self.haiku, opus] {
+            let on = q.uses(engines: [work: engine, people.callGroup: engine], registry: reg, promptVersions: versions)
+            #expect(on.isOn(d, .timeline) && on.isOn(d, .linked), "\(engine.model)")
         }
-        // Without that model's *attributes* (never recorded, or turned off), its *timeline* is off too: the gate measured
-        // them together.
-        let alone = FactsQualification(records: [record([.recorded, .linked]),
-                                                 record([.timeline], answerModels: [haikuAnswers], answerPrompt: SearchAnswerer.promptVersion)])
-        #expect(!alone.uses(engines: engines, registry: reg, promptVersions: versions,
-                            answer: .init(model: haikuAnswers, promptVersion: SearchAnswerer.promptVersion)).isOn(d, .timeline))
-        // An engine-free timeline record (13e.1's form) still counts for plain search, as before.
-        let engineFree = FactsQualification(records: [record([.recorded, .linked, .timeline])])
-        #expect(engineFree.uses(engines: engines, registry: reg, promptVersions: versions).isOn(d, .timeline))
+        // The persons' *attributes* switched off: the timeline stays on (the gate's coupling went with the gate).
+        var off = q
+        for p in reg.groupPredicates(people.callGroup) {
+            off.off.insert(.init(predicate: p, use: .attributes, engine: Self.haiku,
+                                 promptVersion: versions[people.callGroup]!, registryVersion: reg.fingerprint))
+        }
+        let on = off.uses(engines: [work: Self.haiku, people.callGroup: Self.haiku], registry: reg, promptVersions: versions)
+        #expect(on.isOn(d, .timeline) && on.predicates(.attributes) == [d])
     }
 
     /// The record step's evidence rules (the author's decision of 2026-11-24): a waiver caps only owed checks and

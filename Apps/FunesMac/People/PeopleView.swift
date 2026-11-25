@@ -443,7 +443,7 @@ struct PeopleTimelineView: View {
                 .controlSize(.small)
             }
             if !s.on {
-                Text(String(localized: "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here."))
+                Text(String(localized: "Funes isn't ordering this now. Only what you enter shows here."))
                     .font(.callout).foregroundStyle(.secondary)
             }
             if s.episodes.isEmpty {

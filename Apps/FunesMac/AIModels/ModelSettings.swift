@@ -466,10 +466,9 @@ final class ModelSettings {
         }
     }
 
-    // MARK: Facts (v0.10, FR-F-01, model providers §4)
+    // MARK: Facts (FR-F-01, model providers §4)
 
-    /// The qualification records the page offers models from: the shipped ones. The runner reads them again with the
-    /// local off-switches for every job (`factsConfiguration`).
+    /// The qualification records that mark offers *Recommended*: the shipped ones. They never decide what runs.
     var factsQualification: FactsQualification = .bundled
 
     /// Remove Learned Facts is running: learning can't be turned on until it ends (shared, so leaving the page and
@@ -522,22 +521,18 @@ final class ModelSettings {
         PlanKind.allCases.filter { executables[$0] != nil || stored.facts.choice?.account == $0.rawValue }
     }
 
-    /// The models the Facts picker offers: only ones that qualified, from accounts and plans that can run them.
+    /// The models the Facts picker offers: every model of every account and found plan, the tested ones first.
     var factsOffers: [FactsOffer] { stored.factsOffers(qualification: factsQualification, plans: factsPlans) }
 
-    /// Whether learned facts reach Search answers (memory processing §10.3, 13d): *Use in search and answers* on, and an
-    /// *attributes* record covering the answer model (as `ModelRouter.engine` names it: the account, or plan, and the
-    /// model's id as chosen, so an alias never matches) at the current answer prompt, for the Facts engines search uses.
-    /// The disclosures say so only then (otherwise answers are 13b's and send nothing learned).
+    /// Whether learned facts reach a cloud or local-server Search answer (memory processing §10.3, 13d, 13e.2): *Use in
+    /// search and answers* on, an account's model answering, and *attributes* or *timeline* on for the Facts engine
+    /// search uses (any answer model; the off-switches aren't read here, so it may say so when a switch holds them back).
+    /// The disclosures say so only then. Apple on-device answers stay on this Mac and need no line.
     var factsInAnswers: Bool {
-        guard factsUse, case let .model(account, model) = resolve(.searchAnswers).model else { return false }
-        var engines: [String: FactsEngine] = [:]
-        for offer in [factsResolution.fallback, factsResolution.chosen].compactMap({ $0 }) {
-            for group in offer.groups { engines[group] = offer.engine }
-        }
-        let answer = FactsQualification.AnswerKey(model: "\(account)/\(model)", promptVersion: SearchAnswerer.promptVersion)
-        return !factsQualification.uses(engines: engines, registry: .bundled, promptVersions: FactsQualification.promptVersions(.bundled),
-                                        answer: answer).predicates(.attributes).isEmpty
+        guard factsUse, case .model = resolve(.searchAnswers).model else { return false }
+        let uses = factsQualification.uses(engines: factsResolution.engines(), registry: .bundled,
+                                           promptVersions: FactsQualification.promptVersions(.bundled))
+        return !uses.predicates(.attributes).isEmpty || !uses.predicates(.timeline).isEmpty
     }
 
     /// What Facts runs on.
@@ -548,7 +543,7 @@ final class ModelSettings {
     /// Why Facts can't learn as chosen.
     var factsProblem: FactsProblem? {
         let offers = factsOffers
-        return stored.factsProblem(qualification: factsQualification, offers: offers,
+        return stored.factsProblem(offers: offers,
                                    resolution: stored.factsResolution(offers: offers, runnable: { self.problem(account: $0) == nil }),
                                    accountProblem: { self.problem(account: $0) })
     }
@@ -559,8 +554,8 @@ final class ModelSettings {
     /// Where the chosen model runs (a plan is cloud; an account is cloud until resolved).
     var factsLocality: Locality? { factsResolution.account.map { locality(account: $0) } }
 
-    /// What a facts job needs, read now on the main actor: the clients (built off it, in `make`) for the chosen offer
-    /// and its fallback, and the cloud limit. Nil while learning is off or no model resolves.
+    /// What a facts job needs, read now on the main actor: the client (built off it, in `make`) for the chosen offer,
+    /// and the cloud limit. Nil while learning is off or no model resolves.
     func factsConfiguration(cap: CloudRequestCap?) -> FactsConfiguration? {
         let resolution = factsResolution
         // A known problem with the account (not signed in, no key, paused) waits like no model, rather than failing the
@@ -572,8 +567,7 @@ final class ModelSettings {
             let key = kind == nil ? settings.account(offer.account).flatMap { (try? keys.key(for: $0.endpoint.id)) ?? nil } : nil
             return .init(offer: offer, executable: kind.flatMap { executables[$0] }, key: key)
         }
-        return FactsConfiguration(settings: settings, chosen: recipe(chosen), fallback: resolution.fallback.map(recipe),
-                                  cloudLimit: limit, cap: cap, backoff: backoff)
+        return FactsConfiguration(settings: settings, chosen: recipe(chosen), cloudLimit: limit, cap: cap, backoff: backoff)
     }
 
     // MARK: Limits (ADR-0022)

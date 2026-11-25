@@ -260,13 +260,10 @@ struct AIJobText {
         }
     }
 
-    // MARK: Facts (v0.10, FR-F-01)
+    // MARK: Facts (FR-F-01)
 
-    /// The Features row's summary: "Not available yet" while no model qualified; otherwise the switches.
+    /// The Features row's summary: the switches, or the first backfill's progress.
     var factsSummary: String {
-        if case .nothingQualified? = settings.factsProblem, !settings.factsLearn, !settings.factsUse {
-            return String(localized: "Not available yet")
-        }
         // The first backfill's progress stands for "Learning from memories" while it runs.
         if settings.factsLearn, let p = model.factsBackfill, p.state.isRunning {
             let reading = p.state.isPaused ? String(localized: "Paused: \(p.done) of \(p.total) memories read.")
@@ -281,8 +278,7 @@ struct AIJobText {
         }
     }
 
-    /// The page's status: ready, what's missing, or that nothing has qualified yet; and, when the chosen model reads only
-    /// part of what Facts learns, who reads the rest. While the first backfill runs, or Facts waits for tomorrow's cap,
+    /// The page's status: ready, or what's missing. While the first backfill runs, or Facts waits for tomorrow's cap,
     /// that says where it is instead of "Ready." (the two would contradict each other).
     var factsStatus: String {
         func sentence(_ s: String) -> String { s.hasSuffix(".") ? s : s + "." }
@@ -292,23 +288,27 @@ struct AIJobText {
             return ([problemStatus] + [paused].compactMap { $0 }).map(sentence).joined(separator: " ")
         }
         let underway = [backfillStatus, settings.factsLearn ? factsCapStatus : nil].compactMap { $0 }
-        return (underway.isEmpty ? [readyStatus] : underway + partStatus).map(sentence).joined(separator: " ")
+        return (underway.isEmpty ? [readyStatus] : underway).map(sentence).joined(separator: " ")
     }
 
-    /// The status when Facts has no problem: ready, and who reads what when the model reads only part of it.
+    /// The status when Facts has no problem.
     private var readyStatus: String {
-        ([settings.factsLearn ? String(localized: "Ready. Funes learns from new and changed memories.")
-                              : String(localized: "Ready. Turn on Learn from memories to start.")] + partStatus).joined(separator: " ")
+        settings.factsLearn ? String(localized: "Ready. Funes learns from new and changed memories.")
+                            : String(localized: "Ready. Turn on Learn from memories to start.")
+    }
+
+    /// One quiet line under the model when the chosen one isn't among those Funes tested (ADR-0032, amended 2026-11-24):
+    /// it still runs everything; this only says so.
+    var factsUntestedNote: String? {
+        guard let chosen = settings.factsResolution.chosen, !chosen.tested else { return nil }
+        return String(localized: "Funes hasn't tested this model for Facts; results may vary.")
     }
 
     /// Why Facts can't learn as chosen ("" when it can).
     var problemStatus: String {
         switch settings.factsProblem {
-        case .nothingQualified?:
-            return String(localized: "No model has passed Funes's tests for Facts yet, so Facts can't be turned on.")
-        case let .needsAccount(models)?:
-            let names = models.map(FactsModelName.display)
-            return String(localized: "Facts needs a model that passed Funes's tests: \(names.formatted(.list(type: .or))). Add one in Models & Accounts.")
+        case .noModel?:
+            return String(localized: "Add a model in Models & Accounts to learn facts.")
         case .chooseModel?:
             return String(localized: "Choose a model to learn facts.")
         case let .account(id, problem)?:
@@ -324,18 +324,6 @@ struct AIJobText {
         case nil:
             return ""
         }
-    }
-
-    /// When the chosen model reads only part of what Facts learns: who reads the rest.
-    private var partStatus: [String] {
-        let resolution = settings.factsResolution
-        let all = Set(FactsRegistry.bundled.callGroups.keys)
-        guard let chosen = resolution.chosen, chosen.groups != all else { return [] }
-        let name = FactsModelName.display(chosen.model)
-        if let fallback = resolution.fallback, resolution.groups == all {
-            return [String(localized: "\(name) reads part of what Facts learns; \(FactsModelName.display(fallback.model)) reads the rest.")]
-        }
-        return [String(localized: "\(name) reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned.")]
     }
 
     /// FR-F-01's disclosure, for a cloud model: what Facts sends and to whom.

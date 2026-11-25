@@ -140,17 +140,17 @@ import Testing
         #expect(try await search("flat white", facts: Self.config()) == (try await search("flat white", facts: nil)))
     }
 
-    @Test func aRecordWithoutLinkedAdmitsNothing() async throws {
+    @Test func linkedSwitchedOffAdmitsNothing() async throws {
         _ = try sisters()
-        // Recorded but not linked: the person predicates' records without `linked`.
+        // Recorded but not linked: every predicate's *linked* switched off locally (whatever the model).
         let reg = FactsRegistry.bundled
         let engine = FactsQualificationTests.haiku
-        let records = reg.callGroups.keys.sorted().map { group in
-            FactsQualification.Record(predicates: reg.predicates.filter { $0.callGroup == group }.map(\.id), uses: ["recorded"],
-                                      callGroup: group, engine: engine, promptVersion: FactsPrompt.version(group, registry: reg),
-                                      registryVersion: reg.fingerprint, gate: "test", recordedAt: "2026-11-19")
+        var q = FactsQualification(records: [])
+        for p in reg.predicates {
+            q.off.insert(.init(predicate: p.id, use: .linked, engine: engine, promptVersion: FactsPrompt.version(p.callGroup, registry: reg),
+                               registryVersion: reg.fingerprint))
         }
-        let c = FactsSearchConfig(qualification: FactsQualification(records: records),
+        let c = FactsSearchConfig(qualification: q,
                                   engines: Dictionary(uniqueKeysWithValues: reg.callGroups.keys.map { ($0, engine) }),
                                   userAliases: [], cloudLimit: .upTo(.internal))
         #expect(try await search("What does Maria drink?", facts: c) == (try await search("What does Maria drink?", facts: nil)))

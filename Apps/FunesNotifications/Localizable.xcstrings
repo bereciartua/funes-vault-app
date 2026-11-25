@@ -517,13 +517,13 @@
     "Funes can't tell which came first" : {
       "comment" : "Timeline: an undecidable order"
     },
-    "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." : {
-
-    },
     "Funes hasn't learned anyone from your memories yet. It reads new and changed ones as you save them." : {
 
     },
     "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
+
+    },
+    "Funes isn't ordering this now. Only what you enter shows here." : {
 
     },
     "Gap of %lld months before this" : {

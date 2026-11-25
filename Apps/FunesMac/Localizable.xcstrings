@@ -33,9 +33,6 @@
     "%@ (connected cloud app)" : {
 
     },
-    "%@ (part of what Facts learns)" : {
-
-    },
     "%@ (remote token)" : {
 
     },
@@ -327,19 +324,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ or %2$@"
-          }
-        }
-      }
-    },
-    "%@ reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned." : {
-
-    },
-    "%@ reads part of what Facts learns; %@ reads the rest." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ reads part of what Facts learns; %2$@ reads the rest."
           }
         }
       }
@@ -2273,6 +2257,9 @@
     "Add a category" : {
 
     },
+    "Add a model in Models & Accounts to learn facts." : {
+
+    },
     "Add a person, a place or a fact yourself" : {
 
     },
@@ -3937,9 +3924,6 @@
     "Facts" : {
 
     },
-    "Facts needs a model that passed Funes's tests: %@. Add one in Models & Accounts." : {
-
-    },
     "Facts sends new and changed memories (up to %@) to %@ through your %@ sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %lld cloud requests, and your %@ account's training setting applies." : {
       "localizations" : {
         "en" : {
@@ -4393,9 +4377,6 @@
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
 
     },
-    "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." : {
-
-    },
     "Funes finished reading your memories" : {
 
     },
@@ -4475,10 +4456,16 @@
     "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
 
     },
+    "Funes hasn't tested this model for Facts; results may vary." : {
+
+    },
     "Funes inferred this from what it learned about your memories." : {
 
     },
     "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
+
+    },
+    "Funes isn't ordering this now. Only what you enter shows here." : {
 
     },
     "Funes keeps the last 7 backups in its data folder." : {
@@ -5886,9 +5873,6 @@
     "No memory selected" : {
 
     },
-    "No model has passed Funes's tests for Facts yet, so Facts can't be turned on." : {
-
-    },
     "No models" : {
 
     },
@@ -5947,9 +5931,6 @@
 
     },
     "Not available on this Mac" : {
-
-    },
-    "Not available yet" : {
 
     },
     "Not found" : {
@@ -6220,9 +6201,6 @@
 
     },
     "Only allowed categories can be shared. Deny always wins." : {
-
-    },
-    "Only models that passed Funes's tests for Facts are listed." : {
 
     },
     "Only what you entered" : {
@@ -6834,6 +6812,9 @@
 
     },
     "Recently Deleted is empty" : {
+
+    },
+    "Recommended" : {
 
     },
     "Redirect URI" : {

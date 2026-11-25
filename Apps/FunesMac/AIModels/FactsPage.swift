@@ -5,10 +5,10 @@ import SwiftUI
 
 private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "facts")
 
-/// Features ▸ Facts (v0.10, working name; FR-F-01, model providers §4, 04-ux-mac.md ▸ Page: Facts): *Learn from
-/// memories*, *Use in search and answers*, the model (only models that qualified), its status and disclosure, and Remove
-/// Learned Facts…. Off by default. While no model has qualified (what ships until 13a.2's Gates step), both switches stay
-/// off and the page says why.
+/// Features ▸ Facts (FR-F-01, model providers §4, 04-ux-mac.md ▸ Page: Facts): *Learn from memories*, *Use in search
+/// and answers*, the model (any configured one; the ones Funes tested first, marked *Recommended*), its status and
+/// disclosure, and Remove Learned Facts…. Off by default. With no model configured, both switches stay off and the page
+/// says why.
 ///
 /// The first backfill (FR-F-03): turning Learn from memories on the first time, with a model and memories, opens its
 /// sheet (count and cost first); **Read Existing Memories…** opens it later, until it starts. While it runs the page shows
@@ -43,6 +43,9 @@ struct FactsPage: View {
             }
             Section {
                 FactsModelRow(model: model)
+                if let note = text.factsUntestedNote {
+                    Text(note).font(.callout).foregroundStyle(.secondary)
+                }
                 // One status line: while the backfill runs or Facts waits for the cap, it says so instead of "Ready.".
                 HStack(alignment: .firstTextBaseline) {
                     Text(text.factsStatus).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -135,7 +138,7 @@ struct FactsPage: View {
     }
 }
 
-/// Facts' Model row: the pop-up of qualified models and the chosen one's badge, or "None available".
+/// Facts' Model row: the pop-up of models and the chosen one's badge, or "None available".
 struct FactsModelRow: View {
     let model: AppModel
 
@@ -155,8 +158,9 @@ struct FactsModelRow: View {
     }
 }
 
-/// Facts' model pop-up (model providers §4): only offers, each a model's display name under its account or plan (the
-/// chosen one's full id, which records name, is the pop-up's help tag), with why the account can't run now; a model that qualified for part of what Facts learns says so; then the footer and Add a Model….
+/// Facts' model pop-up (model providers §4): first the models Funes tested, under *Recommended*, each "<name> · <account>";
+/// then every other model under its account or plan, with why the account can't run now (the chosen one's id is the
+/// pop-up's help tag); then Add a Model….
 struct FactsModelPicker: View {
     let model: AppModel
 
@@ -165,24 +169,28 @@ struct FactsModelPicker: View {
     private enum Tag: Hashable {
         case offer(ModelChoice)
         case none
-        case footer
         case addModel
     }
 
     var body: some View {
         let offers = settings.factsOffers
         let current = settings.factsChoice ?? settings.factsResolution.chosen?.choice
-        let all = Set(FactsRegistry.bundled.callGroups.keys)
-        let accounts = offers.map(\.account).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        let tested = offers.filter(\.tested), others = offers.filter { !$0.tested }
+        let accounts = others.map(\.account).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
         Menu {
             Picker(selection: Binding<Tag>(get: { current.map(Tag.offer) ?? .none }, set: choose)) {
                 if current == nil { Text(String(localized: "Choose a model")).tag(Tag.none) }
+                if !tested.isEmpty {
+                    Section(String(localized: "Recommended")) {
+                        ForEach(tested, id: \.self) { offer in
+                            Text(recommended(offer)).tag(Tag.offer(offer.choice))
+                        }
+                    }
+                }
                 ForEach(accounts, id: \.self) { account in
                     Section(header(account)) {
-                        ForEach(offers.filter { $0.account == account }, id: \.self) { offer in
-                            let name = FactsModelName.display(offer.model)
-                            Text(offer.groups == all ? name : String(localized: "\(name) (part of what Facts learns)"))
-                                .tag(Tag.offer(offer.choice))
+                        ForEach(others.filter { $0.account == account }, id: \.self) { offer in
+                            Text(FactsModelName.display(offer.model)).tag(Tag.offer(offer.choice))
                         }
                     }
                 }
@@ -190,7 +198,6 @@ struct FactsModelPicker: View {
                     Text(label(chosen)).tag(Tag.offer(chosen)).disabled(true)
                 }
                 Divider()
-                Text(String(localized: "Only models that passed Funes's tests for Facts are listed.")).tag(Tag.footer).disabled(true)
                 Text(String(localized: "Add a Model…")).tag(Tag.addModel)
             } label: {
                 EmptyView()
@@ -203,6 +210,13 @@ struct FactsModelPicker: View {
         .fixedSize()
         .help(current?.model ?? "")
         .accessibilityLabel(String(localized: "Model: \(current.map(label) ?? String(localized: "Choose a model"))"))
+    }
+
+    /// "Claude Haiku 5.5 · Claude (Claude Code)", with why the account can't run now.
+    private func recommended(_ offer: FactsOffer) -> String {
+        let name = FactsModelName.display(offer.model), account = settings.name(offer.account)
+        return settings.problem(account: offer.account).map { "\(name) · \(account) — \(ProviderText.reason($0))" }
+            ?? "\(name) · \(account)"
     }
 
     private func header(_ account: String) -> String {
@@ -219,7 +233,7 @@ struct FactsModelPicker: View {
         switch tag {
         case let .offer(choice): settings.setFactsChoice(choice)
         case .addModel: model.showSettingsPane(.accounts)
-        case .none, .footer: break
+        case .none: break
         }
     }
 }

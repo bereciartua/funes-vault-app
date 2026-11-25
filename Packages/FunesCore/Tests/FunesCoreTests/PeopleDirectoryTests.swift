@@ -163,6 +163,29 @@ import Testing
         #expect(!section.episodes[0].stating.isEmpty)
     }
 
+    /// Your Timeline reads the uses with no answer model (`FactsSearchConfig.uses`), from the shipped records and the
+    /// Facts engines as the app builds them. Before ADR-0032's amendment of 2026-11-24 it was always off: both shipped
+    /// timeline records name answer models, and a record with answer models didn't count without one.
+    @Test func yourTimelineShowsLearnedJobsWithTheTestedModelAndAnUntestedOne() throws {
+        let a = try memory("Acme", "I joined Acme in 2015 and left in 2017.")
+        let b = try memory("Initech", "I joined Initech in 2019; I left in 2021.", at: 1)
+        try apply(a, job("Acme", start: "2015", end: "2017", quote: "I joined Acme in 2015"), group: workGroup)
+        try apply(b, job("Initech", start: "2019", end: "2021", quote: "I joined Initech in 2019"), group: workGroup)
+        let haiku = FactsEngine(ClaudeCodeClient(executable: "/usr/bin/false", model: FactsClients.defaultModel))
+        let untested = FactsEngine(model: "ollama/qwen3:8b", adapter: "ollama")
+        #expect(FactsQualification.bundled.tested(haiku, registry: Self.reg, promptVersions: FactsQualification.promptVersions(Self.reg)))
+        for engine in [haiku, untested] {
+            let config = FactsSearchConfig(engines: [people: engine, workGroup: engine], userAliases: [], cloudLimit: .upTo(.internal))
+            let section = try #require(try v.store.peopleDirectory(config: config).timeline.first { $0.predicate == Self.work })
+            #expect(section.on, "\(engine.model)")
+            #expect(section.episodes.map(\.name) == ["Initech", "Acme"], "\(engine.model)")
+            #expect(section.episodes.allSatisfy { !$0.yours }, "\(engine.model)")
+        }
+        // No model at all: off, and only your entries would show.
+        let none = FactsSearchConfig(engines: [:], userAliases: [], cloudLimit: .upTo(.internal))
+        #expect(try v.store.peopleDirectory(config: none).timeline.first { $0.predicate == Self.work }?.on == false)
+    }
+
     @Test func anUndatedJobSaysFunesCantPlaceIt() throws {
         let a = try memory("Acme", "I joined Acme in 2015 and left in 2017.")
         let h = try memory("Hooli", "I did a contract at Hooli at some point.", at: 1)
