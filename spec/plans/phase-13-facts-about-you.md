@@ -796,7 +796,7 @@
 - [ ] **Exit:** the sample passes, or the failing uses are off and a fix is planned. The default stays off (ADR-0032 decision 3); changing it would be an ADR amendment.
 
 ## 13f Ship · ¼ weekend
-- [ ] README, PRIVACY.md (what the Facts task sends, and what answers now send), docs, CHANGELOG.
+- [x] README, PRIVACY.md (what the Facts task sends, and what answers now send), docs, CHANGELOG. *Done 25 November 2026 on the release branch for 0.6.0, the author having asked to release before 13e's two-week review; PRIVACY.md and funesvault.com/privacy regenerated from it, checked against the code by Fable 5.2 (the roster's quoted memories and when work history goes with an answer were added). The in-app disclosure (`AIText`) now says the same: "with every person Funes knows, what they are to you and up to 4 other memories that name each".*
 - [ ] `sh scripts/test.sh` green; the iPhone app builds; a TestFlight build with the author's go-ahead.
 
 **Later (not Phase 13), each a registry entry with a fixture and gates, or a generic capability by an ADR amendment:**

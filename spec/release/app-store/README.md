@@ -7,7 +7,7 @@ Task 5.7 of [Phase 5](../../plans/phase-5-iphone-companion.md). What goes into A
 | [`en-US/name.txt`](en-US/name.txt) · [`subtitle.txt`](en-US/subtitle.txt) | "Funes Vault" · "Private memory for AI agents" |
 | [`en-US/promotional-text.txt`](en-US/promotional-text.txt) · [`description.txt`](en-US/description.txt) · [`keywords.txt`](en-US/keywords.txt) | The version page's texts |
 | [`en-US/support-url.txt`](en-US/support-url.txt) · [`privacy-url.txt`](en-US/privacy-url.txt) · [`marketing-url.txt`](en-US/marketing-url.txt) | `https://funesvault.com/support/`, `/privacy/`, `/` (`site/support`, `site/privacy`, `site/index.html`) |
-| [`en-US/whats-new.txt`](en-US/whats-new.txt) | "What's New in This Version" for 0.5.2 |
+| [`en-US/whats-new.txt`](en-US/whats-new.txt) | "What's New in This Version" for 0.6.0 |
 | [`en-US/review-notes.txt`](en-US/review-notes.txt) | App Review notes: the Mac requirement and how to enter demo mode |
 | [`privacy.md`](privacy.md) | The App Privacy answers ("Data Not Collected") and the privacy manifests' audit |
 | [`screenshots.md`](screenshots.md) | The screenshots plan |

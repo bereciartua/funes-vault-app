@@ -24,3 +24,10 @@ regexes = [
 [[allowlists]]
 description = "Fixed test values: the Remote Access harness's secret path and a fake key the import test expects to be blocked."
 stopwords = ["q7Zk2vN4bXwP9sL1mT6hYa", "abcdefgh12345678"]
+
+[[allowlists]]
+description = "The people spike's result files key each recorded model call by its SHA-256 (\"key\": \"<64 hex>\"), a digest of the request, not a credential. Only a whole 64-character lowercase hex secret, and only under spikes/people/results-*; anything else there is still scanned."
+condition = "AND"
+paths = ['''^spikes/people/results-[^/]+/''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']

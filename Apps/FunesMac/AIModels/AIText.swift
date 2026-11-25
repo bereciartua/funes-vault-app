@@ -327,7 +327,8 @@ struct AIJobText {
         }
     }
 
-    /// FR-F-01's disclosure, for a cloud model: what Facts sends and to whom.
+    /// FR-F-01's disclosure, for a cloud model: what Facts sends and to whom. Each call's roster lists every person Funes
+    /// knows, quoting up to 4 other memories that name each (`known_max` in facts-prompt.json; keep the "4" in step).
     var factsDisclosure: String? {
         guard settings.factsProblem == nil || { if case .account = settings.factsProblem { true } else { false } }(),
               let account = settings.factsResolution.account, settings.factsLocality?.isLocal == false else { return nil }
@@ -336,9 +337,9 @@ struct AIJobText {
             return String(localized: "Facts sends nothing to \(name): the cloud limit is Nothing, so it links memories only from what it already knows.")
         }
         if let kind = PlanKind(rawValue: account) {
-            return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(kind.plan) through your \(kind.tool) sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's \(settings.dailyCap) cloud requests, and your \(kind.plan) account's training setting applies.")
+            return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(kind.plan) through your \(kind.tool) sign-in, with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's \(settings.dailyCap) cloud requests, and your \(kind.plan) account's training setting applies.")
         }
-        return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(name), with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's \(settings.dailyCap) cloud requests.")
+        return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(name), with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names. Nothing it learns goes to agents. It counts toward today's \(settings.dailyCap) cloud requests.")
     }
 
     // MARK: Apply changes automatically
@@ -424,7 +425,7 @@ struct AIJobText {
                 guard local || limit != nil else {
                     return (String(localized: "Facts: nothing to \(to); the cloud limit is Nothing."), false)
                 }
-                return (String(localized: "Facts: new and changed memories\(upTo(local)), with the names and facts about you they mention, including other people's names, to \(to)."), !local)
+                return (String(localized: "Facts: new and changed memories\(upTo(local)), with every person Funes knows, what they are to you and up to 4 other memories that name each, including other people's names, to \(to)."), !local)
             case let .searchIndex(memoryText, agentTasks):
                 if !memoryText {
                     return (agentTasks
