@@ -31,8 +31,12 @@ final class SignInPanelController {
         shownID = first.id
         let panel = self.panel ?? makePanel()
         self.panel = panel
-        panel.contentViewController = NSHostingController(rootView: SignInPanelView(model: model, request: first))
-        panel.layoutIfNeeded()
+        let host = NSHostingController(rootView: SignInPanelView(model: model, request: first))
+        panel.contentViewController = host
+        // Size before placing: on macOS 27 the hosting controller sizes the panel only after
+        // this pass, so a panel placed from its frame then had zero width and opened off the
+        // right edge of the screen.
+        panel.setContentSize(host.view.fittingSize)
         position(panel)
         panel.orderFrontRegardless()
         NSAccessibility.post(element: NSApp as Any, notification: .announcementRequested,
@@ -75,7 +79,9 @@ final class SignInPanelController {
         if let other = NSApp.windows.first(where: { $0 !== panel && $0.isVisible && $0.title == String(localized: "Approval") }) {
             top = other.frame.minY - 12
         }
-        panel.setFrameTopLeftPoint(NSPoint(x: frame.maxX - panel.frame.width - 12, y: top))
+        // The view is always `width` wide, so a late-sized frame can't push the panel off screen.
+        let width = max(panel.frame.width, Self.width)
+        panel.setFrameTopLeftPoint(NSPoint(x: frame.maxX - width - 12, y: top))
     }
 }
 
